@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ResearchFlow OS - Master Workspace</title>
+  <link rel="stylesheet" href="../styles/theme.css">
+  <link rel="stylesheet" href="../styles/options.css">
+</head>
+<body>
+  <div class="dashboard-wrapper">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar glass-panel">
+      <div class="brand">
+        <div class="logo-orb gradient-bg-purple"></div>
+        <div>
+          <h2>ResearchFlow OS</h2>
+          <span class="version">v1.0.0 Companion</span>
+        </div>
+      </div>
+      
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-view="view-dashboard">
+          <svg class="svg-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+          Dashboard Overview
+        </button>
+        <button class="nav-item" data-view="view-projects">
+          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          Areas & Projects
+        </button>
+        <button class="nav-item" data-view="view-records">
+          <svg class="svg-icon" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          Research Records
+        </button>
+        <button class="nav-item" data-view="view-manuscripts">
+          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Manuscripts Kanban
+        </button>
+        <button class="nav-item" data-view="view-submissions">
+          <svg class="svg-icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Submissions & Review
+        </button>
+        <button class="nav-item" data-view="view-evidence">
+          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          Evidence Locker
+        </button>
+        <button class="nav-item" data-view="view-settings">
+          <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Multi-Cloud Settings
+        </button>
+      </nav>
+
+      <!-- Sync Status Indicator Card -->
+      <div class="sidebar-sync-card glass-card">
+        <div class="sync-indicator">
+          <span class="indicator-dot active" id="sync-dot"></span>
+          <span id="sync-status-text">Synced (Local)</span>
+        </div>
+        <button id="btn-manual-sync" class="btn-secondary w-full" style="padding: 6px 10px; font-size: 11px; margin-top: 8px;">
+          🔄 Force Sync
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Workspace -->
+    <main class="main-content">
+      
+      <!-- VIEW 1: DASHBOARD OVERVIEW -->
+      <section id="view-dashboard" class="content-view active">
+        <header class="view-header">
+          <h1>Dashboard Overview</h1>
+          <p class="text-muted">A bird's eye view of your scientific progress and pipelines.</p>
+        </header>
+
+        <!-- Stats row -->
+        <div class="grid-cols-3">
+          <div class="glass-card stat-box interactive-stat-card filter-accepted" id="card-filter-accepted">
+            <h4 style="display:flex; align-items:center; gap:6px;">🎉 Accepted & Published <span class="filter-tip">Click to filter</span></h4>
+            <div class="stat-number gradient-text-emerald" id="stat-accepted-submissions">0</div>
+          </div>
+          <div class="glass-card stat-box interactive-stat-card filter-active" id="card-filter-active">
+            <h4 style="display:flex; align-items:center; gap:6px;">🕒 Active In-Review <span class="filter-tip">Click to filter</span></h4>
+            <div class="stat-number gradient-text-purple" id="stat-active-submissions">0</div>
+          </div>
+          <div class="glass-card stat-box interactive-stat-card filter-all active" id="card-filter-all">
+            <h4 style="display:flex; align-items:center; gap:6px;">📊 Total Submissions <span class="filter-tip">Click to filter</span></h4>
+            <div class="stat-number gradient-text-purple" id="stat-total-submissions">0</div>
+          </div>
+        </div>
+
+        <!-- Pipeline Timeline Module -->
+        <div class="glass-panel pipeline-module">
+          <div class="pipeline-module-header">
+            <div>
+              <h3>📅 Manuscript Pipeline Timelines</h3>
+              <p class="text-muted" style="font-size:12px; margin-top:2px;">Track experiments, writing, submission, revision, acceptance, and publication through visual manuscript pipelines.</p>
+            </div>
+            <div class="pipeline-toolbar">
+              <span class="pipeline-filter-label" id="dashboard-filter-label">All pipelines</span>
+              <button class="btn-secondary btn-sm" id="btn-pipeline-view-toggle" title="Toggle Compact / Expanded view">
+                <span id="pipeline-view-icon">▤</span> <span id="pipeline-view-label">Compact</span>
+              </button>
+            </div>
+          </div>
+          
+          <!-- Key Event Duration Summary Header -->
+          <div class="timeline-summary-header" style="margin-bottom: 20px;">
+            <div class="summary-card"><div class="label">平均 实验 → 投稿</div><div class="value" id="mExpSubmit">—</div></div>
+            <div class="summary-card"><div class="label">未接收：投稿 → 今天</div><div class="value" id="mSubmitNow">—</div></div>
+            <div class="summary-card"><div class="label">未接收：R1 → 今天</div><div class="value" id="mR1Now">—</div></div>
+            <div class="summary-card"><div class="label">已接收：投稿 → 接收</div><div class="value" id="mSubmitAccept">—</div></div>
+          </div>
+
+          <div class="pipeline-cards-container" id="dashboard-gantt">
+            <!-- Rendered dynamically by renderDashboard() -->
+            <p class="empty-state">No manuscript submission pipelines in progress.</p>
+          </div>
+        </div>
+
+        <div class="grid-cols-2">
+          <!-- Recent Research Logs -->
+          <div class="glass-card recent-box">
+            <h3>⚡ Recent Research Logs</h3>
+            <div class="recent-list" id="dashboard-recent-records">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+          <!-- Timeline alerts -->
+          <div class="glass-card recent-box">
+            <h3>🔔 Timeline Alerts</h3>
+            <div class="recent-list" id="dashboard-pending-milestones">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 2: AREAS & PROJECTS -->
+      <section id="view-projects" class="content-view">
+        <header class="view-header flex-space">
+          <div>
+            <h1>Areas & Projects Tree</h1>
+            <p class="text-muted">Manage your research domains, hypotheses, and projects.</p>
+          </div>
+          <button id="btn-add-project" class="btn-primary">+ Add New Project</button>
+        </header>
+
+        <div class="projects-tree-layout">
+          <!-- Projects list pane -->
+          <div class="glass-panel tree-sidebar">
+            <div class="tree-header">
+              <h3>Folders & Groups</h3>
+            </div>
+            <div class="tree-nodes" id="projects-tree-nodes">
+              <!-- JS Populated -->
+            </div>
+          </div>
+
+          <!-- Project Detail Pane -->
+          <div class="glass-panel project-detail-card" id="project-detail-panel">
+            <div class="empty-state">
+              <svg class="svg-icon" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              <h3>Select a project from the tree to view and edit its details.</h3>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 3: RESEARCH RECORDS -->
+      <section id="view-records" class="content-view">
+        <header class="view-header flex-space">
+          <div>
+            <h1>Research Records</h1>
+            <p class="text-muted">Spreadsheet log for experiments, simulations, surveys, and literature reviews.</p>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button id="btn-zotero-sync" class="btn-secondary" style="display: flex; align-items: center; gap: 6px; padding: 0 12px; height: 36px; font-size:12px; font-weight: 600;">📤 Import to Zotero</button>
+            <button id="btn-add-record" class="btn-primary" style="height: 36px; padding: 0 12px; font-size:12px; font-weight: 600;">+ Create New Record</button>
+          </div>
+        </header>
+
+        <div class="glass-panel records-table-card">
+          <!-- Filters row -->
+          <div class="table-filters flex-row">
+            <input type="text" id="record-search" placeholder="Search records by title, tags or summary...">
+            <select id="record-filter-type">
+              <option value="">-- All Types --</option>
+              <option value="experiment">Experiment</option>
+              <option value="simulation">Simulation</option>
+              <option value="survey">Survey</option>
+              <option value="analysis">Analysis</option>
+              <option value="literature_review">Literature Review</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <!-- Spreadsheet grid -->
+          <div class="grid-table-container">
+            <table class="grid-table" id="records-grid-table">
+               <thead>
+                 <tr>
+                   <th style="width: 40px; text-align: center;"><input type="checkbox" id="chk-records-select-all" style="width: 14px; height: 14px; cursor: pointer; accent-color: hsl(var(--accent-purple));"></th>
+                   <th>Title</th>
+                   <th>Type</th>
+                   <th>Project Context</th>
+                   <th>Recorded Date</th>
+                   <th>Tags</th>
+                   <th>Actions</th>
+                 </tr>
+               </thead>
+              <tbody id="records-table-body">
+                <!-- Rendered dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 4: MANUSCRIPTS KANBAN -->
+      <section id="view-manuscripts" class="content-view">
+        <header class="view-header flex-space">
+          <div>
+            <h1>Manuscripts Kanban</h1>
+            <p class="text-muted">Track your writing process from outline/drafting to final peer-review.</p>
+          </div>
+          <button id="btn-add-manuscript" class="btn-primary">+ Add Manuscript</button>
+        </header>
+
+        <!-- Kanban Columns -->
+        <div class="kanban-board">
+          
+          <div class="kanban-col glass-panel" data-status="idea">
+            <div class="col-header">
+              <h3>💡 Idea & Outline</h3>
+              <span class="count" id="count-idea">0</span>
+            </div>
+            <div class="col-cards" id="cards-idea"></div>
+          </div>
+
+          <div class="kanban-col glass-panel" data-status="drafting">
+            <div class="col-header">
+              <h3>📝 Drafting & Figures</h3>
+              <span class="count" id="count-drafting">0</span>
+            </div>
+            <div class="col-cards" id="cards-drafting"></div>
+          </div>
+
+          <div class="kanban-col glass-panel" data-status="submitted">
+            <div class="col-header">
+              <h3>🚀 Submitted</h3>
+              <span class="count" id="count-submitted">0</span>
+            </div>
+            <div class="col-cards" id="cards-submitted"></div>
+          </div>
+
+          <div class="kanban-col glass-panel" data-status="accepted">
+            <div class="col-header">
+              <h3>🎉 Accepted / Published</h3>
+              <span class="count" id="count-accepted">0</span>
+            </div>
+            <div class="col-cards" id="cards-accepted"></div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- VIEW 5: SUBMISSIONS & REVIEW -->
+      <section id="view-submissions" class="content-view">
+        <header class="view-header flex-space">
+          <div>
+            <h1>Submissions & Peer Review Matrix</h1>
+            <p class="text-muted">Draft rebuttal response matrices and checklist compliance reports.</p>
+          </div>
+          <button id="btn-add-submission" class="btn-primary">+ Track New Submission</button>
+        </header>
+
+        <div class="submission-split-layout">
+          <!-- Submissions grid pane -->
+          <div class="glass-panel submission-list-card">
+            <h3>Active Submissions</h3>
+            <div class="submission-cards-list" id="submissions-list-container">
+              <!-- JS Populated -->
+            </div>
+            <div class="journal-portals-section">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <h3 style="font-size: 14px; margin: 0;">🌐 Journal Portals</h3>
+                <button class="btn-secondary" style="padding:4px 8px; font-size:10px;" id="btn-add-portal">+ Add</button>
+              </div>
+              <div class="portal-grid-list" id="journal-portals-list">
+                <!-- JS Populated -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Submission detail/rebuttal pane -->
+          <div class="glass-panel submission-detail-card" id="submission-detail-panel">
+            <div class="empty-state">
+              <svg class="svg-icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <h3>Select a submission to manage its checklist and rebuttal response matrix.</h3>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 6: EVIDENCE LOCKER -->
+      <section id="view-evidence" class="content-view">
+        <header class="view-header flex-space">
+          <div>
+            <h1>Evidence Locker</h1>
+            <p class="text-muted">A dedicated vault for certificate captures, manuscript PDFs, and research data.</p>
+          </div>
+          <button id="btn-add-evidence" class="btn-primary">+ Upload Evidence File</button>
+        </header>
+
+        <div class="glass-panel evidence-table-card">
+          <div class="grid-table-container">
+            <table class="grid-table">
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Type</th>
+                  <th>Linked Project</th>
+                  <th>Stored Drive</th>
+                  <th>Uploaded Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="evidence-table-body">
+                <!-- Populated via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 7: MULTI-CLOUD SETTINGS -->
+      <section id="view-settings" class="content-view">
+        <header class="view-header">
+          <h1>Multi-Cloud & AI Integration Settings</h1>
+          <p class="text-muted">Control exactly how and where your private data is distributed.</p>
+        </header>
+
+        <div class="settings-grid">
+
+          <!-- Language Card -->
+          <div class="glass-panel settings-card" id="settings-language-card">
+            <h3>Language & Interface</h3>
+            <p class="text-muted" id="language-help" style="font-size: 12px; margin-bottom: 16px;">Switch the dashboard interface between English and Chinese.</p>
+            <div class="form-group">
+              <label for="ui-language">Display Language</label>
+              <select id="ui-language">
+                <option value="en">English</option>
+                <option value="zh">中文</option>
+              </select>
+            </div>
+            <button id="btn-save-language" class="btn-primary" style="margin-top: 16px;">Save Language</button>
+          </div>
+          
+          <!-- Cloud Mappings Card -->
+          <div class="glass-panel settings-card" id="settings-cloud-card">
+            <h3>📂 Distributed Cloud Storage Routing</h3>
+            <p class="text-muted" style="font-size: 12px; margin-bottom: 16px;">Map separate storage locations for metadata databases and raw evidence attachments.</p>
+            
+            <div class="form-group">
+              <label for="route-db">Database JSON Sync Destination</label>
+              <select id="route-db">
+                <option value="local">None (Local Cache Only)</option>
+                <option value="webdav">WebDAV Drive (Jianguoyun, Nextcloud)</option>
+                <option value="github">GitHub Private Repository</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="margin-top: 12px;">
+              <label for="route-files">Raw Evidence Files (PDF/Binary) Upload Destination</label>
+              <select id="route-files">
+                <option value="local">Local Browser Storage</option>
+                <option value="webdav">WebDAV Server Folder</option>
+                <option value="github">GitHub Repository Folder</option>
+              </select>
+            </div>
+            
+            <button id="btn-save-settings" class="btn-primary" style="margin-top: 16px;">Save Storage Mappings</button>
+          </div>
+
+          <!-- WebDAV config -->
+          <div class="glass-panel settings-card" id="settings-webdav-card">
+            <h3>🌐 WebDAV Credentials</h3>
+            <div class="form-group">
+              <label>WebDAV Server Base URL</label>
+              <input type="text" id="webdav-url" placeholder="https://dav.jianguoyun.com/dav">
+            </div>
+            <div class="form-group">
+              <label>Username / Email</label>
+              <input type="text" id="webdav-username" placeholder="your@email.com">
+            </div>
+            <div class="form-group">
+              <label>App-Specific Password</label>
+              <input type="password" id="webdav-password" placeholder="••••••••••••••••">
+            </div>
+            <div class="flex-row" style="margin-top: 12px;">
+              <button id="btn-test-webdav" class="btn-secondary">Test WebDAV Connection</button>
+            </div>
+          </div>
+
+          <!-- GitHub config -->
+          <div class="glass-panel settings-card" id="settings-github-card">
+            <h3>🐙 GitHub Private Repository Sync</h3>
+            <div class="form-group">
+              <label>GitHub Personal Access Token (PAT)</label>
+              <input type="password" id="github-token" placeholder="ghp_••••••••••••••••">
+            </div>
+            <div class="form-group">
+              <label>Repository Name (owner/repo)</label>
+              <input type="text" id="github-repo" placeholder="username/my-research-flow">
+            </div>
+            <div class="form-group">
+              <label>Branch Name</label>
+              <input type="text" id="github-branch" value="main">
+            </div>
+            <div class="flex-row" style="margin-top: 12px;">
+              <button id="btn-test-github" class="btn-secondary">Test GitHub Repository</button>
+            </div>
+          </div>
+
+          <!-- AI Credentials -->
+          <div class="glass-panel settings-card" id="settings-ai-card">
+            <h3>🧠 AI Copilot Credentials</h3>
+            <div class="form-group">
+              <label>AI API Provider</label>
+              <select id="ai-provider">
+                <option value="openai">OpenAI Endpoint</option>
+                <option value="deepseek">DeepSeek Endpoint</option>
+                <option value="custom">Custom URL</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>API Endpoint Base URL</label>
+              <input type="text" id="ai-endpoint" value="https://api.openai.com/v1">
+            </div>
+            <div class="form-group">
+              <label>API Key</label>
+              <input type="password" id="ai-key" placeholder="sk-••••••••••••••••">
+            </div>
+            <div class="form-group">
+              <label>Preferred LLM Model</label>
+              <input type="text" id="ai-model" value="gpt-4o">
+            </div>
+            <button id="btn-save-ai" class="btn-primary" style="margin-top: 16px;">Save AI Configuration</button>
+          </div>
+
+          <!-- Data Backup & Import Card -->
+          <div class="glass-panel settings-card" id="settings-backup-card">
+            <h3>💾 Database Backup & Import</h3>
+            <p class="text-muted" style="font-size: 12px; margin-bottom: 16px;">Export your research database to JSON, or import/migrate existing ResearchFlow JSON backups.</p>
+            
+            <div style="display: flex; gap: 12px; margin-top: 12px;">
+              <button id="btn-export-db" class="btn-secondary" style="flex: 1; padding: 10px;">📤 Export Database</button>
+              <button id="btn-trigger-import" class="btn-primary" style="flex: 1; padding: 10px;">📥 Import JSON</button>
+              <input type="file" id="import-db-file" accept=".json" style="display: none;">
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Dynamic Form Dialog Modals -->
+  <div class="modal-backdrop" id="modal-container">
+    <div class="modal-card glass-panel" id="modal-card-content">
+      <!-- Injected via JS -->
+    </div>
+  </div>
+
+  <script src="../scripts/storage.js"></script>
+  <script src="../scripts/ai.js"></script>
+  <script src="../scripts/options.js"></script>
+</body>
+</html>
