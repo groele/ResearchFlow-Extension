@@ -1,44 +1,51 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="ResearchFlow academic planning">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-labelledby="title desc">
+  <title id="title">ResearchFlow Companion</title>
+  <desc id="desc">A research paper with connected workflow milestones and an accepted check mark.</desc>
   <defs>
-    <linearGradient id="bg" x1="18" y1="14" x2="110" y2="114" gradientUnits="userSpaceOnUse">
+    <linearGradient id="app-bg" x1="14" y1="10" x2="116" y2="118" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#0f766e"/>
-      <stop offset="0.62" stop-color="#2563eb"/>
-      <stop offset="1" stop-color="#1e40af"/>
+      <stop offset="0.48" stop-color="#2563eb"/>
+      <stop offset="1" stop-color="#312e81"/>
     </linearGradient>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="8" stdDeviation="7" flood-color="#0f172a" flood-opacity="0.25"/>
+    <linearGradient id="flow" x1="34" y1="88" x2="92" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#14b8a6"/>
+      <stop offset="0.55" stop-color="#2563eb"/>
+      <stop offset="1" stop-color="#16a34a"/>
+    </linearGradient>
+    <filter id="soft-shadow" x="-24%" y="-24%" width="148%" height="148%">
+      <feDropShadow dx="0" dy="8" stdDeviation="7" flood-color="#020617" flood-opacity="0.24"/>
+    </filter>
+    <filter id="node-shadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="3" stdDeviation="2.4" flood-color="#0f172a" flood-opacity="0.28"/>
     </filter>
   </defs>
 
-  <rect x="6" y="6" width="116" height="116" rx="28" fill="url(#bg)"/>
+  <rect x="6" y="6" width="116" height="116" rx="28" fill="url(#app-bg)"/>
+  <path d="M20 31c15-14 40-18 62-11 20 6 34 22 39 41v39c0 12-10 22-22 22H52c-23-5-40-20-46-42V28c2 2 8 5 14 3z" fill="#ffffff" opacity="0.08"/>
 
-  <g filter="url(#shadow)">
-    <rect x="28" y="30" width="72" height="70" rx="14" fill="#ffffff"/>
-    <rect x="28" y="30" width="72" height="70" rx="14" fill="none" stroke="#dbeafe" stroke-width="2"/>
-    <path d="M28 48h72" stroke="#bfdbfe" stroke-width="4"/>
-    <path d="M46 26v14M82 26v14" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
-    <path d="M46 26v14M82 26v14" stroke="#0f766e" stroke-width="4" stroke-linecap="round"/>
+  <g filter="url(#soft-shadow)">
+    <path d="M36 24h43l21 21v56c0 7-5 12-12 12H36c-7 0-12-5-12-12V36c0-7 5-12 12-12z" fill="#f8fafc"/>
+    <path d="M79 24v17c0 4 3 7 7 7h14z" fill="#dbeafe"/>
+    <path d="M36 24h43l21 21v56c0 7-5 12-12 12H36c-7 0-12-5-12-12V36c0-7 5-12 12-12z" fill="none" stroke="#bfdbfe" stroke-width="2.5"/>
+  </g>
+
+  <g fill="none" stroke-linecap="round">
+    <path d="M41 48h25" stroke="#94a3b8" stroke-width="5"/>
+    <path d="M41 62h39" stroke="#cbd5e1" stroke-width="5"/>
+    <path d="M41 76h20" stroke="#cbd5e1" stroke-width="5"/>
   </g>
 
   <g fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M43 83h43" stroke="#dbeafe" stroke-width="4"/>
-    <path d="M44 78l13-13 12 8 18-21" stroke="#0f766e" stroke-width="7"/>
-    <path d="M44 78l13-13 12 8 18-21" stroke="#14b8a6" stroke-width="4"/>
+    <path d="M35 89c13-19 25-22 38-18 11 4 15-7 24-23" stroke="#e0f2fe" stroke-width="12"/>
+    <path d="M35 89c13-19 25-22 38-18 11 4 15-7 24-23" stroke="url(#flow)" stroke-width="7"/>
   </g>
 
-  <g>
-    <circle cx="44" cy="78" r="6" fill="#0f766e" stroke="#ecfeff" stroke-width="3"/>
-    <circle cx="57" cy="65" r="6" fill="#2563eb" stroke="#eff6ff" stroke-width="3"/>
-    <circle cx="69" cy="73" r="6" fill="#f59e0b" stroke="#fffbeb" stroke-width="3"/>
-    <circle cx="87" cy="52" r="6" fill="#16a34a" stroke="#f0fdf4" stroke-width="3"/>
+  <g filter="url(#node-shadow)">
+    <circle cx="35" cy="89" r="9" fill="#0f766e" stroke="#ecfeff" stroke-width="4"/>
+    <circle cx="58" cy="72" r="9" fill="#2563eb" stroke="#eff6ff" stroke-width="4"/>
+    <circle cx="78" cy="70" r="9" fill="#f59e0b" stroke="#fffbeb" stroke-width="4"/>
+    <circle cx="97" cy="48" r="12" fill="#16a34a" stroke="#f0fdf4" stroke-width="4"/>
   </g>
 
-  <g>
-    <path d="M41 56h19" stroke="#94a3b8" stroke-width="4" stroke-linecap="round"/>
-    <path d="M41 92h28" stroke="#94a3b8" stroke-width="4" stroke-linecap="round"/>
-    <path d="M76 88l21-8-21-8-21 8z" fill="#0f172a"/>
-    <path d="M62 83v8c0 5 28 5 28 0v-8" fill="none" stroke="#0f172a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M97 80v11" stroke="#f59e0b" stroke-width="4" stroke-linecap="round"/>
-    <circle cx="97" cy="94" r="3" fill="#f59e0b"/>
-  </g>
+  <path d="M91 48l5 5 10-12" fill="none" stroke="#ffffff" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

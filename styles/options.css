@@ -521,6 +521,31 @@
   height: calc(100vh - 200px);
 }
 
+.submission-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  min-width: 0;
+}
+
+.submission-list-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.submission-list-head h3 {
+  font-size: 16px;
+  margin: 0;
+}
+
+.submission-list-head .text-muted {
+  font-size: 11px;
+  margin-top: 3px;
+}
+
 .submission-list-card {
   padding: 16px;
   overflow-y: auto;
@@ -693,6 +718,28 @@
   padding-top: 16px;
 }
 
+.journal-portals-dock {
+  display: grid;
+  grid-template-columns: auto minmax(220px, 420px) auto;
+  align-items: center;
+  gap: 10px;
+  max-width: 620px;
+  min-width: 0;
+  padding: 7px 8px 7px 12px;
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  background: hsl(var(--card-bg) / 0.5);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.16);
+}
+
+.portal-dock-title {
+  color: hsl(var(--text-muted));
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 .portal-grid-list {
   display: flex;
   flex-direction: column;
@@ -700,8 +747,18 @@
   margin-top: 8px;
 }
 
+.portal-dock-list {
+  flex-direction: row;
+  gap: 7px;
+  margin-top: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  padding: 1px 2px;
+}
+
 .portal-item-card {
   display: flex;
+  position: relative;
   align-items: center;
   justify-content: space-between;
   padding: 10px 12px;
@@ -711,6 +768,17 @@
   transition: all 0.2s ease;
   cursor: pointer;
   text-decoration: none;
+}
+
+.journal-portals-dock .portal-item-card {
+  flex: 0 0 auto;
+  justify-content: flex-start;
+  width: 96px;
+  height: 38px;
+  min-width: 82px;
+  max-width: 116px;
+  padding: 6px 9px 6px 7px;
+  border-radius: 11px;
 }
 
 .portal-item-card:hover {
@@ -728,6 +796,11 @@
   min-width: 0;
 }
 
+.journal-portals-dock .portal-info {
+  gap: 7px;
+  flex: 1 1 auto;
+}
+
 .portal-avatar {
   width: 32px;
   height: 32px;
@@ -741,6 +814,13 @@
   text-transform: uppercase;
   flex-shrink: 0;
   box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+.journal-portals-dock .portal-avatar {
+  width: 26px;
+  height: 26px;
+  font-size: 11px;
+  box-shadow: 0 2px 7px rgba(0,0,0,0.14);
 }
 
 .portal-text {
@@ -759,12 +839,24 @@
   text-overflow: ellipsis;
 }
 
+.journal-portals-dock .portal-name {
+  display: block;
+  max-width: 54px;
+  font-size: 11.5px;
+  font-weight: 750;
+  line-height: 1.1;
+}
+
 .portal-domain {
   font-size: 10px;
   color: hsl(var(--text-muted));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.journal-portals-dock .portal-domain {
+  display: none;
 }
 
 .portal-actions {
@@ -777,6 +869,45 @@
 
 .portal-item-card:hover .portal-actions {
   opacity: 1;
+}
+
+.journal-portals-dock .portal-actions {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: flex;
+  opacity: 0;
+}
+
+.journal-portals-dock .portal-item-card:hover .portal-actions {
+  opacity: 1;
+}
+
+.journal-portals-dock .btn-delete-portal {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border-radius: 999px;
+  background: hsl(var(--card-bg));
+  border: 1px solid hsl(var(--card-border));
+  font-size: 9px;
+}
+
+.btn-portal-add {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 10px;
+  font-size: 16px;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+
+.journal-portals-dock .empty-state {
+  padding: 0;
+  font-size: 11px;
+  white-space: nowrap;
+  color: hsl(var(--text-muted));
 }
 
 .btn-delete-portal {
@@ -1841,6 +1972,19 @@ select option {
 
 /* Responsive grid overrides */
 @media (max-width: 1220px) {
+  #view-submissions .view-header.flex-space {
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .submission-header-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+  .journal-portals-dock {
+    grid-template-columns: auto minmax(180px, 1fr) auto;
+    max-width: 540px;
+  }
   .pipeline-card {
     grid-template-columns: 1fr 1.35fr;
   }
@@ -1858,6 +2002,26 @@ select option {
 }
 
 @media (max-width: 820px) {
+  #view-submissions .view-header.flex-space,
+  .submission-header-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .journal-portals-dock {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    max-width: none;
+  }
+  .journal-portals-dock .portal-item-card {
+    width: 88px;
+  }
+  .submission-split-layout {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+  .submission-list-card,
+  .submission-detail-card {
+    overflow-y: visible;
+  }
   .pipeline-card {
     grid-template-columns: 1fr;
   }

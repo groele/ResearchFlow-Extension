@@ -272,24 +272,29 @@
             <h1>Submissions & Peer Review Matrix</h1>
             <p class="text-muted">Draft rebuttal response matrices and checklist compliance reports.</p>
           </div>
-          <button id="btn-add-submission" class="btn-primary">+ Track New Submission</button>
+          <div class="submission-header-actions">
+            <div class="journal-portals-dock" aria-label="Journal portals">
+              <span class="portal-dock-title">Journal Portals</span>
+              <div class="portal-grid-list portal-dock-list" id="journal-portals-list">
+                <!-- JS Populated -->
+              </div>
+              <button class="btn-secondary btn-portal-add" id="btn-add-portal" title="Add journal portal">+</button>
+            </div>
+            <button id="btn-add-submission" class="btn-primary">+ Track New Submission</button>
+          </div>
         </header>
 
         <div class="submission-split-layout">
           <!-- Submissions grid pane -->
           <div class="glass-panel submission-list-card">
-            <h3>Active Submissions</h3>
+            <div class="submission-list-head">
+              <div>
+                <h3>Active Submissions</h3>
+                <p class="text-muted">Newest submissions first.</p>
+              </div>
+            </div>
             <div class="submission-cards-list" id="submissions-list-container">
               <!-- JS Populated -->
-            </div>
-            <div class="journal-portals-section">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                <h3 style="font-size: 14px; margin: 0;">🌐 Journal Portals</h3>
-                <button class="btn-secondary" style="padding:4px 8px; font-size:10px;" id="btn-add-portal">+ Add</button>
-              </div>
-              <div class="portal-grid-list" id="journal-portals-list">
-                <!-- JS Populated -->
-              </div>
             </div>
           </div>
 

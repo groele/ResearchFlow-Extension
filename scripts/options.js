@@ -28,7 +28,7 @@ const I18N = {
     clickToFilter: 'Click to filter',
     timelineTitle: '📅 Manuscript Pipeline Timelines',
     timelineSubtitle: 'Track experiments, writing, submission, revision, acceptance, and publication through visual manuscript pipelines.',
-    timelineSortedBySubmissionDate: 'Sorted by submission date',
+    timelineSortedBySubmissionDate: 'Latest submissions first',
     compact: 'Compact',
     expanded: 'Expanded',
     allPipelines: 'All pipelines',
@@ -160,6 +160,7 @@ const I18N = {
     publicationLinkTitle: 'Publication Link',
     savePublicationLink: 'Save DOI / Link',
     publicationLinkSaved: 'Publication DOI and link saved.',
+    publicationLinkRequiresAcceptance: 'DOI and article links are available after acceptance or publication.',
     trackSubmissionButton: 'Track Submission',
     manuscriptJournalRequired: 'Manuscript and Journal are required',
     submissionAddedToast: 'New submission added to pipeline!',
@@ -219,7 +220,7 @@ const I18N = {
     clickToFilter: '点击筛选',
     timelineTitle: '📅 手稿投稿时间线',
     timelineSubtitle: '跟踪实验、写作、投稿、返修、接收和发表等关键事件。',
-    timelineSortedBySubmissionDate: '按投稿日期排序',
+    timelineSortedBySubmissionDate: '最新投稿优先',
     compact: '紧凑',
     expanded: '展开',
     allPipelines: '全部时间线',
@@ -351,6 +352,7 @@ const I18N = {
     publicationLinkTitle: '发表链接',
     savePublicationLink: '保存 DOI / 链接',
     publicationLinkSaved: 'DOI 和文章链接已保存。',
+    publicationLinkRequiresAcceptance: '未接收前不显示 DOI 或文章链接。',
     trackSubmissionButton: '开始跟踪投稿',
     manuscriptJournalRequired: '请填写手稿和目标期刊',
     submissionAddedToast: '新的投稿已加入时间线。',
@@ -544,6 +546,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       }
     });
+
+    dbMigrationChanged = clearUnacceptedPublicationLinks(db) || dbMigrationChanged;
+    dbMigrationChanged = syncManuscriptStatusesFromSubmissions(db) || dbMigrationChanged;
     
     if (dbMigrationChanged) {
       window.storage.saveAll(db).catch(console.error);
@@ -593,6 +598,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (updateChanged) {
           window.storage.saveAll(db).catch(console.error);
         }
+      }
+
+      if (clearUnacceptedPublicationLinks(db)) {
+        window.storage.saveAll(db).catch(console.error);
+      }
+      if (syncManuscriptStatusesFromSubmissions(db)) {
+        window.storage.saveAll(db).catch(console.error);
       }
       
       updateSyncStatus('success', 'Synced');
@@ -919,9 +931,25 @@ async function saveInlineStageEvent(editor) {
     notes: ''
   };
 
-  sub.timelineNodes.push(createTimelineNode(subId, nodeValues));
+  const node = createTimelineNode(subId, nodeValues);
+  sub.timelineNodes.push(node);
+  const nodeKey = inferKey(node);
+  if (nodeKey === 'submit') {
+    sub.submissionDate = dateInputToIso(eventDate);
+    if (!hasPublicationStatus(sub) && sub.status !== 'rejected') sub.status = 'submitted';
+  } else if (nodeKey === 'r1_comments') {
+    sub.firstDecisionDate = dateInputToIso(eventDate);
+    if (!hasPublicationStatus(sub) && sub.status !== 'rejected') sub.status = 'revision';
+  } else if (nodeKey === 'accept' || nodeKey === 'online') {
+    sub.decisionDate = dateInputToIso(eventDate);
+    sub.status = nodeKey === 'online' ? 'published' : 'accepted';
+  }
+  normalizeSubmissionTimeline(sub);
+  syncManuscriptStatusFromSubmission(sub);
   await window.storage.saveAll(db);
   renderDashboard();
+  renderKanban();
+  renderSubmissions();
   showGlobalToast(tf('eventAddedToast', { name }), 'success');
 }
 
@@ -1011,8 +1039,8 @@ function initializeSubmissionTimelineNodes(sub) {
       key: 'accept',
       name: 'Accepted',
       type: 'publication',
-      status: decisionDate && (sub.status === 'accepted' || sub.status === 'published') ? 'completed' : 'pending',
-      completeDate: decisionDate && (sub.status === 'accepted' || sub.status === 'published') ? decisionDate : ''
+      status: decisionDate && hasPublicationStatus(sub) ? 'completed' : 'pending',
+      completeDate: decisionDate && hasPublicationStatus(sub) ? decisionDate : ''
     }),
     createTimelineNode(sub.id, {
       key: 'online',
@@ -1098,7 +1126,7 @@ function normalizeSubmissionTimeline(sub) {
   }
 
   const decisionDate = normalizeDateString(sub.decisionDate);
-  if (decisionDate && (sub.status === 'accepted' || sub.status === 'published')) {
+  if (decisionDate && hasPublicationStatus(sub)) {
     const key = sub.status === 'published' ? 'online' : 'accept';
     const result = ensureTimelineNode(sub, key, key === 'online' ? 'Online Publication' : 'Accepted', 'publication', 'completed');
     changed = result.changed || changed;
@@ -1123,11 +1151,13 @@ function analyzeSubmission(sub) {
   
   const getKeyEventDate = (key) => {
     const node = events.find(e => inferKey(e) === key);
-    const nodeDate = node ? normalizeDateString(node.completeDate || node.planDate || node.dueDate) : null;
+    const nodeDate = node
+      ? normalizeDateString((key === 'accept' || key === 'online') ? node.completeDate : (node.completeDate || node.planDate || node.dueDate))
+      : null;
     if (key === 'submit') return normalizeDateString(sub.submissionDate) || nodeDate;
     if (key === 'r1_comments') return normalizeDateString(sub.firstDecisionDate) || nodeDate;
     if (key === 'accept' || key === 'online') {
-      return normalizeDateString(sub.decisionDate) && (sub.status === 'accepted' || sub.status === 'published')
+      return normalizeDateString(sub.decisionDate) && hasPublicationStatus(sub)
         ? normalizeDateString(sub.decisionDate)
         : nodeDate;
     }
@@ -1146,7 +1176,7 @@ function analyzeSubmission(sub) {
   const onlineDate = getKeyEventDate('online');
   
   const latest = getLatestTimelineNode(sub.timelineNodes || []);
-  const accepted = Boolean(acceptDate) || sub.status === 'accepted' || sub.status === 'published';
+  const accepted = Boolean(acceptDate) || hasPublicationStatus(sub);
 
   const expToSubmit = experimentDate && submitDate ? getDaysDiff(experimentDate, submitDate) : null;
   const submitToNow = submitDate && !accepted ? getDaysDiff(submitDate, todayString()) : null;
@@ -1250,6 +1280,58 @@ function isAcceptedSubmission(sub) {
   return Boolean(sub && analyzeSubmission(sub).accepted);
 }
 
+function hasPublicationStatus(sub) {
+  const status = normalizeText(sub?.status);
+  return status === 'accepted' || status === 'published' || status === 'accept';
+}
+
+function canHavePublicationLink(sub) {
+  if (!sub) return false;
+  if (hasPublicationStatus(sub)) return true;
+  if (normalizeDateString(sub.acceptedAt || sub.publishedAt)) return true;
+  return isAcceptedSubmission(sub);
+}
+
+function clearPublicationLinkFields(sub) {
+  if (!sub) return false;
+  let changed = false;
+  ['doi', 'DOI', 'articleDoi', 'articleUrl', 'publicationUrl', 'journalArticleUrl'].forEach(field => {
+    if (sub[field]) {
+      sub[field] = null;
+      changed = true;
+    }
+  });
+  return changed;
+}
+
+function clearPublicationTimelineCompletion(sub) {
+  if (!sub || !Array.isArray(sub.timelineNodes)) return false;
+  let changed = false;
+  sub.timelineNodes.forEach(node => {
+    if (inferKey(node) !== 'accept' && inferKey(node) !== 'online') return;
+    if (node.completeDate) {
+      node.completeDate = '';
+      changed = true;
+    }
+    if (node.status === 'completed') {
+      node.status = 'pending';
+      changed = true;
+    }
+  });
+  return changed;
+}
+
+function clearUnacceptedPublicationLinks(database) {
+  if (!database || !Array.isArray(database.submissions)) return false;
+  let changed = false;
+  database.submissions.forEach(sub => {
+    if (!canHavePublicationLink(sub)) {
+      changed = clearPublicationLinkFields(sub) || changed;
+    }
+  });
+  return changed;
+}
+
 function getDashboardFilterLabel() {
   if (currentDashboardFilter === 'accepted') return t('acceptedPipelines');
   if (currentDashboardFilter === 'active') return t('activePipelines');
@@ -1273,6 +1355,8 @@ function getSubmissionAttentionScore(sub) {
 }
 
 function getSubmissionDoi(sub) {
+  if (!canHavePublicationLink(sub)) return '';
+
   const direct = normalizeDoi(sub?.doi || sub?.DOI || sub?.articleDoi || sub?.metadata?.doi || sub?.attributes?.doi);
   if (direct) return direct;
 
@@ -1303,6 +1387,8 @@ function getSubmissionJournalName(sub) {
 }
 
 function getSubmissionArticleUrl(sub) {
+  if (!canHavePublicationLink(sub)) return '';
+
   const explicitUrl = String(sub?.articleUrl || sub?.publicationUrl || sub?.url || sub?.journalArticleUrl || '').trim();
   if (explicitUrl) return explicitUrl;
   const doi = getSubmissionDoi(sub);
@@ -1320,12 +1406,99 @@ function sortDashboardSubmissions(submissions) {
   return [...submissions].sort((a, b) => {
     const submittedA = getSubmissionSortTime(a);
     const submittedB = getSubmissionSortTime(b);
-    if (submittedA !== submittedB) return submittedA - submittedB;
+    if (submittedA !== submittedB) return submittedB - submittedA;
 
     const da = getNodeDate(getLatestTimelineNode(a.timelineNodes || [])) || a.updatedAt || a.createdAt || '';
     const db = getNodeDate(getLatestTimelineNode(b.timelineNodes || [])) || b.updatedAt || b.createdAt || '';
-    return new Date(da || 0) - new Date(db || 0);
+    return new Date(db || 0) - new Date(da || 0);
   });
+}
+
+function normalizeSyncedPublicationStatus(status) {
+  const normalized = normalizeText(status);
+  if (normalized === 'accept') return 'accepted';
+  return normalized;
+}
+
+function isSubmissionLifecycleStatus(status) {
+  return ['submitted', 'under_review', 'revision', 'accepted', 'published'].includes(normalizeSyncedPublicationStatus(status));
+}
+
+function getSubmissionLifecycleRank(status) {
+  const ranks = {
+    submitted: 1,
+    under_review: 2,
+    revision: 3,
+    accepted: 4,
+    published: 5
+  };
+  return ranks[normalizeSyncedPublicationStatus(status)] || 0;
+}
+
+function getLinkedActiveSubmissions(manuscriptId) {
+  return (db?.submissions || []).filter(sub => sub.manuscriptId === manuscriptId && sub.status !== 'rejected');
+}
+
+function syncLinkedSubmissionsFromManuscript(manuscript) {
+  if (!manuscript || !isSubmissionLifecycleStatus(manuscript.status)) return false;
+  const nextStatus = normalizeSyncedPublicationStatus(manuscript.status);
+  let changed = false;
+
+  getLinkedActiveSubmissions(manuscript.id).forEach(sub => {
+    if (sub.status !== nextStatus) {
+      sub.status = nextStatus;
+      sub.updatedAt = new Date().toISOString();
+      if (nextStatus !== 'accepted' && nextStatus !== 'published') {
+        clearPublicationLinkFields(sub);
+        clearPublicationTimelineCompletion(sub);
+      }
+      normalizeSubmissionTimeline(sub);
+      changed = true;
+    }
+  });
+
+  return changed;
+}
+
+function setManuscriptStatus(manuscript, status, { syncSubmissions = true } = {}) {
+  if (!manuscript) return false;
+  const nextStatus = normalizeSyncedPublicationStatus(status);
+  let changed = false;
+  if (manuscript.status !== nextStatus) {
+    manuscript.status = nextStatus;
+    manuscript.updatedAt = new Date().toISOString();
+    changed = true;
+  }
+  if (syncSubmissions) {
+    changed = syncLinkedSubmissionsFromManuscript(manuscript) || changed;
+  }
+  return changed;
+}
+
+function syncManuscriptStatusFromSubmission(submission) {
+  if (!submission || !isSubmissionLifecycleStatus(submission.status)) return false;
+  const manuscript = db?.manuscripts?.find(man => man.id === submission.manuscriptId);
+  if (!manuscript) return false;
+  return setManuscriptStatus(manuscript, submission.status, { syncSubmissions: false });
+}
+
+function syncManuscriptStatusesFromSubmissions(database) {
+  if (!database || !Array.isArray(database.manuscripts) || !Array.isArray(database.submissions)) return false;
+  let changed = false;
+  database.manuscripts.forEach(manuscript => {
+    const linked = database.submissions
+      .filter(sub => sub.manuscriptId === manuscript.id && sub.status !== 'rejected' && isSubmissionLifecycleStatus(sub.status))
+      .sort((a, b) => getSubmissionLifecycleRank(b.status) - getSubmissionLifecycleRank(a.status) || getSubmissionSortTime(b) - getSubmissionSortTime(a));
+    const strongest = linked[0];
+    if (!strongest) return;
+    const nextStatus = normalizeSyncedPublicationStatus(strongest.status);
+    if (getSubmissionLifecycleRank(nextStatus) > getSubmissionLifecycleRank(manuscript.status)) {
+      manuscript.status = nextStatus;
+      manuscript.updatedAt = new Date().toISOString();
+      changed = true;
+    }
+  });
+  return changed;
 }
 
 // --- VIEW 1: DASHBOARD OVERVIEW ---
@@ -1380,6 +1553,7 @@ function renderDashboard() {
     ganttBox.innerHTML = `<p class="empty-state">${t('noPipelines')}</p>`;
   } else {
     submissionsList.forEach((sub, index) => {
+      const displayIndex = submissionsList.length - index;
       const man = db.manuscripts.find(m => m.id === sub.manuscriptId);
       const manTitle = man ? man.title : t('untitledManuscript');
       const journalName = getSubmissionJournalName(sub);
@@ -1465,7 +1639,7 @@ function renderDashboard() {
         <!-- Col 1: Manuscript Info -->
         <div class="project-info">
           <div class="project-heading-row">
-            <span class="submission-index">${index + 1}</span>
+            <span class="submission-index">${displayIndex}</span>
             <div class="journal">${escapeHTML(journalName)}</div>
           </div>
           <h3 class="project-title" title="${escapeHTML(manTitle)}">${escapeHTML(manTitle)}</h3>
@@ -1885,6 +2059,7 @@ function openStageDrawer(subId, nodeId) {
     const nodeKey = inferKey(node);
     if (nodeKey === 'submit') {
       sub.submissionDate = eventDate ? dateInputToIso(eventDate) : null;
+      if (eventDate && !hasPublicationStatus(sub) && sub.status !== 'rejected') sub.status = 'submitted';
     } else if (nodeKey === 'r1_comments') {
       sub.firstDecisionDate = eventDate ? dateInputToIso(eventDate) : null;
     } else if (nodeKey === 'accept' || nodeKey === 'online') {
@@ -1892,6 +2067,7 @@ function openStageDrawer(subId, nodeId) {
       if (eventDate) sub.status = nodeKey === 'online' ? 'published' : 'accepted';
     }
     normalizeSubmissionTimeline(sub);
+    syncManuscriptStatusFromSubmission(sub);
 
     await window.storage.saveAll(db);
     closeModal();
@@ -2982,7 +3158,10 @@ function renderKanban() {
           <option value="drafting" ${m.status === 'drafting' ? 'selected' : ''}>Drafting</option>
           <option value="internal_review" ${m.status === 'internal_review' ? 'selected' : ''}>Review</option>
           <option value="submitted" ${m.status === 'submitted' ? 'selected' : ''}>Submitted</option>
+          <option value="under_review" ${m.status === 'under_review' ? 'selected' : ''}>Under Review</option>
+          <option value="revision" ${m.status === 'revision' ? 'selected' : ''}>Revision</option>
           <option value="accepted" ${m.status === 'accepted' ? 'selected' : ''}>Accepted</option>
+          <option value="published" ${m.status === 'published' ? 'selected' : ''}>Published</option>
         </select>
         <button class="btn-secondary" style="padding: 2px 6px; font-size:10px; height: 24px;" id="btn-edit-man-${m.id}">Edit</button>
       </div>
@@ -3002,10 +3181,11 @@ function renderKanban() {
     
     // Bind status change dropdown
     document.getElementById(`sel-man-status-${m.id}`).addEventListener('change', async (e) => {
-      m.status = e.target.value;
-      m.updatedAt = new Date().toISOString();
+      setManuscriptStatus(m, e.target.value);
       await window.storage.saveAll(db);
       renderKanban();
+      renderDashboard();
+      renderSubmissions();
       showGlobalToast('Manuscript status updated!', 'success');
     });
 
@@ -3046,10 +3226,11 @@ function renderKanban() {
           else if (col === 'submitted') newStatus = 'submitted';
           else if (col === 'accepted') newStatus = 'accepted';
 
-          man.status = newStatus;
-          man.updatedAt = new Date().toISOString();
+          setManuscriptStatus(man, newStatus);
           await window.storage.saveAll(db);
           renderKanban();
+          renderDashboard();
+          renderSubmissions();
           showGlobalToast(`Manuscript status updated to ${newStatus}!`, 'success');
         }
       });
@@ -3094,7 +3275,10 @@ function openManuscriptModal(man = null) {
           <option value="drafting" ${man && man.status === 'drafting' ? 'selected' : ''}>Drafting</option>
           <option value="internal_review" ${man && man.status === 'internal_review' ? 'selected' : ''}>Internal Review</option>
           <option value="submitted" ${man && man.status === 'submitted' ? 'selected' : ''}>Submitted</option>
+          <option value="under_review" ${man && man.status === 'under_review' ? 'selected' : ''}>Under Review</option>
+          <option value="revision" ${man && man.status === 'revision' ? 'selected' : ''}>Revision</option>
           <option value="accepted" ${man && man.status === 'accepted' ? 'selected' : ''}>Accepted</option>
+          <option value="published" ${man && man.status === 'published' ? 'selected' : ''}>Published</option>
         </select>
       </div>
       <div class="form-group">
@@ -3126,7 +3310,7 @@ function openManuscriptModal(man = null) {
     if (isEdit) {
       man.projectId = projectId;
       man.title = title;
-      man.status = status;
+      setManuscriptStatus(man, status);
       man.targetJournals = [journal];
       man.abstract = abstract;
       man.updatedAt = new Date().toISOString();
@@ -3156,6 +3340,8 @@ function openManuscriptModal(man = null) {
     await window.storage.saveAll(db);
     closeModal();
     renderKanban();
+    renderDashboard();
+    renderSubmissions();
     showGlobalToast('Manuscripts updated!', 'success');
   });
 }
@@ -3168,7 +3354,9 @@ function renderSubmissions() {
   if (db.submissions.length === 0) {
     container.innerHTML = '<p class="empty-state">No submissions tracked yet.</p>';
   } else {
-    sortDashboardSubmissions(db.submissions).forEach((sub, index) => {
+    const sortedSubmissions = sortDashboardSubmissions(db.submissions);
+    sortedSubmissions.forEach((sub, index) => {
+      const displayIndex = sortedSubmissions.length - index;
       const card = document.createElement('div');
       card.className = `glass-card submission-card-item ${sub.id === selectedSubmissionId ? 'selected' : ''}`;
       
@@ -3180,7 +3368,7 @@ function renderSubmissions() {
 
       card.innerHTML = `
         <div class="submission-card-heading">
-          <span class="submission-index">${index + 1}</span>
+          <span class="submission-index">${displayIndex}</span>
           <h4>${escapeHTML(journalName)}</h4>
         </div>
         <p>Paper: ${escapeHTML(manTitle)}</p>
@@ -3238,6 +3426,7 @@ function renderJournalPortals() {
     }
 
     const initial = portal.name.charAt(0).toUpperCase();
+    card.title = `${portal.name} - ${domain}`;
 
     card.innerHTML = `
       <div class="portal-info">
@@ -3352,6 +3541,7 @@ function renderSubmissionDetails(sub) {
   const man = db.manuscripts.find(m => m.id === sub.manuscriptId);
   const manAbstract = man ? man.abstract || '' : '';
   const journalName = getSubmissionJournalName(sub);
+  const publicationReady = canHavePublicationLink(sub);
   const submissionDoi = getSubmissionDoi(sub);
   const articleUrl = getSubmissionArticleUrl(sub);
   const timelineAnalysis = analyzeSubmission(sub);
@@ -3404,28 +3594,40 @@ function renderSubmissionDetails(sub) {
     <!-- Cycle Time Stats Panel -->
     ${cycleTimeHtml}
 
-    <div class="glass-card" style="margin-top: 16px;">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
-        <div>
-          <h3>${t('publicationLinkTitle')}</h3>
-          <p class="text-muted" style="font-size:11px; line-height:1.5; margin-top:4px;">${t('doiLabel')} and article URL are shown on Dashboard timeline cards and open the paper page directly.</p>
+    ${publicationReady ? `
+      <div class="glass-card" style="margin-top: 16px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+          <div>
+            <h3>${t('publicationLinkTitle')}</h3>
+            <p class="text-muted" style="font-size:11px; line-height:1.5; margin-top:4px;">${t('doiLabel')} and article URL are shown on Dashboard timeline cards and open the paper page directly.</p>
+          </div>
+          ${articleUrl ? `<a class="doi-link" href="${escapeHTML(articleUrl)}" target="_blank" rel="noopener noreferrer">${t('articlePage')}</a>` : ''}
         </div>
-        ${articleUrl ? `<a class="doi-link" href="${escapeHTML(articleUrl)}" target="_blank" rel="noopener noreferrer">${t('articlePage')}</a>` : ''}
+        <div class="grid-cols-2" style="gap:10px; margin-top:12px;">
+          <div class="form-group">
+            <label>${t('doiLabel')}</label>
+            <input type="text" id="sub-publication-doi" value="${escapeHTML(submissionDoi)}" placeholder="10.1002/adfm.202528029">
+          </div>
+          <div class="form-group">
+            <label>${t('articleUrlLabel')}</label>
+            <input type="url" id="sub-publication-url" value="${escapeHTML(articleUrl)}" placeholder="${t('articleUrlPlaceholder')}">
+          </div>
+          <div class="form-group" style="display:flex; align-items:flex-end; grid-column:1 / -1;">
+            <button class="btn-primary w-full" id="btn-save-sub-publication">${t('savePublicationLink')}</button>
+          </div>
+        </div>
       </div>
-      <div class="grid-cols-2" style="gap:10px; margin-top:12px;">
-        <div class="form-group">
-          <label>${t('doiLabel')}</label>
-          <input type="text" id="sub-publication-doi" value="${escapeHTML(submissionDoi)}" placeholder="10.1002/adfm.202528029">
-        </div>
-        <div class="form-group">
-          <label>${t('articleUrlLabel')}</label>
-          <input type="url" id="sub-publication-url" value="${escapeHTML(articleUrl)}" placeholder="${t('articleUrlPlaceholder')}">
-        </div>
-        <div class="form-group" style="display:flex; align-items:flex-end; grid-column:1 / -1;">
-          <button class="btn-primary w-full" id="btn-save-sub-publication">${t('savePublicationLink')}</button>
+    ` : `
+      <div class="glass-card" style="margin-top: 16px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+          <div>
+            <h3>${t('publicationLinkTitle')}</h3>
+            <p class="text-muted" style="font-size:11px; line-height:1.5; margin-top:4px;">${t('publicationLinkRequiresAcceptance')}</p>
+          </div>
+          <span class="doi-missing">${t('doiNotSet')}</span>
         </div>
       </div>
-    </div>
+    `}
 
     <div class="glass-card" style="margin-top: 16px;">
       <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
@@ -3495,25 +3697,31 @@ function renderSubmissionDetails(sub) {
     </div>
   `;
 
-  document.getElementById('btn-save-sub-publication').addEventListener('click', async () => {
-    const doi = normalizeDoi(document.getElementById('sub-publication-doi').value);
-    const url = document.getElementById('sub-publication-url').value.trim();
-    sub.doi = doi || null;
-    sub.articleUrl = url || (doi ? `https://doi.org/${doi}` : null);
-    sub.updatedAt = new Date().toISOString();
-    await window.storage.saveAll(db);
-    renderDashboard();
-    renderSubmissions();
-    renderSubmissionDetails(sub);
-    showGlobalToast(t('publicationLinkSaved'), 'success');
-  });
+  const publicationSaveButton = document.getElementById('btn-save-sub-publication');
+  if (publicationSaveButton) {
+    publicationSaveButton.addEventListener('click', async () => {
+      const doi = normalizeDoi(document.getElementById('sub-publication-doi').value);
+      const url = document.getElementById('sub-publication-url').value.trim();
+      sub.doi = doi || null;
+      sub.articleUrl = url || (doi ? `https://doi.org/${doi}` : null);
+      sub.updatedAt = new Date().toISOString();
+      await window.storage.saveAll(db);
+      renderDashboard();
+      renderSubmissions();
+      renderSubmissionDetails(sub);
+      showGlobalToast(t('publicationLinkSaved'), 'success');
+    });
+  }
 
   // Delete submission
   document.getElementById('btn-delete-sub').addEventListener('click', async () => {
     if (confirm('Delete tracking for this submission?')) {
       db.submissions = db.submissions.filter(s => s.id !== sub.id);
+      syncManuscriptStatusesFromSubmissions(db);
       selectedSubmissionId = null;
       await window.storage.saveAll(db);
+      renderDashboard();
+      renderKanban();
       renderSubmissions();
       document.getElementById('submission-detail-panel').innerHTML = `
         <div class="empty-state">
@@ -3536,10 +3744,17 @@ function renderSubmissionDetails(sub) {
     sub.revisionDueDate = dateInputToIso(revisionDueDateValue);
     sub.decisionDate = dateInputToIso(decisionDateValue);
     sub.status = nextStatus;
+    if (nextStatus !== 'accepted' && nextStatus !== 'published') {
+      clearPublicationLinkFields(sub);
+      clearPublicationTimelineCompletion(sub);
+    }
     sub.updatedAt = new Date().toISOString();
 
     normalizeSubmissionTimeline(sub);
+    syncManuscriptStatusFromSubmission(sub);
     await window.storage.saveAll(db);
+    renderDashboard();
+    renderKanban();
     renderSubmissions();
     renderSubmissionDetails(sub);
     showGlobalToast(t('timelineDatesSaved'), 'success');
@@ -3899,16 +4114,6 @@ document.getElementById('btn-add-submission').addEventListener('click', () => {
       <input type="date" id="sub-date" value="${new Date().toISOString().split('T')[0]}">
     </div>
 
-    <div class="form-group">
-      <label>${t('doiLabel')}</label>
-      <input type="text" id="sub-doi" placeholder="10.1002/adfm.202528029">
-    </div>
-
-    <div class="form-group">
-      <label>${t('articleUrlLabel')}</label>
-      <input type="url" id="sub-article-url" placeholder="${t('articleUrlPlaceholder')}">
-    </div>
-
     <button class="btn-primary w-full" id="btn-submit-sub">${t('trackSubmissionButton')}</button>
   `);
 
@@ -3916,8 +4121,6 @@ document.getElementById('btn-add-submission').addEventListener('click', () => {
     const manuscriptId = document.getElementById('sub-man-select').value;
     const targetJournal = document.getElementById('sub-journal').value.trim();
     const subDate = document.getElementById('sub-date').value;
-    const doi = normalizeDoi(document.getElementById('sub-doi').value);
-    const articleUrl = document.getElementById('sub-article-url').value.trim();
 
     if (!manuscriptId || !targetJournal) {
       alert(t('manuscriptJournalRequired'));
@@ -3931,8 +4134,8 @@ document.getElementById('btn-add-submission').addEventListener('click', () => {
       projectId: db.manuscripts.find(m => m.id === manuscriptId)?.projectId || null,
       targetJournal,
       journalUrl: null,
-      doi: doi || null,
-      articleUrl: articleUrl || (doi ? `https://doi.org/${doi}` : null),
+      doi: null,
+      articleUrl: null,
       status: 'submitted',
       submissionDate: dateInputToIso(subDate),
       decisionDate: null,
@@ -3947,8 +4150,11 @@ document.getElementById('btn-add-submission').addEventListener('click', () => {
 
     normalizeSubmissionTimeline(newSub);
     db.submissions.push(newSub);
+    syncManuscriptStatusFromSubmission(newSub);
     await window.storage.saveAll(db);
     closeModal();
+    renderDashboard();
+    renderKanban();
     renderSubmissions();
     showGlobalToast(t('submissionAddedToast'), 'success');
   });
@@ -4395,6 +4601,18 @@ function setupSettingsListeners() {
             if (sub.complianceChecklist && typeof sub.complianceChecklist === 'object' && !Array.isArray(sub.complianceChecklist)) {
               compliance = sub.complianceChecklist;
             }
+            const status = sub.status || 'submitted';
+            const importedSubmission = {
+              status,
+              acceptedAt: sub.acceptedAt || null,
+              publishedAt: sub.publishedAt || null,
+              decisionDate: sub.decisionDate || sub.decisionAt || null,
+              timelineNodes: Array.isArray(sub.timelineNodes) ? sub.timelineNodes : []
+            };
+            const keepPublicationLink = canHavePublicationLink(importedSubmission);
+            const doi = keepPublicationLink
+              ? normalizeDoi(sub.doi || sub.DOI || extractDoiFromText(sub.notes || ''))
+              : '';
             return {
               id: sub.id,
               userId: sub.userId || 'user',
@@ -4402,9 +4620,9 @@ function setupSettingsListeners() {
               projectId: sub.projectId || null,
               targetJournal: sub.targetJournal || sub.journalName || '',
               journalUrl: sub.journalUrl || sub.submissionUrl || null,
-              doi: normalizeDoi(sub.doi || sub.DOI || extractDoiFromText(sub.notes || '')) || null,
-              articleUrl: sub.articleUrl || sub.publicationUrl || sub.url || null,
-              status: sub.status || 'submitted',
+              doi: doi || null,
+              articleUrl: keepPublicationLink ? (sub.articleUrl || sub.publicationUrl || sub.url || null) : null,
+              status,
               submissionDate: sub.submissionDate || sub.submittedAt || null,
               decisionDate: sub.decisionDate || sub.decisionAt || null,
               firstDecisionDate: sub.firstDecisionDate || null,
@@ -4457,6 +4675,7 @@ function setupSettingsListeners() {
           newDb.honorApplications = importJson.honorApplications;
         }
 
+        syncManuscriptStatusesFromSubmissions(newDb);
         newDb.lastUpdated = Date.now();
 
         // Update database cache and storage state
