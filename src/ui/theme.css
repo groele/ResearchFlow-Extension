@@ -1,0 +1,161 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== Design Tokens: CSS Custom Properties ===== */
+
+:root {
+  /* Primary (Teal) - Light mode */
+  --color-primary-50: 240, 253, 250;
+  --color-primary-100: 204, 251, 241;
+  --color-primary-200: 153, 246, 228;
+  --color-primary-300: 94, 234, 212;
+  --color-primary-400: 45, 212, 191;
+  --color-primary-500: 20, 184, 166;
+  --color-primary-600: 13, 148, 136;
+  --color-primary-700: 15, 118, 110;
+  --color-primary-800: 17, 94, 89;
+  --color-primary-900: 19, 78, 74;
+  --color-primary-950: 4, 47, 46;
+
+  /* Neutral Slate - Light mode (inverted: low numbers = dark, high = light) */
+  --color-slate-50: 2, 6, 23;
+  --color-slate-100: 15, 23, 42;
+  --color-slate-150: 22, 33, 52;
+  --color-slate-200: 30, 41, 59;
+  --color-slate-250: 40, 52, 72;
+  --color-slate-300: 51, 65, 85;
+  --color-slate-350: 58, 72, 94;
+  --color-slate-400: 71, 85, 105;
+  --color-slate-450: 82, 98, 120;
+  --color-slate-500: 100, 116, 139;
+  --color-slate-550: 128, 145, 168;
+  --color-slate-600: 148, 163, 184;
+  --color-slate-650: 176, 190, 210;
+  --color-slate-700: 203, 213, 225;
+  --color-slate-750: 214, 222, 232;
+  --color-slate-800: 226, 232, 240;
+  --color-slate-850: 233, 238, 244;
+  --color-slate-900: 241, 245, 249;
+  --color-slate-905: 244, 247, 250;
+  --color-slate-950: 248, 250, 252;
+  --color-slate-955: 252, 253, 254;
+
+  --color-border-rgb: 15, 23, 42;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Primary (Teal) - Dark mode (same values, slightly adjusted for contrast) */
+    --color-primary-50: 4, 47, 46;
+    --color-primary-100: 17, 94, 89;
+    --color-primary-200: 19, 78, 74;
+    --color-primary-300: 15, 118, 110;
+    --color-primary-400: 13, 148, 136;
+    --color-primary-500: 20, 184, 166;
+    --color-primary-600: 45, 212, 191;
+    --color-primary-700: 94, 234, 212;
+    --color-primary-800: 153, 246, 228;
+    --color-primary-900: 204, 251, 241;
+    --color-primary-950: 240, 253, 250;
+
+    /* Neutral Slate - Dark mode (standard: low = light, high = dark) */
+    --color-slate-50: 248, 250, 252;
+    --color-slate-100: 241, 245, 249;
+    --color-slate-150: 236, 240, 246;
+    --color-slate-200: 226, 232, 240;
+    --color-slate-250: 214, 222, 232;
+    --color-slate-300: 203, 213, 225;
+    --color-slate-350: 176, 190, 210;
+    --color-slate-400: 148, 163, 184;
+    --color-slate-450: 128, 145, 168;
+    --color-slate-500: 100, 116, 139;
+    --color-slate-550: 82, 98, 120;
+    --color-slate-600: 71, 85, 105;
+    --color-slate-650: 58, 72, 94;
+    --color-slate-700: 51, 65, 85;
+    --color-slate-750: 40, 52, 72;
+    --color-slate-800: 30, 41, 59;
+    --color-slate-850: 22, 33, 52;
+    --color-slate-900: 15, 23, 42;
+    --color-slate-905: 12, 20, 38;
+    --color-slate-950: 2, 6, 23;
+    --color-slate-955: 1, 4, 16;
+
+    --color-border-rgb: 255, 255, 255;
+  }
+}
+
+/* ===== Base Layer ===== */
+
+@layer base {
+  body {
+    @apply bg-slate-950 text-slate-100 antialiased selection:bg-primary-500/30 selection:text-primary-200;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  * {
+    @apply border-slate-800;
+  }
+
+  input, textarea, select {
+    @apply text-slate-100;
+  }
+
+  ::placeholder {
+    @apply text-slate-500;
+  }
+}
+
+/* ===== Component Layer ===== */
+
+@layer components {
+  /* Glassmorphism panels */
+  .glass-panel {
+    background: rgba(var(--color-slate-900), 0.45);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(var(--color-border-rgb), 0.05);
+  }
+
+  .glass-panel-heavy {
+    background: rgba(var(--color-slate-900), 0.75);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(var(--color-border-rgb), 0.08);
+  }
+
+  /* Focus ring - consistent across all interactive elements */
+  .focus-ring {
+    @apply outline-none ring-2 ring-primary-500/40 ring-offset-2 ring-offset-slate-950;
+  }
+
+  /* Subtle hover card effect */
+  .hover-card {
+    @apply transition-all duration-200;
+  }
+  .hover-card:hover {
+    @apply bg-slate-900/80 border-slate-750;
+    transform: translateY(-1px);
+  }
+}
+
+/* ===== Custom Scrollbars ===== */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(var(--color-border-rgb), 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--color-border-rgb), 0.2);
+}
