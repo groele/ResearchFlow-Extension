@@ -1,0 +1,169 @@
+body {
+  width: 360px;
+  background-color: hsl(var(--bg-color));
+  color: hsl(var(--text-primary));
+  font-family: var(--font-body);
+  border-radius: 0px; /* Chrome popup manages borders, but inside we can style it */
+}
+
+.popup-container {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Header styling */
+.popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--glass-border);
+  padding-bottom: 12px;
+}
+
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-orb {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  box-shadow: 0 0 12px hsl(var(--accent-purple) / 0.5);
+  animation: logoGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes logoGlow {
+  0% { transform: scale(1); filter: hue-rotate(0deg) brightness(1); }
+  100% { transform: scale(1.05); filter: hue-rotate(45deg) brightness(1.2); }
+}
+
+.popup-header h2 {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.1;
+  font-family: var(--font-display);
+}
+
+.popup-header .subtitle {
+  font-size: 10px;
+  color: hsl(var(--text-muted));
+}
+
+/* Metrics Grid styling */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.metric-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 6px;
+  text-align: center;
+}
+
+.metric-num {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.metric-label {
+  font-size: 10px;
+  color: hsl(var(--text-muted));
+  font-weight: 550;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+/* Shortcuts */
+.shortcuts {
+  margin-top: 2px;
+}
+
+.w-full {
+  width: 100%;
+}
+
+/* Quick Capture */
+.quick-capture {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.quick-capture h3 {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: hsl(var(--text-primary));
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-group label {
+  font-size: 10px;
+  font-weight: 600;
+}
+
+input, textarea, select {
+  font-size: 12px !important;
+  padding: 8px 10px !important;
+}
+
+textarea {
+  min-height: 60px;
+}
+
+#btn-save-note {
+  margin-top: 4px;
+}
+
+/* PaperPilot Intake UI Styles */
+.paper-detected-banner {
+  background: linear-gradient(135deg, hsl(var(--accent-purple) / 0.08), hsl(var(--accent-cyan) / 0.06));
+  border: 1.5px solid hsl(var(--accent-purple) / 0.25);
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: hsl(var(--accent-purple));
+  margin-bottom: 8px;
+  animation: pulseGlow 2.5s ease-in-out infinite alternate;
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: hsl(var(--accent-purple));
+  display: inline-block;
+  animation: pulseRing 1.8s infinite ease-in-out;
+}
+
+@keyframes pulseRing {
+  0% { transform: scale(0.85); box-shadow: 0 0 0 0px hsl(var(--accent-purple) / 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 5px hsl(var(--accent-purple) / 0); }
+  100% { transform: scale(0.85); box-shadow: 0 0 0 0px hsl(var(--accent-purple) / 0); }
+}
+
+@keyframes pulseGlow {
+  0% { border-color: hsl(var(--accent-purple) / 0.2); box-shadow: 0 0 4px hsl(var(--accent-purple) / 0.05); }
+  100% { border-color: hsl(var(--accent-purple) / 0.5); box-shadow: 0 0 12px hsl(var(--accent-purple) / 0.15); }
+}

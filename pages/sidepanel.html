@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ResearchFlow Workspace</title>
+  <link rel="stylesheet" href="../styles/theme.css">
+  <link rel="stylesheet" href="../styles/sidepanel.css">
+</head>
+<body class="glass-panel">
+  <div class="sidepanel-container">
+    <!-- Header -->
+    <header class="workspace-header">
+      <div class="logo-area">
+        <div class="logo-orb gradient-bg-purple"></div>
+        <h2>ResearchFlow OS</h2>
+      </div>
+      <button id="btn-options" class="btn-secondary btn-icon" title="Go to Dashboard">
+        <svg class="svg-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </button>
+    </header>
+
+    <!-- Project Context Bar -->
+    <div class="context-bar glass-card">
+      <label for="side-project-select">Active Project Context</label>
+      <select id="side-project-select">
+        <option value="">-- No Active Project Selected --</option>
+      </select>
+    </div>
+
+    <!-- Tab Navigation -->
+    <nav class="tab-nav glass-card">
+      <button class="tab-btn active" data-tab="tab-capture">
+        <svg class="svg-icon" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+        Capture
+      </button>
+      <button class="tab-btn" data-tab="tab-copilot">
+        <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        AI Copilot
+      </button>
+      <button class="tab-btn" data-tab="tab-notes">
+        <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Notes
+      </button>
+    </nav>
+
+    <!-- Tab Contents -->
+    <main class="tab-content-container">
+      
+      <!-- TAB 1: CAPTURE LITERATURE -->
+      <section id="tab-capture" class="tab-pane active">
+        <div class="capture-actions">
+          <button id="btn-scrape" class="btn-primary w-full">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            Capture Active Page
+          </button>
+        </div>
+
+        <div class="metadata-form glass-card animate-slide-in">
+          <div class="form-group">
+            <label>Publication Title</label>
+            <input type="text" id="meta-title" placeholder="Academic paper title...">
+          </div>
+          <div class="form-group">
+            <label>DOI Number</label>
+            <input type="text" id="meta-doi" placeholder="e.g. 10.1038/s41586-024-xxxx">
+          </div>
+          <div class="form-group">
+            <label>Authors</label>
+            <input type="text" id="meta-authors" placeholder="Comma separated authors list...">
+          </div>
+          <div class="form-group">
+            <label>Abstract</label>
+            <textarea id="meta-abstract" placeholder="Abstract or paper overview text..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Source Link / PDF</label>
+            <input type="text" id="meta-pdf" placeholder="https://...">
+          </div>
+
+          <!-- Structured Reading Dimensions -->
+          <details class="glass-card" style="margin-top: 10px; border: 1px solid var(--glass-border); padding: 8px 12px; border-radius: 8px;" id="details-structured-notes">
+            <summary style="font-size:11px; font-weight:700; color:hsl(var(--accent-purple)); cursor:pointer; user-select:none; outline:none;">🔬 Structured Reading Notes</summary>
+            <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
+              <div class="form-group">
+                <label style="font-size:9px;">Core Breakthrough</label>
+                <input type="text" id="meta-breakthrough" placeholder="e.g. Novel carbon anode design">
+              </div>
+              <div class="form-group">
+                <label style="font-size:9px;">Methodology & Equations</label>
+                <input type="text" id="meta-equations" placeholder="e.g. CVD synthesis, Eq (3)">
+              </div>
+              <div class="form-group">
+                <label style="font-size:9px;">Datasets & Compute</label>
+                <input type="text" id="meta-datasets" placeholder="e.g. arXiv corpus, PyTorch">
+              </div>
+              <div class="form-group">
+                <label style="font-size:9px;">Open Limitations</label>
+                <input type="text" id="meta-limitations" placeholder="e.g. Poor cyclability at high C-rate">
+              </div>
+            </div>
+          </details>
+
+          <div class="submit-actions grid-cols-2">
+            <button id="btn-save-record" class="btn-secondary">Save Record</button>
+            <button id="btn-save-evidence" class="btn-primary">Link Evidence</button>
+          </div>
+        </div>
+
+        <!-- Academic Citation Previewer -->
+        <div class="citation-previewer glass-card" style="margin-top: 12px; display: none;" id="sec-citation">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <h4 style="font-size:10px; text-transform:uppercase; color:hsl(var(--text-muted)); margin-bottom:0; font-weight:700;">🎓 Academic Citation</h4>
+            <select id="sel-citation-style" style="width:auto; font-size:10px !important; padding:2px 4px !important; height:24px;">
+              <option value="apa">APA 7th</option>
+              <option value="mla">MLA 9th</option>
+              <option value="bibtex">BibTeX</option>
+            </select>
+          </div>
+          <div id="citation-text" style="font-size:11px; background:rgba(0,0,0,0.15); padding:8px 10px; border-radius:6px; font-family:monospace; word-break:break-all; user-select:all; border:1px dashed var(--glass-border); line-height:1.4; color:hsl(var(--text-primary)); max-height:80px; overflow-y:auto;">
+            <!-- Rendered dynamically -->
+          </div>
+          <button id="btn-copy-citation" class="btn-secondary w-full" style="padding: 4px 8px; font-size: 11px; margin-top:8px; display:flex; align-items:center; justify-content:center; gap:6px;">
+            📋 Copy Citation
+          </button>
+        </div>
+      </section>
+
+      <!-- TAB 2: AI COPILOT -->
+      <section id="tab-copilot" class="tab-pane">
+        <div class="ai-quick-shortcuts">
+          <button id="btn-ai-summarize" class="btn-secondary">📝 Summarize Page</button>
+          <button id="btn-ai-rebuttal" class="btn-secondary">✉️ Review Response</button>
+        </div>
+
+        <div class="chat-container glass-card">
+          <div id="chat-messages" class="chat-messages">
+            <div class="chat-bubble ai">
+              Hello! I'm your ResearchFlow AI Copilot. Set your API Key in Settings to begin summarizing, generating CV items, or reviewing papers side-by-side!
+            </div>
+          </div>
+          
+          <div class="chat-input-area">
+            <textarea id="chat-input" placeholder="Ask a research question or query..."></textarea>
+            <button id="btn-chat-send" class="btn-primary btn-icon">
+              <svg class="svg-icon" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: NOTES & TASKS -->
+      <section id="tab-notes" class="tab-pane">
+        <div class="notes-workspace glass-card">
+          <h3>📝 Working Scratchpad</h3>
+          <textarea id="scratchpad" placeholder="Type temporary notes, computational code snippets, or thoughts here. Autosaves instantly."></textarea>
+        </div>
+
+        <div class="tasks-workspace glass-card">
+          <div class="tasks-header">
+            <h3>📋 Project Checklist</h3>
+            <button id="btn-add-task" class="btn-secondary" style="padding: 4px 8px; font-size: 11px;">+ Add Task</button>
+          </div>
+          <div id="side-tasks-list" class="tasks-list">
+            <!-- Populated via JS -->
+            <p class="empty-state">Select a project context to view tasks.</p>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="../scripts/storage.js"></script>
+  <script src="../scripts/ai.js"></script>
+  <script src="../scripts/sidepanel.js"></script>
+</body>
+</html>
