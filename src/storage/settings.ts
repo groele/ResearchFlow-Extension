@@ -109,7 +109,9 @@ function deepMerge(target: any, source: any): any {
   const output = Object.assign({}, target);
   if (isObject(target) && isObject(source)) {
     Object.keys(source).forEach(key => {
-      if (isObject(source[key])) {
+      if (Array.isArray(source[key])) {
+        output[key] = source[key];
+      } else if (isObject(source[key])) {
         if (!(key in target)) {
           Object.assign(output, { [key]: source[key] });
         } else {

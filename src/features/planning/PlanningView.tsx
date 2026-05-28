@@ -110,6 +110,8 @@ export function PlanningView() {
               nodes={graphNodes}
               edges={graphEdges}
               height={Math.max(220, graphNodes.length * 30 + 60)}
+              hypothesisLabel={t('planning.hypothesis')}
+              experimentLabel={t('planning.experiment')}
             />
             <div className="flex items-center gap-4 mt-3 pt-3 border-t border-slate-800/60">
               <span className="text-3xs text-slate-500">

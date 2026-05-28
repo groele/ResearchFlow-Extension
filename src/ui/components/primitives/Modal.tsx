@@ -2,6 +2,7 @@ import React, { useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/ui/cn';
 import { X } from 'lucide-react';
+import { t } from '../../../i18n';
 
 export interface ModalProps {
   isOpen: boolean;
@@ -78,6 +79,7 @@ export function Modal({
             {showClose && (
               <button
                 onClick={onClose}
+                aria-label={t('common.close')}
                 className="p-1 -mt-1 -mr-1 text-slate-500 hover:text-slate-300 hover:bg-slate-800 rounded-lg transition-colors"
               >
                 <X size={16} />

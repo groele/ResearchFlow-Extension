@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from '@/ui/cn';
+import { t } from '../../../i18n';
 
 interface SpinnerProps {
   size?: 'xs' | 'sm' | 'md' | 'lg';
@@ -22,7 +23,7 @@ export function Spinner({ size = 'md', className }: SpinnerProps) {
         className
       )}
       role="status"
-      aria-label="Loading"
+      aria-label={t('a11y.loading')}
     />
   );
 }

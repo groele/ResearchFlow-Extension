@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useGlobalSearch, getSearchHistory, clearSearchHistory, type SearchResultType } from '@/hooks/useGlobalSearch';
 import { useLang } from '@/i18n';
 import { Badge } from '@components/primitives/Badge';
@@ -55,8 +55,31 @@ export function GlobalSearch({ onNavigate }: GlobalSearchProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
+  const [activeIndex, setActiveIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  // Build flat list of navigable option IDs for arrow key navigation
+  const optionIds = useMemo(() => {
+    const ids: string[] = [];
+    if (showHistory && history.length > 0) {
+      history.forEach((_, i) => ids.push(`search-history-${i}`));
+    }
+    if (!isSearching && groupedResults.length > 0) {
+      groupedResults.forEach(group => {
+        group.results.slice(0, 5).forEach(result => {
+          ids.push(`search-result-${result.id}`);
+        });
+      });
+    }
+    return ids;
+  }, [showHistory, history, isSearching, groupedResults]);
+
+  // Reset active index when options change
+  useEffect(() => {
+    setActiveIndex(-1);
+  }, [optionIds.length, showHistory]);
 
   // Load history when opening
   const handleFocus = useCallback(() => {
@@ -88,6 +111,8 @@ export function GlobalSearch({ onNavigate }: GlobalSearchProps) {
     inputRef.current?.focus();
   }, [setQuery]);
 
+  const showDropdown = isOpen && (!!query || showHistory);
+
   const handleClearHistory = useCallback(() => {
     clearSearchHistory();
     setHistory([]);
@@ -104,15 +129,51 @@ export function GlobalSearch({ onNavigate }: GlobalSearchProps) {
     if (e.key === 'Escape') {
       setIsOpen(false);
       setShowHistory(false);
+      setActiveIndex(-1);
       inputRef.current?.blur();
+      return;
     }
-  }, []);
 
-  const showDropdown = isOpen && (query || showHistory);
+    if (!showDropdown) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveIndex(prev => (prev < optionIds.length - 1 ? prev + 1 : 0));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveIndex(prev => (prev > 0 ? prev - 1 : optionIds.length - 1));
+    } else if (e.key === 'Enter' && activeIndex >= 0) {
+      e.preventDefault();
+      const activeId = optionIds[activeIndex];
+      if (activeId?.startsWith('search-history-')) {
+        const histIdx = parseInt(activeId.replace('search-history-', ''), 10);
+        if (history[histIdx]) handleHistoryClick(history[histIdx]);
+      } else if (activeId?.startsWith('search-result-')) {
+        const resultId = activeId.replace('search-result-', '');
+        for (const group of groupedResults) {
+          const result = group.results.find(r => r.id === resultId);
+          if (result) {
+            handleResultClick(result.type);
+            break;
+          }
+        }
+      }
+    }
+  }, [showDropdown, optionIds, activeIndex, history, groupedResults, handleHistoryClick, handleResultClick]);
+
+  // Scroll active option into view
+  useEffect(() => {
+    if (activeIndex >= 0 && optionIds[activeIndex]) {
+      const el = listRef.current?.querySelector(`[data-option-id="${optionIds[activeIndex]}"]`);
+      el?.scrollIntoView({ block: 'nearest' });
+    }
+  }, [activeIndex, optionIds]);
+
+  const activeDescendant = activeIndex >= 0 ? optionIds[activeIndex] : undefined;
 
   return (
-    <div ref={containerRef} className="relative mb-6">
-      <div className="relative">
+    <div ref={containerRef} className="relative mb-6" aria-expanded={showDropdown}>
+      <div className="relative" role="combobox" aria-haspopup="listbox" aria-owns={showDropdown ? 'search-listbox' : undefined}>
         <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
         <input
           ref={inputRef}
@@ -122,11 +183,15 @@ export function GlobalSearch({ onNavigate }: GlobalSearchProps) {
           onFocus={handleFocus}
           onKeyDown={handleKeyDown}
           placeholder={t('search.placeholder')}
+          aria-label={t('search.searchLabel')}
+          aria-autocomplete="list"
+          aria-activedescendant={activeDescendant}
           className="w-full h-10 pl-10 pr-9 rounded-lg border border-slate-800 bg-slate-900/60 text-sm text-slate-100 placeholder:text-slate-500 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors duration-150"
         />
         {query && (
           <button
             onClick={() => { clear(); setShowHistory(true); setHistory(getSearchHistory()); }}
+            aria-label={t('common.clear')}
             className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
           >
             <X size={14} />
@@ -135,7 +200,7 @@ export function GlobalSearch({ onNavigate }: GlobalSearchProps) {
       </div>
 
       {showDropdown && (
-        <div className="absolute z-50 top-full left-0 right-0 mt-1.5 rounded-lg border border-slate-800 bg-slate-900 shadow-xl max-h-80 overflow-y-auto">
+        <div ref={listRef} id="search-listbox" role="listbox" className="absolute z-50 top-full left-0 right-0 mt-1.5 rounded-lg border border-slate-800 bg-slate-900 shadow-xl max-h-80 overflow-y-auto">
           {/* Search History */}
           {showHistory && history.length > 0 && (
             <div className="p-2">
@@ -154,8 +219,15 @@ export function GlobalSearch({ onNavigate }: GlobalSearchProps) {
               {history.map((item, i) => (
                 <button
                   key={i}
+                  id={`search-history-${i}`}
+                  data-option-id={`search-history-${i}`}
+                  role="option"
+                  aria-selected={activeIndex === i}
                   onClick={() => handleHistoryClick(item)}
-                  className="w-full text-left px-3 py-1.5 rounded-md text-xs text-slate-300 hover:bg-slate-800/60 transition-colors truncate"
+                  onMouseEnter={() => setActiveIndex(i)}
+                  className={`w-full text-left px-3 py-1.5 rounded-md text-xs truncate transition-colors ${
+                    activeIndex === i ? 'bg-slate-800/60 text-slate-200' : 'text-slate-300 hover:bg-slate-800/60'
+                  }`}
                 >
                   {item}
                 </button>
@@ -194,37 +266,48 @@ export function GlobalSearch({ onNavigate }: GlobalSearchProps) {
                     </span>
                     <Badge size="sm" className="ml-1.5">{group.results.length}</Badge>
                   </div>
-                  {group.results.slice(0, 5).map(result => (
-                    <button
-                      key={result.id}
-                      onClick={() => handleResultClick(result.type)}
-                      className="w-full text-left flex items-center gap-2.5 px-3 py-1.5 rounded-md hover:bg-slate-800/60 transition-colors group"
-                    >
-                      <span className={`${typeColor[result.type]} flex-shrink-0`}>
-                        {typeIcon[result.type]}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs text-slate-200 truncate group-hover:text-slate-100">
-                          {result.title}
-                        </p>
-                        <p className="text-2xs text-slate-500 truncate">
-                          {result.subtitle}
-                          {result.matchedField && (
-                            <span className="text-slate-600 ml-1.5">
-                              &middot; {t('search.matchedIn', { field: result.matchedField })}
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                      <ChevronRight size={12} className="text-slate-700 group-hover:text-primary-400 transition-colors flex-shrink-0" />
-                    </button>
-                  ))}
+                  {group.results.slice(0, 5).map(result => {
+                    const optId = `search-result-${result.id}`;
+                    const idx = optionIds.indexOf(optId);
+                    return (
+                      <button
+                        key={result.id}
+                        id={optId}
+                        data-option-id={optId}
+                        role="option"
+                        aria-selected={activeIndex === idx}
+                        onClick={() => handleResultClick(result.type)}
+                        onMouseEnter={() => setActiveIndex(idx)}
+                        className={`w-full text-left flex items-center gap-2.5 px-3 py-1.5 rounded-md transition-colors group ${
+                          activeIndex === idx ? 'bg-slate-800/60' : 'hover:bg-slate-800/60'
+                        }`}
+                      >
+                        <span className={`${typeColor[result.type]} flex-shrink-0`}>
+                          {typeIcon[result.type]}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-slate-200 truncate group-hover:text-slate-100">
+                            {result.title}
+                          </p>
+                          <p className="text-2xs text-slate-500 truncate">
+                            {result.subtitle}
+                            {result.matchedField && (
+                              <span className="text-slate-600 ml-1.5">
+                                &middot; {t('search.matchedIn', { field: result.matchedField })}
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                        <ChevronRight size={12} className="text-slate-700 group-hover:text-primary-400 transition-colors flex-shrink-0" />
+                      </button>
+                    );
+                  })}
                   {group.results.length > 5 && (
                     <button
                       onClick={() => handleResultClick(group.type)}
                       className="w-full text-left px-3 py-1 text-2xs text-primary-400 hover:text-primary-300 transition-colors"
                     >
-                      +{group.results.length - 5} more
+                      {t('search.moreResults', { count: group.results.length - 5 })}
                     </button>
                   )}
                 </div>

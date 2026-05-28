@@ -103,6 +103,9 @@ export const en = {
   'dashboard.quickNewRecord': 'New Record',
   'dashboard.quickNewManuscript': 'New Manuscript',
   'dashboard.quickNewProject': 'New Project',
+  'dashboard.goToRecords': 'Go to Records',
+  'dashboard.goToManuscripts': 'Go to Manuscripts',
+  'dashboard.goToProjects': 'Go to Projects',
   'dashboard.recentReading': 'Recent Reading',
   'dashboard.urgentTasks': 'Urgent Tasks',
   'dashboard.noUrgentTasks': 'No urgent tasks',
@@ -357,6 +360,8 @@ export const en = {
   'reading.unreadCount': 'unread',
   'reading.readingCount': 'reading',
   'reading.readCount': 'read',
+  'reading.addPaper': 'Add Paper',
+  'reading.markAllRead': 'Mark All as Read',
 
   // Writing
   'writing.title': 'Writing Studio',
@@ -616,7 +621,18 @@ export const en = {
   'search.type.manuscript': 'Manuscripts',
   'search.type.task': 'Tasks',
   'search.matchedIn': 'Matched in: {{field}}',
+  'search.moreResults': '+{{count}} more',
   'search.searchLabel': 'Global Search',
+
+  // Time
+  'time.justNow': 'just now',
+  'time.minutesAgo': '{{n}} min ago',
+  'time.hoursAgo': '{{n}}h ago',
+  'time.daysAgo': '{{n}}d ago',
+
+  // Error states
+  'error.somethingWrong': 'Something went wrong',
+  'error.tryAgain': 'Try Again',
 
   // Version
   'app.version': 'ScholarFlow v2.1',

@@ -17,9 +17,11 @@ import {
   FolderOpen, Plus, Trash2, Edit2, Filter,
   LayoutList, LayoutGrid, FileText, ListTodo, Clock, GanttChart,
 } from 'lucide-react';
-import { useLang } from '@/i18n';
+import { useLang, type TranslationKey } from '@/i18n';
 
-function getRelativeTime(dateStr: string): string {
+type TFn = (key: TranslationKey, params?: Record<string, string | number>) => string;
+
+function getRelativeTime(dateStr: string, t: TFn): string {
   const now = Date.now();
   const date = new Date(dateStr).getTime();
   const diffMs = now - date;
@@ -27,10 +29,10 @@ function getRelativeTime(dateStr: string): string {
   const diffHour = Math.floor(diffMs / 3600000);
   const diffDay = Math.floor(diffMs / 86400000);
 
-  if (diffMin < 1) return '刚刚';
-  if (diffMin < 60) return `${diffMin} 分钟前`;
-  if (diffHour < 24) return `${diffHour} 小时前`;
-  if (diffDay < 30) return `${diffDay} 天前`;
+  if (diffMin < 1) return t('time.justNow');
+  if (diffMin < 60) return t('time.minutesAgo', { n: diffMin });
+  if (diffHour < 24) return t('time.hoursAgo', { n: diffHour });
+  if (diffDay < 30) return t('time.daysAgo', { n: diffDay });
   return new Date(dateStr).toLocaleDateString();
 }
 
@@ -254,7 +256,7 @@ export function ProjectsView() {
                     <FileText size={12} /> {proj.recordCount} {t('projects.records')}
                   </span>
                   <span className="flex items-center gap-1 ml-auto">
-                    <Clock size={12} /> {getRelativeTime(proj.updatedAt)}
+                    <Clock size={12} /> {getRelativeTime(proj.updatedAt, t)}
                   </span>
                 </div>
               </Card>
@@ -303,7 +305,7 @@ export function ProjectsView() {
                       <FileText size={12} /> {proj.recordCount}
                     </span>
                     <span className="flex items-center gap-1" title={t('projects.updated')}>
-                      <Clock size={12} /> {getRelativeTime(proj.updatedAt)}
+                      <Clock size={12} /> {getRelativeTime(proj.updatedAt, t)}
                     </span>
                   </div>
                   {/* Actions */}

@@ -19,6 +19,8 @@ interface HypothesisGraphProps {
   className?: string;
   height?: number;
   onNodeClick?: (node: GraphNode) => void;
+  hypothesisLabel?: string;
+  experimentLabel?: string;
 }
 
 const hypStatusColors: Record<string, string> = {
@@ -35,7 +37,7 @@ const expStatusColors: Record<string, string> = {
   failed: '#ef4444',
 };
 
-export function HypothesisGraph({ nodes, edges, className, height = 260, onNodeClick }: HypothesisGraphProps) {
+export function HypothesisGraph({ nodes, edges, className, height = 260, onNodeClick, hypothesisLabel = 'Hypothesis', experimentLabel = 'Experiment' }: HypothesisGraphProps) {
   const [hovered, setHovered] = useState<string | null>(null);
 
   const { hypNodes, expNodes, positioned, width } = useMemo(() => {
@@ -215,9 +217,9 @@ export function HypothesisGraph({ nodes, edges, className, height = 260, onNodeC
         {/* Legend */}
         <g transform="translate(2, 96)">
           <circle cx={0} cy={0} r={1.5} fill="#64748b" opacity={0.7} />
-          <text x={3} y={1} fill="rgba(148,163,184,0.5)" fontSize="2.2">假设</text>
+          <text x={3} y={1} fill="rgba(148,163,184,0.5)" fontSize="2.2">{hypothesisLabel}</text>
           <rect x={12} y={-1.5} width={3} height={3} rx={0.5} fill="#64748b" opacity={0.7} />
-          <text x={17} y={1} fill="rgba(148,163,184,0.5)" fontSize="2.2">实验</text>
+          <text x={17} y={1} fill="rgba(148,163,184,0.5)" fontSize="2.2">{experimentLabel}</text>
         </g>
       </svg>
     </div>

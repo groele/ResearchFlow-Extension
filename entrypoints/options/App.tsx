@@ -78,7 +78,7 @@ function App() {
             {activeView === 'submissions' && <SubmissionsView />}
             {activeView === 'evidence' && <EvidenceView />}
             {activeView === 'planning' && <PlanningView />}
-            {activeView === 'reading' && <ReadingQueueView />}
+            {activeView === 'reading' && <ReadingQueueView onNavigate={(v) => setActiveView(v as ActiveView)} />}
             {activeView === 'writing' && <WritingView />}
             {activeView === 'citations' && <CitationsView />}
             {activeView === 'journal' && <JournalView />}

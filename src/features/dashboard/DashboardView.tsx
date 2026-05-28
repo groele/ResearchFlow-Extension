@@ -6,6 +6,7 @@ import { StatCard } from '@components/layout/StatCard';
 import { Card, CardHeader, CardTitle, CardContent } from '@components/primitives/Card';
 import { Badge } from '@components/primitives/Badge';
 import { EmptyState } from '@components/primitives/EmptyState';
+import { Spinner } from '@components/primitives/Spinner';
 import { ProgressBar } from '@components/primitives/ProgressBar';
 import { Tooltip } from '@components/primitives/Tooltip';
 import { SubmissionTimeline } from '@components/domain/SubmissionTimeline';
@@ -27,7 +28,7 @@ export function DashboardView({ onNavigate }: DashboardViewProps) {
   const { t } = useLang();
 
   const {
-    projects, records, manuscripts, submissions, analyses,
+    isLoading, projects, records, manuscripts, submissions, analyses,
     timelineAlerts, metrics, recentRecords, taskStats,
     monthlyTrend, monthlyTaskCompletionRate, recordTypeDistribution, projectProgress,
     overdueTasks, readingStats, weeklyActivity, monthlyActivity,
@@ -76,6 +77,13 @@ export function DashboardView({ onNavigate }: DashboardViewProps) {
         icon={<LayoutDashboard size={18} />}
       />
 
+      {isLoading && (
+        <div className="flex items-center justify-center py-20">
+          <Spinner size="lg" />
+        </div>
+      )}
+
+      {!isLoading && (<>
       {/* Global Search */}
       <GlobalSearch onNavigate={onNavigate} />
 
@@ -162,21 +170,21 @@ export function DashboardView({ onNavigate }: DashboardViewProps) {
               onClick={navigateRecords}
               className="w-full flex items-center justify-between p-1.5 rounded-md hover:bg-slate-800/60 transition-colors text-left group"
             >
-              <span className="text-2xs text-slate-300 group-hover:text-slate-100">{t('dashboard.quickNewRecord')}</span>
+              <span className="text-2xs text-slate-300 group-hover:text-slate-100">{t('dashboard.goToRecords')}</span>
               <ArrowRight size={11} className="text-slate-600 group-hover:text-primary-400 transition-colors" />
             </button>
             <button
               onClick={navigateKanban}
               className="w-full flex items-center justify-between p-1.5 rounded-md hover:bg-slate-800/60 transition-colors text-left group"
             >
-              <span className="text-2xs text-slate-300 group-hover:text-slate-100">{t('dashboard.quickNewManuscript')}</span>
+              <span className="text-2xs text-slate-300 group-hover:text-slate-100">{t('dashboard.goToManuscripts')}</span>
               <ArrowRight size={11} className="text-slate-600 group-hover:text-primary-400 transition-colors" />
             </button>
             <button
               onClick={navigateProjects}
               className="w-full flex items-center justify-between p-1.5 rounded-md hover:bg-slate-800/60 transition-colors text-left group"
             >
-              <span className="text-2xs text-slate-300 group-hover:text-slate-100">{t('dashboard.quickNewProject')}</span>
+              <span className="text-2xs text-slate-300 group-hover:text-slate-100">{t('dashboard.goToProjects')}</span>
               <ArrowRight size={11} className="text-slate-600 group-hover:text-primary-400 transition-colors" />
             </button>
           </div>
@@ -308,22 +316,8 @@ export function DashboardView({ onNavigate }: DashboardViewProps) {
         </Card>
       )}
 
-      {/* Analytics Charts */}
-      <div className="grid grid-cols-2 gap-3 mb-6">
-        {/* Monthly Trend */}
-        <Card variant="solid" padding="md" hover="subtle" className="cursor-pointer" onClick={navigateRecords}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp size={14} className="text-primary-400" />
-              {t('dashboard.recordsTrend')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ChartLine data={monthlyTrend} height={100} color="#14b8a6" />
-          </CardContent>
-        </Card>
-
-        {/* Record Type Distribution */}
+      {/* Record Type Distribution */}
+      <div className="mb-6">
         <Card variant="solid" padding="md" hover="subtle" className="cursor-pointer" onClick={navigateRecords}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -496,6 +490,7 @@ export function DashboardView({ onNavigate }: DashboardViewProps) {
           )}
         </CardContent>
       </Card>
+      </>)}
     </div>
   );
 }

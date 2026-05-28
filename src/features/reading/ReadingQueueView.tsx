@@ -4,12 +4,17 @@ import { useLang } from '@/i18n';
 import { PageHeader } from '@components/layout/PageHeader';
 import { Card } from '@components/primitives/Card';
 import { Badge } from '@components/primitives/Badge';
+import { Button } from '@components/primitives/Button';
 import { Input } from '@components/primitives/Input';
 import { Select } from '@components/primitives/Select';
 import { EmptyState } from '@components/primitives/EmptyState';
-import { BookOpen, Search, Star, Clock, CheckCircle2, RotateCcw, Eye } from 'lucide-react';
+import { BookOpen, Search, Star, Clock, CheckCircle2, RotateCcw, Eye, Plus, CheckCheck } from 'lucide-react';
 
-export function ReadingQueueView() {
+interface ReadingQueueViewProps {
+  onNavigate?: (view: string) => void;
+}
+
+export function ReadingQueueView({ onNavigate }: ReadingQueueViewProps) {
   const { t } = useLang();
   const {
     readingQueue, projects, stats,
@@ -19,6 +24,7 @@ export function ReadingQueueView() {
     sortBy, setSortBy,
     handleStatusChange,
     handleToggleStar,
+    markAllAsRead,
   } = useReadingQueue();
 
   const statusConfig: Record<ReadingStatus, { label: string; variant: string; icon: React.ReactNode }> = {
@@ -34,6 +40,26 @@ export function ReadingQueueView() {
         title={t('reading.title')}
         description={`${stats.total} ${t('reading.papers')} · ${stats.unread} ${t('reading.unreadCount')} · ${stats.reading} ${t('reading.readingCount')} · ${stats.read} ${t('reading.readCount')}`}
         icon={<BookOpen size={18} />}
+        actions={
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              leftIcon={<CheckCheck size={14} />}
+              onClick={markAllAsRead}
+            >
+              {t('reading.markAllRead')}
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              leftIcon={<Plus size={14} />}
+              onClick={() => onNavigate?.('records')}
+            >
+              {t('reading.addPaper')}
+            </Button>
+          </div>
+        }
       />
 
       {/* Stats Row */}

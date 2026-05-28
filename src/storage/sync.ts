@@ -1,4 +1,4 @@
-import { db, type Project, type ResearchRecord, type Manuscript, type Submission, type Evidence, type SchemaTemplate, type Hypothesis, type Experiment, type Task, type ResearchArea } from './dexie';
+import { db, type Project, type ResearchRecord, type Manuscript, type Submission, type Evidence, type SchemaTemplate, type Hypothesis, type Experiment, type ExperimentResult, type JournalEntry, type Task, type ResearchArea } from './dexie';
 import { loadSettings, type WebDAVConfig, type GitHubConfig, type CloudConfig } from './settings';
 import { generateId } from './id';
 
@@ -19,6 +19,8 @@ interface LocalDatabaseDump {
   schemaTemplates: SchemaTemplate[];
   hypotheses: Hypothesis[];
   experiments: Experiment[];
+  experimentResults: ExperimentResult[];
+  journalEntries: JournalEntry[];
   lastUpdated: number;
   _github_sha?: string;
 }
@@ -223,6 +225,8 @@ class CloudSyncEngine {
     const schemaTemplates = await db.schemaTemplates.toArray();
     const hypotheses = await db.hypotheses.toArray();
     const experiments = await db.experiments.toArray();
+    const experimentResults = await db.experimentResults.toArray();
+    const journalEntries = await db.journalEntries.toArray();
 
     const timestampResult = await chrome.storage.local.get(['db_last_updated']);
 
@@ -237,6 +241,8 @@ class CloudSyncEngine {
       schemaTemplates,
       hypotheses,
       experiments,
+      experimentResults,
+      journalEntries,
       lastUpdated: (timestampResult.db_last_updated as number) || Date.now()
     };
   }
@@ -253,6 +259,8 @@ class CloudSyncEngine {
       db.schemaTemplates,
       db.hypotheses,
       db.experiments,
+      db.experimentResults,
+      db.journalEntries,
     ], async () => {
       await db.projects.clear();
       await db.researchRecords.clear();
@@ -264,6 +272,8 @@ class CloudSyncEngine {
       await db.schemaTemplates.clear();
       await db.hypotheses.clear();
       await db.experiments.clear();
+      await db.experimentResults.clear();
+      await db.journalEntries.clear();
 
       if (Array.isArray(data.projects)) await db.projects.bulkPut(data.projects);
       if (Array.isArray(data.researchRecords)) await db.researchRecords.bulkPut(data.researchRecords);
@@ -275,6 +285,8 @@ class CloudSyncEngine {
       if (Array.isArray(data.schemaTemplates)) await db.schemaTemplates.bulkPut(data.schemaTemplates);
       if (Array.isArray(data.hypotheses)) await db.hypotheses.bulkPut(data.hypotheses);
       if (Array.isArray(data.experiments)) await db.experiments.bulkPut(data.experiments);
+      if (Array.isArray(data.experimentResults)) await db.experimentResults.bulkPut(data.experimentResults);
+      if (Array.isArray(data.journalEntries)) await db.journalEntries.bulkPut(data.journalEntries);
     });
 
     if (data.lastUpdated) {

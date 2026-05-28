@@ -176,11 +176,19 @@ export const analyzeSubmission = (sub: Submission): SubmissionAnalysis => {
 
 // --- Hook ---
 export function useDashboardData() {
-  const projects = useLiveQuery(() => db.projects.where('userId').equals('user').toArray()) ?? [];
-  const records = useLiveQuery(() => db.researchRecords.where('userId').equals('user').toArray()) ?? [];
-  const manuscripts = useLiveQuery(() => db.manuscripts.toArray()) ?? [];
-  const submissions = useLiveQuery(() => db.submissions.toArray()) ?? [];
-  const tasks = useLiveQuery(() => db.tasks.where('userId').equals('user').toArray()) ?? [];
+  const projectsQuery = useLiveQuery(() => db.projects.where('userId').equals('user').toArray());
+  const recordsQuery = useLiveQuery(() => db.researchRecords.where('userId').equals('user').toArray());
+  const manuscriptsQuery = useLiveQuery(() => db.manuscripts.toArray());
+  const submissionsQuery = useLiveQuery(() => db.submissions.toArray());
+  const tasksQuery = useLiveQuery(() => db.tasks.where('userId').equals('user').toArray());
+
+  const isLoading = projectsQuery === undefined || recordsQuery === undefined || manuscriptsQuery === undefined || submissionsQuery === undefined || tasksQuery === undefined;
+
+  const projects = projectsQuery ?? [];
+  const records = recordsQuery ?? [];
+  const manuscripts = manuscriptsQuery ?? [];
+  const submissions = submissionsQuery ?? [];
+  const tasks = tasksQuery ?? [];
 
   // Compute analyses for all submissions
   const manuscriptMap = useMemo(() => {
@@ -372,6 +380,7 @@ export function useDashboardData() {
   }, [records]);
 
   return {
+    isLoading,
     projects,
     records,
     manuscripts,

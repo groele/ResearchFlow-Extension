@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '@storage/dexie';
+import { db, type Project } from '@storage/dexie';
 import { generateId } from '@storage/id';
 
 export type ViewMode = 'list' | 'card';
@@ -47,7 +47,7 @@ export function useProjects() {
     setNewProjAreaId(null);
   }, []);
 
-  const openEditProject = useCallback((proj: any) => {
+  const openEditProject = useCallback((proj: Project) => {
     setEditingProjectId(proj.id);
     setNewProjTitle(proj.title);
     setNewProjDiscipline(proj.discipline || '');
@@ -72,8 +72,8 @@ export function useProjects() {
       });
       resetAreaForm();
       setIsAreaModalOpen(false);
-    } catch (e: any) {
-      console.error('Failed to save area:', e);
+    } catch (e: unknown) {
+      console.error('Failed to save area:', e instanceof Error ? e.message : e);
       setError('Failed to save research area. Please try again.');
     }
   }, [newAreaName, newAreaDesc, newAreaColor, resetAreaForm]);
@@ -111,36 +111,33 @@ export function useProjects() {
       });
       resetProjectForm();
       setIsProjModalOpen(false);
-    } catch (e: any) {
-      console.error('Failed to save project:', e);
+    } catch (e: unknown) {
+      console.error('Failed to save project:', e instanceof Error ? e.message : e);
       setError('Failed to save project. Please try again.');
     }
   }, [editingProjectId, newProjTitle, newProjDiscipline, newProjHypothesis, newProjAbstract, newProjAreaId, resetProjectForm]);
 
   const handleDeleteProject = useCallback(async (id: string) => {
     try {
-      // Cascade: delete related records, manuscripts, submissions, tasks, hypotheses, experiments, evidence
-      const relatedRecords = await db.researchRecords.where('projectId').equals(id).toArray();
-      const relatedTasks = await db.tasks.where('projectId').equals(id).toArray();
-      const relatedHyps = await db.hypotheses.where('projectId').equals(id).toArray();
-      const relatedExps = await db.experiments.where('projectId').equals(id).toArray();
-      const relatedEvidence = await db.evidence.where('projectId').equals(id).toArray();
+      // Cascade: delete related records, tasks, hypotheses, experiments, experimentResults, journalEntries, evidence
+      await db.researchRecords.where('projectId').equals(id).delete();
+      await db.tasks.where('projectId').equals(id).delete();
+      await db.hypotheses.where('projectId').equals(id).delete();
+      await db.experiments.where('projectId').equals(id).delete();
+      await db.experimentResults.where('projectId').equals(id).delete();
+      await db.journalEntries.where('projectId').equals(id).delete();
+      await db.evidence.where('projectId').equals(id).delete();
+
+      // Delete manuscripts and their submissions
       const relatedManuscripts = await db.manuscripts.where('projectId').equals(id).toArray();
-
       for (const ms of relatedManuscripts) {
-        const subs = await db.submissions.where('manuscriptId').equals(ms.id).toArray();
-        await db.submissions.bulkDelete(subs.map(s => s.id));
+        await db.submissions.where('manuscriptId').equals(ms.id).delete();
       }
-
-      await db.researchRecords.bulkDelete(relatedRecords.map(r => r.id));
-      await db.tasks.bulkDelete(relatedTasks.map(t => t.id));
-      await db.hypotheses.bulkDelete(relatedHyps.map(h => h.id));
-      await db.experiments.bulkDelete(relatedExps.map(e => e.id));
-      await db.evidence.bulkDelete(relatedEvidence.map(e => e.id));
       await db.manuscripts.bulkDelete(relatedManuscripts.map(m => m.id));
+
       await db.projects.delete(id);
-    } catch (e: any) {
-      console.error('Failed to delete project:', e);
+    } catch (e: unknown) {
+      console.error('Failed to delete project:', e instanceof Error ? e.message : e);
       setError('Failed to delete project. Please try again.');
     }
   }, []);
@@ -153,8 +150,8 @@ export function useProjects() {
         await db.projects.update(p.id, { areaId: null });
       }
       await db.researchAreas.delete(id);
-    } catch (e: any) {
-      console.error('Failed to delete area:', e);
+    } catch (e: unknown) {
+      console.error('Failed to delete area:', e instanceof Error ? e.message : e);
       setError('Failed to delete research area. Please try again.');
     }
   }, []);

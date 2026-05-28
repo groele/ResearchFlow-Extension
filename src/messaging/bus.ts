@@ -3,7 +3,7 @@ import type { ExtensionRequest, PaperMetadata } from './types';
 /**
  * Sends a typed request to the background service worker or another active context.
  */
-export async function sendExtensionMessage<T = any>(message: ExtensionRequest): Promise<T> {
+export async function sendExtensionMessage<T = unknown>(message: ExtensionRequest): Promise<T> {
   return new Promise((resolve, reject) => {
     chrome.runtime.sendMessage(message, (response) => {
       if (chrome.runtime.lastError) {

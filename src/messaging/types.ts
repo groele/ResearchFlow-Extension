@@ -14,7 +14,7 @@ export type ExtensionRequest =
   | { action: 'SCRAPE_PAGE' }
   | { action: 'TRIGGER_SYNC' }
   | { action: 'DATABASE_UPDATED' }
-  | { action: 'SETTINGS_UPDATED'; settings: any };
+  | { action: 'SETTINGS_UPDATED'; settings: unknown };
 
 export interface ScrapePageResponse {
   metadata: PaperMetadata;

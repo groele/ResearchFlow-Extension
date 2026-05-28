@@ -82,6 +82,22 @@ export function useReadingQueue() {
     }
   }, []);
 
+  const markAllAsRead = useCallback(async () => {
+    try {
+      const now = new Date().toISOString();
+      const litRecords = records.filter(r =>
+        (r.recordType === 'literature_review' || r.tags.includes('literature')) &&
+        r.readingStatus !== 'read'
+      );
+      await Promise.all(
+        litRecords.map(r => db.researchRecords.update(r.id, { readingStatus: 'read', updatedAt: now }))
+      );
+    } catch (e: unknown) {
+      console.error('Failed to mark all as read:', e);
+      setError('Failed to mark all as read. Please try again.');
+    }
+  }, [records]);
+
   return {
     readingQueue,
     projects,
@@ -96,6 +112,7 @@ export function useReadingQueue() {
     setSortBy,
     handleStatusChange,
     handleToggleStar,
+    markAllAsRead,
     error,
     clearError,
   };

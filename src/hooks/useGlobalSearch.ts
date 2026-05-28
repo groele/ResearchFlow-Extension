@@ -63,9 +63,10 @@ function matchesQuery(text: string | undefined | null, query: string): boolean {
   return text.toLowerCase().includes(query.toLowerCase());
 }
 
-function searchField(item: Record<string, any>, fields: string[], query: string): string | null {
+function searchField<T extends object>(item: T, fields: string[], query: string): string | null {
   for (const field of fields) {
-    if (matchesQuery(item[field], query)) return field;
+    const value = (item as Record<string, unknown>)[field];
+    if (matchesQuery(typeof value === 'string' ? value : null, query)) return field;
   }
   return null;
 }

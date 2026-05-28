@@ -105,6 +105,9 @@ export const zh: Record<TranslationKey, string> = {
   'dashboard.quickNewRecord': '新建记录',
   'dashboard.quickNewManuscript': '新建稿件',
   'dashboard.quickNewProject': '新建项目',
+  'dashboard.goToRecords': '前往记录',
+  'dashboard.goToManuscripts': '前往稿件',
+  'dashboard.goToProjects': '前往项目',
   'dashboard.recentReading': '最近阅读',
   'dashboard.urgentTasks': '紧急任务',
   'dashboard.noUrgentTasks': '暂无紧急任务',
@@ -359,6 +362,8 @@ export const zh: Record<TranslationKey, string> = {
   'reading.unreadCount': '未读',
   'reading.readingCount': '阅读中',
   'reading.readCount': '已读',
+  'reading.addPaper': '添加文献',
+  'reading.markAllRead': '全部标为已读',
 
   // 写作
   'writing.title': '写作工作台',
@@ -618,7 +623,18 @@ export const zh: Record<TranslationKey, string> = {
   'search.type.manuscript': '稿件',
   'search.type.task': '任务',
   'search.matchedIn': '匹配字段：{{field}}',
+  'search.moreResults': '+{{count}}条更多',
   'search.searchLabel': '全局搜索',
+
+  // 时间
+  'time.justNow': '刚刚',
+  'time.minutesAgo': '{{n}}分钟前',
+  'time.hoursAgo': '{{n}}小时前',
+  'time.daysAgo': '{{n}}天前',
+
+  // 错误状态
+  'error.somethingWrong': '出错了',
+  'error.tryAgain': '重试',
 
   // 版本
   'app.version': 'ScholarFlow v2.1',

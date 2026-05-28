@@ -1,4 +1,5 @@
 import React from 'react';
+import { t } from '../../../i18n';
 
 interface Props {
   children: React.ReactNode;
@@ -32,13 +33,13 @@ export class ErrorBoundary extends React.Component<Props, State> {
           <div className="h-12 w-12 rounded-full bg-error-950 flex items-center justify-center mb-4">
             <span className="text-error-400 text-lg">!</span>
           </div>
-          <h3 className="text-sm font-semibold text-slate-200 mb-1">Something went wrong</h3>
+          <h3 className="text-sm font-semibold text-slate-200 mb-1">{t('error.somethingWrong')}</h3>
           <p className="text-xs text-slate-500 mb-4 max-w-md">{this.state.error?.message}</p>
           <button
             onClick={() => this.setState({ hasError: false, error: null })}
             className="px-3 py-1.5 text-xs font-medium bg-primary-600 text-white rounded-lg hover:bg-primary-500 transition"
           >
-            Try Again
+            {t('error.tryAgain')}
           </button>
         </div>
       );
