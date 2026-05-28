@@ -232,11 +232,15 @@ export function Sidebar({ activeView, onNavigate, className }: SidebarProps) {
         className
       )}
     >
-      {/* Logo */}
-      <div className={cn(
-        'border-b border-slate-800 transition-all duration-200',
-        collapsed ? 'p-3' : 'p-4 pb-3'
-      )}>
+      {/* Logo - click to go to dashboard */}
+      <button
+        onClick={() => onNavigate('dashboard')}
+        className={cn(
+          'w-full border-b border-slate-800 transition-all duration-200 text-left hover:bg-slate-800/40 cursor-pointer',
+          collapsed ? 'p-3' : 'p-4 pb-3'
+        )}
+        title={t('sidebar.dashboard')}
+      >
         <div className={cn(
           'flex items-center',
           collapsed ? 'justify-center' : 'gap-2.5'
@@ -251,7 +255,7 @@ export function Sidebar({ activeView, onNavigate, className }: SidebarProps) {
             </div>
           )}
         </div>
-      </div>
+      </button>
 
       {/* Navigation */}
       <nav
