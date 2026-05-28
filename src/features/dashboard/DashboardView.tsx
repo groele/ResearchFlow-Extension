@@ -1,6 +1,7 @@
 import React, { useMemo, useCallback } from 'react';
 import { useDashboardData } from './useDashboardData';
 import { GlobalSearch } from './GlobalSearch';
+import { JournalDashboard } from './JournalDashboard';
 import { PageHeader } from '@components/layout/PageHeader';
 import { StatCard } from '@components/layout/StatCard';
 import { Card, CardHeader, CardTitle, CardContent } from '@components/primitives/Card';
@@ -490,6 +491,11 @@ export function DashboardView({ onNavigate }: DashboardViewProps) {
           )}
         </CardContent>
       </Card>
+
+      {/* Journal & Resource Quick Access */}
+      <div className="mt-6">
+        <JournalDashboard />
+      </div>
       </>)}
     </div>
   );
