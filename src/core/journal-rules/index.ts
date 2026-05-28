@@ -1,4 +1,4 @@
-import type { PaperMetadata } from '../../messaging/types';
+import type { PaperMetadata } from '@/messaging/types';
 import { arxivAdapter } from './arxiv';
 import { biorxivAdapter } from './biorxiv';
 import { pubmedAdapter } from './pubmed';

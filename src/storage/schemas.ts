@@ -137,7 +137,7 @@ export const HypothesisSchema = z.object({
   projectId: z.string().min(1),
   statement: z.string().min(1),
   status: z.enum(['proposed', 'testing', 'confirmed', 'refuted']),
-  evidence: z.array(z.string()),
+  evidenceIds: z.array(z.string()).default([]),
   notes: z.string(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
@@ -152,6 +152,32 @@ export const ExperimentSchema = z.object({
   variables: z.string(),
   status: z.enum(['planned', 'running', 'completed', 'failed']),
   results: z.string(),
+  resultSummary: z.string().default(''),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+
+export const ExperimentResultSchema = z.object({
+  id: z.string().min(1),
+  experimentId: z.string().min(1),
+  projectId: z.string().min(1),
+  title: z.string().min(1),
+  summary: z.string(),
+  conclusionType: z.enum(['supporting', 'contradicting', 'inconclusive']),
+  evidenceIds: z.array(z.string()).default([]),
+  rawData: z.string().default(''),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+
+export const JournalEntrySchema = z.object({
+  id: z.string().min(1),
+  userId: z.string().min(1),
+  projectId: z.string().nullable(),
+  date: z.string(),
+  content: z.string().min(1),
+  mood: z.enum(['productive', 'stuck', 'breakthrough', 'neutral']).default('neutral'),
+  tags: z.array(z.string()).default([]),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
@@ -168,3 +194,5 @@ export type SchemaTemplate = z.infer<typeof SchemaTemplateSchema>;
 export type TimelineNode = z.infer<typeof TimelineNodeSchema>;
 export type Hypothesis = z.infer<typeof HypothesisSchema>;
 export type Experiment = z.infer<typeof ExperimentSchema>;
+export type ExperimentResult = z.infer<typeof ExperimentResultSchema>;
+export type JournalEntry = z.infer<typeof JournalEntrySchema>;

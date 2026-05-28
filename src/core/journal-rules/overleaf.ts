@@ -1,4 +1,4 @@
-import type { PaperMetadata } from '../../messaging/types';
+import type { PaperMetadata } from '@/messaging/types';
 
 export const overleafAdapter = {
   id: 'overleaf',

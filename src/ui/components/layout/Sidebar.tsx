@@ -1,6 +1,6 @@
 import React from 'react';
-import { cn } from '../../cn';
-import { useLang } from '../../../i18n';
+import { cn } from '@/ui/cn';
+import { useLang } from '@/i18n';
 import {
   LayoutDashboard,
   FolderOpen,

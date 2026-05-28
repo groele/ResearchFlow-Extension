@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { loadSettings, saveSettings } from '../storage/settings';
+import { loadSettings, saveSettings } from '@storage/settings';
 import { en, type TranslationKey } from './en';
 import { zh } from './zh';
 

@@ -1,6 +1,6 @@
 import React from 'react';
-import { cn } from '../../cn';
-import { Card } from '../primitives/Card';
+import { cn } from '@/ui/cn';
+import { Card } from '@components/primitives/Card';
 
 interface StatCardProps {
   label: string;

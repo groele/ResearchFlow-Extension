@@ -1,6 +1,6 @@
 import React from 'react';
-import { cn } from '../../cn';
-import type { SubmissionAnalysis, Milestone } from '../../../features/dashboard/useDashboardData';
+import { cn } from '@/ui/cn';
+import type { SubmissionAnalysis, Milestone } from '@features/dashboard/useDashboardData';
 
 interface SubmissionTimelineProps {
   analysis: SubmissionAnalysis;

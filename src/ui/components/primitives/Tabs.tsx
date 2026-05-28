@@ -1,5 +1,5 @@
 import React from 'react';
-import { cn } from '../../cn';
+import { cn } from '@/ui/cn';
 
 interface Tab {
   id: string;

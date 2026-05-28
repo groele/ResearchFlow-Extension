@@ -1,11 +1,11 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../../storage/dexie';
-import { generateId } from '../../storage/id';
+import { db } from '@storage/dexie';
+import { generateId } from '@storage/id';
 
 export function useEvidence() {
-  const evidence = useLiveQuery(() => db.evidence.toArray()) ?? [];
-  const projects = useLiveQuery(() => db.projects.toArray()) ?? [];
+  const evidence = useLiveQuery(() => db.evidence.where('userId').equals('user').toArray()) ?? [];
+  const projects = useLiveQuery(() => db.projects.where('userId').equals('user').toArray()) ?? [];
 
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);

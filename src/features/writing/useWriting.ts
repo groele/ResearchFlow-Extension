@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../../storage/dexie';
-import { generateId } from '../../storage/id';
+import { db } from '@storage/dexie';
+import { generateId } from '@storage/id';
 
 export interface Section {
   id: string;

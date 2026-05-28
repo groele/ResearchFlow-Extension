@@ -1,14 +1,14 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../../storage/dexie';
+import { db } from '@storage/dexie';
 
 export type ReadingStatus = 'unread' | 'reading' | 'read' | 'to-reread';
 
 export type ReadingFilter = ReadingStatus | 'all' | 'starred';
 
 export function useReadingQueue() {
-  const records = useLiveQuery(() => db.researchRecords.toArray()) ?? [];
-  const projects = useLiveQuery(() => db.projects.toArray()) ?? [];
+  const records = useLiveQuery(() => db.researchRecords.where('userId').equals('user').toArray()) ?? [];
+  const projects = useLiveQuery(() => db.projects.where('userId').equals('user').toArray()) ?? [];
 
   const [statusFilter, setStatusFilter] = useState<ReadingFilter>('all');
   const [projectFilter, setProjectFilter] = useState('');

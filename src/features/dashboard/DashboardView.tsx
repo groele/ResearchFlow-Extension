@@ -1,20 +1,22 @@
 import React from 'react';
 import { useDashboardData } from './useDashboardData';
-import { PageHeader } from '../../ui/components/layout/PageHeader';
-import { StatCard } from '../../ui/components/layout/StatCard';
-import { Card, CardHeader, CardTitle, CardContent } from '../../ui/components/primitives/Card';
-import { Badge } from '../../ui/components/primitives/Badge';
-import { EmptyState } from '../../ui/components/primitives/EmptyState';
-import { ProgressBar } from '../../ui/components/primitives/ProgressBar';
-import { SubmissionTimeline } from '../../ui/components/domain/SubmissionTimeline';
-import { ChartBar } from '../../ui/components/domain/ChartBar';
-import { ChartDonut } from '../../ui/components/domain/ChartDonut';
-import { ChartLine } from '../../ui/components/domain/ChartLine';
+import { PageHeader } from '@components/layout/PageHeader';
+import { StatCard } from '@components/layout/StatCard';
+import { Card, CardHeader, CardTitle, CardContent } from '@components/primitives/Card';
+import { Badge } from '@components/primitives/Badge';
+import { EmptyState } from '@components/primitives/EmptyState';
+import { ProgressBar } from '@components/primitives/ProgressBar';
+import { Tooltip } from '@components/primitives/Tooltip';
+import { SubmissionTimeline } from '@components/domain/SubmissionTimeline';
+import { ChartBar } from '@components/domain/ChartBar';
+import { ChartDonut } from '@components/domain/ChartDonut';
+import { ChartLine } from '@components/domain/ChartLine';
 import {
   LayoutDashboard, FileText, FolderOpen, Clock, CheckCircle2,
-  AlertTriangle, Send, Columns3, ListTodo, BookOpen, TrendingUp, ChevronRight
+  AlertTriangle, Send, Columns3, ListTodo, BookOpen, TrendingUp, ChevronRight,
+  CalendarDays, Flame, Zap, ArrowRight
 } from 'lucide-react';
-import { useLang } from '../../i18n';
+import { useLang } from '@/i18n';
 
 interface DashboardViewProps {
   onNavigate?: (view: string) => void;
@@ -34,7 +36,8 @@ export function DashboardView({ onNavigate }: DashboardViewProps) {
     projects, records, manuscripts, submissions, analyses,
     timelineAlerts, metrics, recentRecords, taskStats,
     monthlyTrend, recordTypeDistribution, projectProgress,
-    overdueTasks, readingStats,
+    overdueTasks, readingStats, weeklyActivity, monthlyActivity,
+    urgentTasks,
   } = useDashboardData();
 
   // Pipeline counts for manuscripts
@@ -61,6 +64,102 @@ export function DashboardView({ onNavigate }: DashboardViewProps) {
         <StatCard label={t('dashboard.records')} value={records.length} icon={<FileText size={16} />} onClick={() => onNavigate?.('records')} />
         <StatCard label={t('dashboard.manuscripts')} value={manuscripts.length} icon={<Send size={16} />} onClick={() => onNavigate?.('kanban')} />
         <StatCard label={t('dashboard.tasksDone')} value={`${taskStats.completed}/${taskStats.total}`} icon={<ListTodo size={16} />} />
+      </div>
+
+      {/* Research Activity Overview */}
+      <div className="grid grid-cols-3 gap-3 mb-6">
+        {/* This Week */}
+        <Card variant="solid" padding="md">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="h-7 w-7 rounded-lg bg-primary-950 text-primary-400 flex items-center justify-center">
+              <CalendarDays size={14} />
+            </div>
+            <p className="text-2xs font-semibold uppercase tracking-wider text-slate-400">{t('dashboard.thisWeek')}</p>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <Tooltip content={t('dashboard.recordsThisWeek')}>
+              <div className="text-center">
+                <p className="text-sm font-bold text-slate-100 font-display">{weeklyActivity.records}</p>
+                <p className="text-3xs text-slate-500">{t('dashboard.recordsShort')}</p>
+              </div>
+            </Tooltip>
+            <Tooltip content={t('dashboard.tasksThisWeek')}>
+              <div className="text-center">
+                <p className="text-sm font-bold text-slate-100 font-display">{weeklyActivity.tasksCompleted}</p>
+                <p className="text-3xs text-slate-500">{t('dashboard.tasksShort')}</p>
+              </div>
+            </Tooltip>
+            <Tooltip content={t('dashboard.readingThisWeek')}>
+              <div className="text-center">
+                <p className="text-sm font-bold text-slate-100 font-display">{weeklyActivity.papersRead}</p>
+                <p className="text-3xs text-slate-500">{t('dashboard.papersShort')}</p>
+              </div>
+            </Tooltip>
+          </div>
+        </Card>
+
+        {/* This Month */}
+        <Card variant="solid" padding="md">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="h-7 w-7 rounded-lg bg-info-950 text-info-400 flex items-center justify-center">
+              <Flame size={14} />
+            </div>
+            <p className="text-2xs font-semibold uppercase tracking-wider text-slate-400">{t('dashboard.thisMonth')}</p>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <Tooltip content={t('dashboard.recordsThisMonth')}>
+              <div className="text-center">
+                <p className="text-sm font-bold text-slate-100 font-display">{monthlyActivity.records}</p>
+                <p className="text-3xs text-slate-500">{t('dashboard.recordsShort')}</p>
+              </div>
+            </Tooltip>
+            <Tooltip content={t('dashboard.tasksThisMonth')}>
+              <div className="text-center">
+                <p className="text-sm font-bold text-slate-100 font-display">{monthlyActivity.tasksCompleted}</p>
+                <p className="text-3xs text-slate-500">{t('dashboard.tasksShort')}</p>
+              </div>
+            </Tooltip>
+            <Tooltip content={t('dashboard.readingThisMonth')}>
+              <div className="text-center">
+                <p className="text-sm font-bold text-slate-100 font-display">{monthlyActivity.papersRead}</p>
+                <p className="text-3xs text-slate-500">{t('dashboard.papersShort')}</p>
+              </div>
+            </Tooltip>
+          </div>
+        </Card>
+
+        {/* Quick Actions */}
+        <Card variant="solid" padding="md">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="h-7 w-7 rounded-lg bg-success-950 text-success-400 flex items-center justify-center">
+              <Zap size={14} />
+            </div>
+            <p className="text-2xs font-semibold uppercase tracking-wider text-slate-400">{t('dashboard.quickActions')}</p>
+          </div>
+          <div className="space-y-1.5">
+            <button
+              onClick={() => onNavigate?.('records')}
+              className="w-full flex items-center justify-between p-1.5 rounded-md hover:bg-slate-800/60 transition-colors text-left group"
+            >
+              <span className="text-2xs text-slate-300 group-hover:text-slate-100">{t('dashboard.quickNewRecord')}</span>
+              <ArrowRight size={11} className="text-slate-600 group-hover:text-primary-400 transition-colors" />
+            </button>
+            <button
+              onClick={() => onNavigate?.('kanban')}
+              className="w-full flex items-center justify-between p-1.5 rounded-md hover:bg-slate-800/60 transition-colors text-left group"
+            >
+              <span className="text-2xs text-slate-300 group-hover:text-slate-100">{t('dashboard.quickNewManuscript')}</span>
+              <ArrowRight size={11} className="text-slate-600 group-hover:text-primary-400 transition-colors" />
+            </button>
+            <button
+              onClick={() => onNavigate?.('projects')}
+              className="w-full flex items-center justify-between p-1.5 rounded-md hover:bg-slate-800/60 transition-colors text-left group"
+            >
+              <span className="text-2xs text-slate-300 group-hover:text-slate-100">{t('dashboard.quickNewProject')}</span>
+              <ArrowRight size={11} className="text-slate-600 group-hover:text-primary-400 transition-colors" />
+            </button>
+          </div>
+        </Card>
       </div>
 
       {/* Task Progress */}

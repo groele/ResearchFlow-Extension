@@ -1,13 +1,13 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../../storage/dexie';
-import { generateId } from '../../storage/id';
-import { parseBibTeX, generateBibTeX, entryToRecord, recordToBibTeX, type BibTeXEntry } from '../../core/citation/bibtex';
-import { parseRIS, entryToRecord as risEntryToRecord } from '../../core/citation/ris';
-import { formatCitation, formatCitationsBatch, type CitationFormat, type CitationData } from '../../core/citation/formatter';
+import { db } from '@storage/dexie';
+import { generateId } from '@storage/id';
+import { parseBibTeX, generateBibTeX, entryToRecord, recordToBibTeX, type BibTeXEntry } from '@core/citation/bibtex';
+import { parseRIS, entryToRecord as risEntryToRecord } from '@core/citation/ris';
+import { formatCitation, formatCitationsBatch, type CitationFormat, type CitationData } from '@core/citation/formatter';
 
 export function useCitations() {
-  const records = useLiveQuery(() => db.researchRecords.toArray()) ?? [];
+  const records = useLiveQuery(() => db.researchRecords.where('userId').equals('user').toArray()) ?? [];
 
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');

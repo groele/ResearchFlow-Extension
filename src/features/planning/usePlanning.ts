@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../../storage/dexie';
-import { generateId } from '../../storage/id';
+import { db, type Hypothesis, type Experiment } from '@storage/dexie';
+import { generateId } from '@storage/id';
 
 export function usePlanning() {
   const projects = useLiveQuery(() => db.projects.toArray()) ?? [];
@@ -27,6 +27,7 @@ export function usePlanning() {
     variables: '',
     status: 'planned' as string,
     results: '',
+    resultSummary: '',
   });
 
   const projectHypotheses = selectedProjectId
@@ -44,16 +45,16 @@ export function usePlanning() {
 
   const resetExpForm = useCallback(() => {
     setEditingExpId(null);
-    setExpForm({ title: '', hypothesisId: '', design: '', variables: '', status: 'planned', results: '' });
+    setExpForm({ title: '', hypothesisId: '', design: '', variables: '', status: 'planned', results: '', resultSummary: '' });
   }, []);
 
-  const openEditHyp = useCallback((h: any) => {
+  const openEditHyp = useCallback((h: Hypothesis) => {
     setEditingHypId(h.id);
     setHypForm({ statement: h.statement, status: h.status, notes: h.notes || '' });
     setIsHypModalOpen(true);
   }, []);
 
-  const openEditExp = useCallback((e: any) => {
+  const openEditExp = useCallback((e: Experiment) => {
     setEditingExpId(e.id);
     setExpForm({
       title: e.title,
@@ -62,6 +63,7 @@ export function usePlanning() {
       variables: e.variables,
       status: e.status,
       results: e.results || '',
+      resultSummary: e.resultSummary || '',
     });
     setIsExpModalOpen(true);
   }, []);
@@ -76,14 +78,14 @@ export function usePlanning() {
         projectId: selectedProjectId,
         statement: hypForm.statement.trim(),
         status: hypForm.status,
-        evidence: existing?.evidence || [],
+        evidenceIds: existing?.evidenceIds || [],
         notes: hypForm.notes.trim(),
         createdAt: existing?.createdAt || now,
         updatedAt: now,
       });
       resetHypForm();
       setIsHypModalOpen(false);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('Failed to save hypothesis:', e);
     }
   }, [editingHypId, hypForm, selectedProjectId, resetHypForm]);
@@ -102,12 +104,13 @@ export function usePlanning() {
         variables: expForm.variables.trim(),
         status: expForm.status,
         results: expForm.results.trim(),
+        resultSummary: expForm.resultSummary?.trim() || '',
         createdAt: existing?.createdAt || now,
         updatedAt: now,
       });
       resetExpForm();
       setIsExpModalOpen(false);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('Failed to save experiment:', e);
     }
   }, [editingExpId, expForm, selectedProjectId, resetExpForm]);
@@ -120,7 +123,7 @@ export function usePlanning() {
       for (const exp of linkedExps) {
         await db.experiments.update(exp.id, { hypothesisId: null });
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('Failed to delete hypothesis:', e);
     }
   }, []);
@@ -128,7 +131,7 @@ export function usePlanning() {
   const handleDeleteExperiment = useCallback(async (id: string) => {
     try {
       await db.experiments.delete(id);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('Failed to delete experiment:', e);
     }
   }, []);
@@ -136,7 +139,7 @@ export function usePlanning() {
   const handleHypStatusChange = useCallback(async (id: string, newStatus: string) => {
     try {
       await db.hypotheses.update(id, { status: newStatus, updatedAt: new Date().toISOString() });
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('Failed to update hypothesis status:', e);
     }
   }, []);
@@ -144,7 +147,7 @@ export function usePlanning() {
   const handleExpStatusChange = useCallback(async (id: string, newStatus: string) => {
     try {
       await db.experiments.update(id, { status: newStatus, updatedAt: new Date().toISOString() });
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('Failed to update experiment status:', e);
     }
   }, []);

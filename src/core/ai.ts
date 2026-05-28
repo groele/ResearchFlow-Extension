@@ -1,4 +1,4 @@
-import { loadSettings } from '../storage/settings';
+import { loadSettings } from '@storage/settings';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
