@@ -54,6 +54,15 @@ export const zh: Record<TranslationKey, string> = {
   'sidebar.group.produce': '写作投稿',
   'sidebar.group.settings': '设置',
   'sidebar.switchLang': '切换语言',
+
+  // 未分类项目
+  'projects.uncategorized': '未分类',
+  'projects.uncategorizedDesc': '尚未归类的项目条目，可随时整理到具体项目中。',
+  'projects.moveTo': '移动到项目',
+  'projects.moveItem': '移动',
+  'projects.moveSuccess': '已将 {{count}} 个条目移动到 {{project}}',
+  'projects.nothingToMove': '没有可移动的条目',
+  'projects.systemProject': '系统',
   'sidebar.collapse': '收起侧边栏',
   'sidebar.expand': '展开侧边栏',
   'sidebar.shortcuts': '键盘快捷键',

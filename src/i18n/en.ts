@@ -52,6 +52,15 @@ export const en = {
   'sidebar.group.produce': 'Produce',
   'sidebar.group.settings': 'Settings',
   'sidebar.switchLang': 'Switch language',
+
+  // Uncategorized project
+  'projects.uncategorized': 'Uncategorized',
+  'projects.uncategorizedDesc': 'Items without a project. Drag or move them to organize.',
+  'projects.moveTo': 'Move to Project',
+  'projects.moveItem': 'Move',
+  'projects.moveSuccess': 'Moved {{count}} items to {{project}}',
+  'projects.nothingToMove': 'No items to move',
+  'projects.systemProject': 'System',
   'sidebar.collapse': 'Collapse sidebar',
   'sidebar.expand': 'Expand sidebar',
   'sidebar.shortcuts': 'Keyboard shortcuts',

@@ -1,15 +1,39 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type Project } from '@storage/dexie';
 import { generateId } from '@storage/id';
 
 export type ViewMode = 'list' | 'card';
 
+const UNCATEGORIZED_ID = 'proj_uncategorized';
+
+export const UNCATEGORIZED_PROJECT: Project = {
+  id: UNCATEGORIZED_ID,
+  userId: 'user',
+  title: 'Uncategorized',
+  discipline: '',
+  hypothesis: '',
+  abstract: 'System project for uncategorized items. Cannot be deleted.',
+  status: 'active',
+  areaId: null,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+};
+
 export function useProjects() {
   const projects = useLiveQuery(() => db.projects.where('userId').equals('user').toArray()) ?? [];
   const researchAreas = useLiveQuery(() => db.researchAreas.where('userId').equals('user').toArray()) ?? [];
   const tasks = useLiveQuery(() => db.tasks.where('userId').equals('user').toArray()) ?? [];
   const researchRecords = useLiveQuery(() => db.researchRecords.where('userId').equals('user').toArray()) ?? [];
+
+  // Ensure uncategorized project exists
+  useEffect(() => {
+    db.projects.get(UNCATEGORIZED_ID).then(existing => {
+      if (!existing) {
+        db.projects.put({ ...UNCATEGORIZED_PROJECT, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+      }
+    });
+  }, []);
 
   const [viewMode, setViewMode] = useState<ViewMode>('card');
 
@@ -28,6 +52,11 @@ export function useProjects() {
   const [newProjAbstract, setNewProjAbstract] = useState('');
   const [newProjAreaId, setNewProjAreaId] = useState<string | null>(null);
   const [areaFilter, setAreaFilter] = useState<string | null>(null);
+
+  // Move modal state
+  const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
+  const [moveTargetProjectId, setMoveTargetProjectId] = useState('');
+  const [moveSuccessMsg, setMoveSuccessMsg] = useState<string | null>(null);
 
   const [error, setError] = useState<string | null>(null);
   const clearError = useCallback(() => setError(null), []);
@@ -78,10 +107,34 @@ export function useProjects() {
     }
   }, [newAreaName, newAreaDesc, newAreaColor, resetAreaForm]);
 
-  const filteredProjects = useMemo(() =>
-    areaFilter ? projects.filter(p => p.areaId === areaFilter) : projects,
-    [projects, areaFilter]
+  // Separate uncategorized from regular projects
+  const uncategorizedProject = useMemo(
+    () => projects.find(p => p.id === UNCATEGORIZED_ID) || UNCATEGORIZED_PROJECT,
+    [projects]
   );
+
+  const regularProjects = useMemo(
+    () => projects.filter(p => p.id !== UNCATEGORIZED_ID),
+    [projects]
+  );
+
+  const filteredProjects = useMemo(() => {
+    const base = areaFilter ? regularProjects.filter(p => p.areaId === areaFilter) : regularProjects;
+    return base;
+  }, [regularProjects, areaFilter]);
+
+  // Uncategorized project stats
+  const uncategorizedStats = useMemo(() => {
+    const uncTasks = tasks.filter(t => t.projectId === UNCATEGORIZED_ID);
+    const completed = uncTasks.filter(t => t.status === 'completed').length;
+    const uncRecords = researchRecords.filter(r => r.projectId === UNCATEGORIZED_ID);
+    return {
+      taskCount: uncTasks.length,
+      recordCount: uncRecords.length,
+      progress: uncTasks.length > 0 ? Math.round((completed / uncTasks.length) * 100) : 0,
+      totalItems: uncTasks.length + uncRecords.length,
+    };
+  }, [tasks, researchRecords]);
 
   const enrichedProjects = useMemo(() => {
     return filteredProjects.map(proj => {
@@ -156,11 +209,72 @@ export function useProjects() {
     }
   }, []);
 
+  // Move items from uncategorized to a target project
+  const handleMoveFromUncategorized = useCallback(async (targetProjectId: string) => {
+    if (!targetProjectId || targetProjectId === UNCATEGORIZED_ID) return;
+    try {
+      const now = new Date().toISOString();
+      const targetName = projects.find(p => p.id === targetProjectId)?.title || targetProjectId;
+
+      // Move tasks
+      const uncTasks = await db.tasks.where('projectId').equals(UNCATEGORIZED_ID).toArray();
+      for (const task of uncTasks) {
+        await db.tasks.update(task.id, { projectId: targetProjectId, updatedAt: now });
+      }
+
+      // Move records
+      const uncRecords = await db.researchRecords.where('projectId').equals(UNCATEGORIZED_ID).toArray();
+      for (const rec of uncRecords) {
+        await db.researchRecords.update(rec.id, { projectId: targetProjectId, updatedAt: now });
+      }
+
+      // Move evidence
+      const uncEvidence = await db.evidence.where('projectId').equals(UNCATEGORIZED_ID).toArray();
+      for (const ev of uncEvidence) {
+        await db.evidence.update(ev.id, { projectId: targetProjectId, updatedAt: now });
+      }
+
+      // Move hypotheses
+      const uncHyps = await db.hypotheses.where('projectId').equals(UNCATEGORIZED_ID).toArray();
+      for (const hyp of uncHyps) {
+        await db.hypotheses.update(hyp.id, { projectId: targetProjectId, updatedAt: now });
+      }
+
+      // Move experiments
+      const uncExps = await db.experiments.where('projectId').equals(UNCATEGORIZED_ID).toArray();
+      for (const exp of uncExps) {
+        await db.experiments.update(exp.id, { projectId: targetProjectId, updatedAt: now });
+      }
+
+      // Move manuscripts
+      const uncMs = await db.manuscripts.where('projectId').equals(UNCATEGORIZED_ID).toArray();
+      for (const ms of uncMs) {
+        await db.manuscripts.update(ms.id, { projectId: targetProjectId, updatedAt: now });
+      }
+
+      const movedCount = uncTasks.length + uncRecords.length + uncEvidence.length + uncHyps.length + uncExps.length + uncMs.length;
+      setMoveSuccessMsg(`Moved ${movedCount} items to ${targetName}`);
+      setIsMoveModalOpen(false);
+      setMoveTargetProjectId('');
+    } catch (e: unknown) {
+      console.error('Failed to move items:', e instanceof Error ? e.message : e);
+      setError('Failed to move items. Please try again.');
+    }
+  }, [projects]);
+
   return {
     projects,
     filteredProjects,
     enrichedProjects,
     researchAreas,
+    // Uncategorized
+    uncategorizedProject,
+    uncategorizedStats,
+    regularProjects,
+    isMoveModalOpen, setIsMoveModalOpen,
+    moveTargetProjectId, setMoveTargetProjectId,
+    moveSuccessMsg, setMoveSuccessMsg,
+    handleMoveFromUncategorized,
     // View mode
     viewMode, setViewMode,
     // Area modal

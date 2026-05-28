@@ -16,6 +16,7 @@ import { ChartGantt, type GanttItem } from '@components/domain/ChartGantt';
 import {
   FolderOpen, Plus, Trash2, Edit2, Filter,
   LayoutList, LayoutGrid, FileText, ListTodo, Clock, GanttChart,
+  Inbox, ArrowRight,
 } from 'lucide-react';
 import { useLang, type TranslationKey } from '@/i18n';
 
@@ -42,6 +43,11 @@ export function ProjectsView() {
 
   const {
     projects, enrichedProjects, researchAreas,
+    uncategorizedProject, uncategorizedStats, regularProjects,
+    isMoveModalOpen, setIsMoveModalOpen,
+    moveTargetProjectId, setMoveTargetProjectId,
+    moveSuccessMsg, setMoveSuccessMsg,
+    handleMoveFromUncategorized,
     viewMode, setViewMode,
     isAreaModalOpen, setIsAreaModalOpen,
     newAreaName, setNewAreaName,
@@ -184,6 +190,76 @@ export function ProjectsView() {
           </Card>
         </div>
       )}
+
+      {/* Uncategorized Project - always visible */}
+      <div className="mb-4">
+        <Card variant="solid" padding="md" className="border-dashed border-primary-600/30 bg-primary-950/10">
+          <div className="flex items-start justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-lg bg-slate-800 flex items-center justify-center">
+                <Inbox size={16} className="text-primary-400" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-primary-300">{t('projects.uncategorized')}</h3>
+                <p className="text-3xs text-slate-500">{t('projects.uncategorizedDesc')}</p>
+              </div>
+            </div>
+            {uncategorizedStats.totalItems > 0 && regularProjects.length > 0 && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setIsMoveModalOpen(true)}
+                leftIcon={<ArrowRight size={13} />}
+              >
+                {t('projects.moveItem')}
+              </Button>
+            )}
+          </div>
+          <div className="flex items-center gap-4 text-2xs text-slate-400">
+            <span className="flex items-center gap-1">
+              <ListTodo size={12} /> {uncategorizedStats.taskCount} {t('projects.tasks')}
+            </span>
+            <span className="flex items-center gap-1">
+              <FileText size={12} /> {uncategorizedStats.recordCount} {t('projects.records')}
+            </span>
+            {uncategorizedStats.totalItems === 0 && (
+              <span className="text-slate-600 italic">{t('common.noData')}</span>
+            )}
+          </div>
+        </Card>
+      </div>
+
+      {/* Move Modal */}
+      <Modal isOpen={isMoveModalOpen} onClose={() => { setIsMoveModalOpen(false); setMoveSuccessMsg(null); }} title={t('projects.moveTo')} size="sm">
+        <div className="space-y-3">
+          {moveSuccessMsg ? (
+            <div className="text-sm text-green-400 text-center py-4">{moveSuccessMsg}</div>
+          ) : (
+            <>
+              <p className="text-xs text-slate-400">{t('projects.uncategorizedDesc')}</p>
+              <Select
+                label={t('projects.project')}
+                value={moveTargetProjectId}
+                onChange={(e) => setMoveTargetProjectId(e.target.value)}
+                options={[
+                  { value: '', label: `-- ${t('common.select')} --` },
+                  ...regularProjects.map(p => ({ value: p.id, label: p.title })),
+                ]}
+              />
+            </>
+          )}
+        </div>
+        <ModalFooter>
+          <Button variant="secondary" size="sm" onClick={() => { setIsMoveModalOpen(false); setMoveSuccessMsg(null); }}>
+            {moveSuccessMsg ? t('common.close') : t('common.cancel')}
+          </Button>
+          {!moveSuccessMsg && (
+            <Button variant="primary" size="sm" onClick={() => handleMoveFromUncategorized(moveTargetProjectId)} disabled={!moveTargetProjectId}>
+              {t('projects.moveItem')}
+            </Button>
+          )}
+        </ModalFooter>
+      </Modal>
 
       {/* Projects */}
       {enrichedProjects.length === 0 ? (
