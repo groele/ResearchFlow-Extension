@@ -1,0 +1,1433 @@
+{
+  "projects": [
+    {
+      "id": "proj_uncategorized",
+      "userId": "user",
+      "title": "Uncategorized",
+      "discipline": "",
+      "hypothesis": "",
+      "abstract": "System project for uncategorized items.",
+      "status": "active",
+      "areaId": null,
+      "createdAt": "2026-05-28T10:57:05.848Z",
+      "updatedAt": "2026-05-28T10:57:05.848Z"
+    },
+    {
+      "id": "cmp6z6z5e0009iha8wxqldtx9",
+      "userId": "user",
+      "title": "Nonvolatile Electrical Programming of Valley Pseudospins in a Ferroelectric Van Der Waals Heterostructure",
+      "discipline": "Ferroelectric",
+      "hypothesis": "",
+      "abstract": "",
+      "status": "archived",
+      "areaId": "cmp6z6yfm0001iha8cn9w7x1d",
+      "createdAt": "2026-04-18T06:17:27.552Z",
+      "updatedAt": "2026-04-18T06:18:51.924Z"
+    },
+    {
+      "id": "cmp6z709w000niha8kcss5tvt",
+      "userId": "user",
+      "title": "Ferroelectric control of interlayer excitons enables nonvolatile quantum photonic memory in two-dimensional heterostructures",
+      "discipline": "Ferroelectric",
+      "hypothesis": "",
+      "abstract": "",
+      "status": "archived",
+      "areaId": "cmp6z6yfm0001iha8cn9w7x1d",
+      "createdAt": "2026-04-18T06:13:07.728Z",
+      "updatedAt": "2026-04-18T06:15:00.449Z"
+    },
+    {
+      "id": "cmp6z70xi000viha8buzimm39",
+      "userId": "user",
+      "title": "Flexoelectrically programmed ferroelectric domain lattices enable deterministic exciton patterning in van der Waals heterostructures",
+      "discipline": "Flexoelectric",
+      "hypothesis": "",
+      "abstract": "",
+      "status": "active",
+      "areaId": "cmp6z6yps0003iha8ocdr1vvi",
+      "createdAt": "2026-04-18T05:36:09.368Z",
+      "updatedAt": "2026-04-18T05:37:00.339Z"
+    },
+    {
+      "id": "cmp6z71hn0011iha8rgyq4ok1",
+      "userId": "user",
+      "title": "Dual-Channel Optical Encryption Enabled by Ferroelectrically Programmable Excitonic Polarization",
+      "discipline": "ferroelectric",
+      "hypothesis": "",
+      "abstract": "",
+      "status": "active",
+      "areaId": "cmp6z6yfm0001iha8cn9w7x1d",
+      "createdAt": "2026-04-18T05:35:12.030Z",
+      "updatedAt": "2026-04-18T05:36:05.152Z"
+    },
+    {
+      "id": "cmp6z72nj001diha8npxfs4zg",
+      "userId": "user",
+      "title": "Sliding Ferroelectric Order Imprinted onto Excitonic and Valley Responses in van der Waals Heterostructures",
+      "discipline": "ferroelectric",
+      "hypothesis": "",
+      "abstract": "",
+      "status": "active",
+      "areaId": "cmp6z6yfm0001iha8cn9w7x1d",
+      "createdAt": "2026-04-18T05:40:48.330Z",
+      "updatedAt": "2026-04-18T05:42:02.335Z"
+    },
+    {
+      "id": "cmpaiusqc0002ihgwnix3j03e",
+      "userId": "user",
+      "title": "Catalyst design for CO2 reduction",
+      "discipline": "Chemistry",
+      "hypothesis": "",
+      "abstract": "Computational screening of catalysts for CO2 reduction",
+      "status": "active",
+      "areaId": "cmp7pjbog0004ih3s8kc7jw1n",
+      "createdAt": "2026-05-18T01:25:00.276Z",
+      "updatedAt": "2026-05-21T07:08:56.925Z"
+    },
+    {
+      "id": "cmpaiusqd0004ihgw72b5biar",
+      "userId": "user",
+      "title": "Strain-engineered excitonic devices",
+      "discipline": "Physics",
+      "hypothesis": "Strain can be used to program exciton-trion spectral weights",
+      "abstract": "Investigating strain effects on excitonic properties in 2D materials",
+      "status": "active",
+      "areaId": "cmp7wpyfm0002ihgojyc8tzia",
+      "createdAt": "2026-05-18T01:25:00.277Z",
+      "updatedAt": "2026-05-21T07:08:56.925Z"
+    }
+  ],
+  "researchRecords": [
+    {
+      "id": "cmp6o603j000cih3kisv632xl",
+      "userId": "user",
+      "projectId": "cmpaiusqd0004ihgw72b5biar",
+      "schemaTemplateId": null,
+      "recordType": "experiment",
+      "title": "PL spectroscopy at 1.65K",
+      "summary": "",
+      "methodology": "Photoluminescence spectroscopy",
+      "recordedDate": "2026-05-15T08:42:36.416Z",
+      "attributes": {
+        "integration_time_s": 30,
+        "laser_power_mW": 0.1,
+        "sample_id": "S1",
+        "temperature_K": 1.65
+      },
+      "dataPath": "",
+      "tags": [
+        "PL",
+        "low-temperature",
+        "WSe2"
+      ],
+      "externalRef": null,
+      "readingStatus": "unread",
+      "starred": false,
+      "createdAt": "2026-05-15T08:42:36.416Z",
+      "updatedAt": "2026-05-21T07:08:57.224Z"
+    },
+    {
+      "id": "cmp7pjcbj000cih3sksp6qpuc",
+      "userId": "user",
+      "projectId": "proj_uncategorized",
+      "schemaTemplateId": null,
+      "recordType": "experiment",
+      "title": "PL spectroscopy at 1.65K",
+      "summary": "",
+      "methodology": "Photoluminescence spectroscopy",
+      "recordedDate": "2026-05-16T02:08:44.576Z",
+      "attributes": {
+        "integration_time_s": 30,
+        "laser_power_mW": 0.1,
+        "sample_id": "S1",
+        "temperature_K": 1.65
+      },
+      "dataPath": "",
+      "tags": [
+        "PL",
+        "low-temperature",
+        "WSe2"
+      ],
+      "externalRef": null,
+      "readingStatus": "unread",
+      "starred": false,
+      "createdAt": "2026-05-16T02:08:44.576Z",
+      "updatedAt": "2026-05-16T02:08:44.576Z"
+    }
+  ],
+  "manuscripts": [
+    {
+      "id": "cmp6z6z0f0007iha8rwtlgnib",
+      "userId": "user",
+      "projectId": "proj_uncategorized",
+      "title": "Nonvolatile Electrical Programming of Valley Pseudospins in a Ferroelectric Van Der Waals Heterostructure",
+      "abstract": "",
+      "targetJournal": "Advanced Functional Materials",
+      "manuscriptType": "research_article",
+      "status": "published",
+      "sections": [],
+      "notes": "",
+      "tags": [],
+      "statusHistory": [
+        {
+          "status": "idea",
+          "at": "2026-04-18T06:17:27.552Z"
+        },
+        {
+          "status": "submitted",
+          "at": "2025-10-21T00:00:00.000Z"
+        },
+        {
+          "status": "revision",
+          "at": "2026-02-13T00:00:00.000Z"
+        },
+        {
+          "status": "accepted",
+          "at": "2026-02-16T00:00:00.000Z"
+        },
+        {
+          "status": "published",
+          "at": "2026-02-16T00:00:00.000Z"
+        }
+      ],
+      "createdAt": "2026-04-18T06:17:27.552Z",
+      "updatedAt": "2026-04-18T06:18:51.924Z"
+    },
+    {
+      "id": "cmp6z6zof000fiha84nws2kux",
+      "userId": "user",
+      "projectId": "proj_uncategorized",
+      "title": "Unveiling spin‐dependent polarization dynamics of interlayer excitons in TMD‐based heterostructures",
+      "abstract": "",
+      "targetJournal": "Small",
+      "manuscriptType": "research_article",
+      "status": "published",
+      "sections": [],
+      "notes": "",
+      "tags": [],
+      "statusHistory": [
+        {
+          "status": "idea",
+          "at": "2026-04-18T06:15:58.869Z"
+        },
+        {
+          "status": "submitted",
+          "at": "2025-03-14T00:00:00.000Z"
+        },
+        {
+          "status": "accepted",
+          "at": "2025-07-29T00:00:00.000Z"
+        },
+        {
+          "status": "published",
+          "at": "2025-07-29T00:00:00.000Z"
+        }
+      ],
+      "createdAt": "2026-04-18T06:15:58.869Z",
+      "updatedAt": "2026-04-18T06:31:56.903Z"
+    },
+    {
+      "id": "cmp6z704r000liha84ogzw6px",
+      "userId": "user",
+      "projectId": "proj_uncategorized",
+      "title": "Ferroelectric control of interlayer excitons enables nonvolatile quantum photonic memory in two-dimensional heterostructures",
+      "abstract": "",
+      "targetJournal": "ACS Nano",
+      "manuscriptType": "research_article",
+      "status": "published",
+      "sections": [],
+      "notes": "",
+      "tags": [],
+      "statusHistory": [
+        {
+          "status": "idea",
+          "at": "2026-04-18T06:13:07.728Z"
+        },
+        {
+          "status": "submitted",
+          "at": "2025-07-08T00:00:00.000Z"
+        },
+        {
+          "status": "revision",
+          "at": "2025-09-19T00:00:00.000Z"
+        },
+        {
+          "status": "accepted",
+          "at": "2025-09-26T00:00:00.000Z"
+        },
+        {
+          "status": "published",
+          "at": "2025-09-26T00:00:00.000Z"
+        }
+      ],
+      "createdAt": "2026-04-18T06:13:07.728Z",
+      "updatedAt": "2026-04-18T06:15:00.449Z"
+    },
+    {
+      "id": "cmp6z70o3000tiha8cutsiryj",
+      "userId": "user",
+      "projectId": "proj_uncategorized",
+      "title": "Flexoelectrically programmed ferroelectric domain lattices enable deterministic exciton patterning in van der Waals heterostructures",
+      "abstract": "",
+      "targetJournal": "Advanced Functional Materials",
+      "manuscriptType": "research_article",
+      "status": "submitted",
+      "sections": [],
+      "notes": "",
+      "tags": [],
+      "statusHistory": [
+        {
+          "status": "under_review",
+          "at": "2026-04-18T05:36:09.368Z"
+        },
+        {
+          "status": "submitted",
+          "at": "2026-02-25T00:00:00.000Z"
+        }
+      ],
+      "createdAt": "2026-04-18T05:36:09.368Z",
+      "updatedAt": "2026-05-26T06:53:06.911Z"
+    },
+    {
+      "id": "cmp6z71b8000ziha8n1ikw5vv",
+      "userId": "user",
+      "projectId": "proj_uncategorized",
+      "title": "Dual-Channel Optical Encryption Enabled by Ferroelectrically Programmable Excitonic Polarization",
+      "abstract": "",
+      "targetJournal": "Advanced Functional Materials",
+      "manuscriptType": "research_article",
+      "status": "under_review",
+      "sections": [],
+      "notes": "",
+      "tags": [],
+      "statusHistory": [
+        {
+          "status": "under_review",
+          "at": "2026-04-18T05:35:12.030Z"
+        },
+        {
+          "status": "submitted",
+          "at": "2026-01-07T00:00:00.000Z"
+        }
+      ],
+      "createdAt": "2026-04-18T05:35:12.030Z",
+      "updatedAt": "2026-04-18T05:36:05.152Z"
+    },
+    {
+      "id": "cmp6z71yd0015iha8zoi9pxpc",
+      "userId": "user",
+      "projectId": "proj_uncategorized",
+      "title": "Efficient gate-tunable exciton–trion conversion in atomically thin WSe2 at sub-volt thresholds",
+      "abstract": "",
+      "targetJournal": "Applied Physics Letters",
+      "manuscriptType": "research_article",
+      "status": "published",
+      "sections": [],
+      "notes": "",
+      "tags": [],
+      "statusHistory": [
+        {
+          "status": "idea",
+          "at": "2026-04-18T06:18:56.850Z"
+        },
+        {
+          "status": "submitted",
+          "at": "2025-06-18T00:00:00.000Z"
+        },
+        {
+          "status": "accepted",
+          "at": "2025-08-28T00:00:00.000Z"
+        },
+        {
+          "status": "published",
+          "at": "2025-09-15T00:00:00.000Z"
+        }
+      ],
+      "createdAt": "2026-04-18T06:18:56.850Z",
+      "updatedAt": "2026-04-18T06:20:29.499Z"
+    },
+    {
+      "id": "cmp6z72gs001biha86ey855e2",
+      "userId": "user",
+      "projectId": "proj_uncategorized",
+      "title": "Sliding Ferroelectric Order Imprinted onto Excitonic and Valley Responses in van der Waals Heterostructures",
+      "abstract": "",
+      "targetJournal": "Applied Physics Letters",
+      "manuscriptType": "research_article",
+      "status": "under_review",
+      "sections": [],
+      "notes": "",
+      "tags": [],
+      "statusHistory": [
+        {
+          "status": "under_review",
+          "at": "2026-04-18T05:40:48.330Z"
+        },
+        {
+          "status": "submitted",
+          "at": "2026-04-14T00:00:00.000Z"
+        }
+      ],
+      "createdAt": "2026-04-18T05:40:48.330Z",
+      "updatedAt": "2026-04-18T05:42:02.335Z"
+    },
+    {
+      "id": "cmpdyyzm10001ihm8kl7zlyh6",
+      "userId": "user",
+      "projectId": "proj_uncategorized",
+      "title": "Programmable Exciton–Trion Nonlinearities for Neuromorphic Optoelectronic Computing",
+      "abstract": "",
+      "targetJournal": "Nature Communications",
+      "manuscriptType": "research_article",
+      "status": "under_review",
+      "sections": [],
+      "notes": "",
+      "tags": [],
+      "statusHistory": [
+        {
+          "status": "pre_submission",
+          "at": "2026-05-20T11:19:28.196Z"
+        },
+        {
+          "status": "submitted",
+          "at": "2026-05-20T12:15:03.632Z"
+        },
+        {
+          "status": "rejected",
+          "at": "2026-05-21T01:06:46.598Z"
+        }
+      ],
+      "createdAt": "2026-05-20T11:19:28.200Z",
+      "updatedAt": "2026-05-26T08:50:17.444Z"
+    }
+  ],
+  "submissions": [
+    {
+      "id": "cmp6z6zb2000biha8613hbgea",
+      "userId": "user",
+      "manuscriptId": "cmp6z6z0f0007iha8rwtlgnib",
+      "journalName": "Advanced Functional Materials",
+      "journalAbbrev": "",
+      "publisher": "",
+      "impactFactor": 19,
+      "manuscriptNumber": "",
+      "submissionDate": "2025-10-21T12:00:00.000Z",
+      "submissionUrl": "",
+      "decisionDate": "2026-02-16T12:00:00.000Z",
+      "firstDecisionDate": "2026-02-13T12:00:00.000Z",
+      "acceptedAt": null,
+      "status": "accepted",
+      "notes": "DOI: 10.1002/adfm.202528029",
+      "revisionDeadline": null,
+      "coverLetter": "",
+      "complianceChecklist": [],
+      "reviewRounds": [],
+      "timelineNodes": [
+        {
+          "completeDate": "2025-09-15",
+          "dueDate": "",
+          "id": "node_1_cmp6z6zb2000biha8613hbgea_1779592757",
+          "name": "Experiments Completed",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "research"
+        },
+        {
+          "completeDate": "2025-09-30",
+          "dueDate": "",
+          "id": "node_2_cmp6z6zb2000biha8613hbgea_1779592757",
+          "name": "Data Organization",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "research"
+        },
+        {
+          "completeDate": "2025-10-10",
+          "dueDate": "",
+          "id": "node_3_cmp6z6zb2000biha8613hbgea_1779592757",
+          "name": "Draft Completed",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "writing"
+        },
+        {
+          "completeDate": "2025-10-21",
+          "dueDate": "",
+          "id": "node_4_cmp6z6zb2000biha8613hbgea_1779592757",
+          "key": "submit",
+          "name": "Manuscript Submitted",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "submission"
+        },
+        {
+          "completeDate": "2026-02-13",
+          "dueDate": "",
+          "id": "node_5_cmp6z6zb2000biha8613hbgea_1779592757",
+          "key": "r1_comments",
+          "name": "Review Comments R1",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "review"
+        },
+        {
+          "completeDate": "2026-02-15",
+          "dueDate": "",
+          "id": "node_6_cmp6z6zb2000biha8613hbgea_1779592757",
+          "name": "R1 Revision Submitted",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "revision"
+        },
+        {
+          "completeDate": "2026-02-16",
+          "dueDate": "",
+          "id": "node_7_cmp6z6zb2000biha8613hbgea_1779592757",
+          "key": "accept",
+          "name": "Accepted",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "publication"
+        },
+        {
+          "completeDate": "2026-02-16",
+          "dueDate": "",
+          "id": "node_8_cmp6z6zb2000biha8613hbgea_1779592757",
+          "name": "Online Publication",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "publication"
+        }
+      ],
+      "statusHistory": "[{\"status\":\"Experiments Completed\",\"at\":\"2025-09-15T00:00:00.000Z\",\"name\":\"Experiments Completed\"},{\"status\":\"Data Organization\",\"at\":\"2025-09-30T00:00:00.000Z\",\"name\":\"Data Organization\"},{\"status\":\"Draft Completed\",\"at\":\"2025-10-10T00:00:00.000Z\",\"name\":\"Draft Completed\"},{\"status\":\"submitted\",\"at\":\"2025-10-21T00:00:00.000Z\",\"name\":\"Manuscript Submitted\"},{\"status\":\"under_review\",\"at\":\"2026-02-13T00:00:00.000Z\",\"name\":\"Review Comments R1\"},{\"status\":\"revision_requested\",\"at\":\"2026-02-15T00:00:00.000Z\",\"name\":\"R1 Revision Submitted\"},{\"status\":\"accepted\",\"at\":\"2026-02-16T00:00:00.000Z\",\"name\":\"Accepted\"},{\"status\":\"accepted\",\"at\":\"2026-02-16T00:00:00.000Z\",\"name\":\"Online Publication\"}]",
+      "createdAt": "2026-04-18T06:17:27.552Z",
+      "updatedAt": "2026-05-26T05:36:20.593Z"
+    },
+    {
+      "id": "cmp6z6zvt000hiha83tlzclb8",
+      "userId": "user",
+      "manuscriptId": "cmp6z6zof000fiha84nws2kux",
+      "journalName": "Small",
+      "journalAbbrev": "",
+      "publisher": "",
+      "impactFactor": 12.1,
+      "manuscriptNumber": "",
+      "submissionDate": "2025-03-14T12:00:00.000Z",
+      "submissionUrl": "",
+      "decisionDate": "2025-07-25T12:00:00.000Z",
+      "firstDecisionDate": "2025-05-10T12:00:00.000Z",
+      "acceptedAt": "2025-07-25T00:00:00.000Z",
+      "status": "accepted",
+      "notes": "DOI: 10.1002/smll.202503316",
+      "revisionDeadline": "2025-07-30T00:00:00.000Z",
+      "coverLetter": "",
+      "complianceChecklist": [],
+      "reviewRounds": [],
+      "timelineNodes": [
+        {
+          "completeDate": "2025-02-15",
+          "dueDate": "",
+          "id": "node_1_cmp6z6zvt000hiha83tlzclb8_1779592757",
+          "name": "Experiments Completed",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "research"
+        },
+        {
+          "completeDate": "2025-02-28",
+          "dueDate": "",
+          "id": "node_2_cmp6z6zvt000hiha83tlzclb8_1779592757",
+          "name": "Data Organization",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "research"
+        },
+        {
+          "completeDate": "2025-03-05",
+          "dueDate": "",
+          "id": "node_3_cmp6z6zvt000hiha83tlzclb8_1779592757",
+          "name": "Draft Completed",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "writing"
+        },
+        {
+          "completeDate": "2025-03-14",
+          "dueDate": "",
+          "id": "node_4_cmp6z6zvt000hiha83tlzclb8_1779592757",
+          "key": "submit",
+          "name": "Manuscript Submitted",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "submission"
+        },
+        {
+          "completeDate": "2025-05-10",
+          "dueDate": "",
+          "id": "node_5_cmp6z6zvt000hiha83tlzclb8_1779592757",
+          "key": "r1_comments",
+          "name": "Review Comments R1",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "review"
+        },
+        {
+          "completeDate": "2025-06-25",
+          "dueDate": "",
+          "id": "node_6_cmp6z6zvt000hiha83tlzclb8_1779592757",
+          "name": "R1 Revision Submitted",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "revision"
+        },
+        {
+          "completeDate": "2025-07-25",
+          "dueDate": "",
+          "id": "node_7_cmp6z6zvt000hiha83tlzclb8_1779592757",
+          "key": "accept",
+          "name": "Accepted",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "publication"
+        },
+        {
+          "completeDate": "2025-07-29",
+          "dueDate": "",
+          "id": "node_8_cmp6z6zvt000hiha83tlzclb8_1779592757",
+          "name": "Online Publication",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "publication"
+        }
+      ],
+      "statusHistory": "[{\"status\":\"Experiments Completed\",\"at\":\"2025-02-15T00:00:00.000Z\",\"name\":\"Experiments Completed\"},{\"status\":\"Data Organization\",\"at\":\"2025-02-28T00:00:00.000Z\",\"name\":\"Data Organization\"},{\"status\":\"Draft Completed\",\"at\":\"2025-03-05T00:00:00.000Z\",\"name\":\"Draft Completed\"},{\"status\":\"submitted\",\"at\":\"2025-03-14T00:00:00.000Z\",\"name\":\"Manuscript Submitted\"},{\"status\":\"under_review\",\"at\":\"2025-05-10T00:00:00.000Z\",\"name\":\"Review Comments R1\"},{\"status\":\"revision_requested\",\"at\":\"2025-06-25T00:00:00.000Z\",\"name\":\"R1 Revision Submitted\"},{\"status\":\"accepted\",\"at\":\"2025-07-25T00:00:00.000Z\",\"name\":\"Accepted\"},{\"status\":\"accepted\",\"at\":\"2025-07-29T00:00:00.000Z\",\"name\":\"Online Publication\"}]",
+      "createdAt": "2026-04-18T06:15:58.869Z",
+      "updatedAt": "2026-05-26T05:36:20.593Z"
+    },
+    {
+      "id": "cmp6z70d9000piha8skixaxzr",
+      "userId": "user",
+      "manuscriptId": "cmp6z704r000liha84ogzw6px",
+      "journalName": "ACS Nano",
+      "journalAbbrev": "",
+      "publisher": "",
+      "impactFactor": 19,
+      "manuscriptNumber": "",
+      "submissionDate": "2025-07-08T12:00:00.000Z",
+      "submissionUrl": "",
+      "decisionDate": "2025-09-26T12:00:00.000Z",
+      "firstDecisionDate": "2025-09-18T12:00:00.000Z",
+      "acceptedAt": null,
+      "status": "accepted",
+      "notes": "DOI: 10.1021/acsnano.5c11442",
+      "revisionDeadline": null,
+      "coverLetter": "",
+      "complianceChecklist": [],
+      "reviewRounds": [],
+      "timelineNodes": [
+        {
+          "completeDate": "2025-06-15",
+          "dueDate": "",
+          "id": "node_1_cmp6z70d9000piha8skixaxzr_1779592757",
+          "name": "Experiments Completed",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "research"
+        },
+        {
+          "completeDate": "2025-06-28",
+          "dueDate": "",
+          "id": "node_2_cmp6z70d9000piha8skixaxzr_1779592757",
+          "name": "Data Organization",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "research"
+        },
+        {
+          "completeDate": "2025-07-02",
+          "dueDate": "",
+          "id": "node_3_cmp6z70d9000piha8skixaxzr_1779592757",
+          "name": "Draft Completed",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "writing"
+        },
+        {
+          "completeDate": "2025-07-08",
+          "dueDate": "",
+          "id": "node_4_cmp6z70d9000piha8skixaxzr_1779592757",
+          "key": "submit",
+          "name": "Manuscript Submitted",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "submission"
+        },
+        {
+          "completeDate": "2025-09-18",
+          "dueDate": "",
+          "id": "node_5_cmp6z70d9000piha8skixaxzr_1779592757",
+          "key": "r1_comments",
+          "name": "Review Comments R1",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "review"
+        },
+        {
+          "completeDate": "2025-09-19",
+          "dueDate": "",
+          "id": "node_6_cmp6z70d9000piha8skixaxzr_1779592757",
+          "name": "R1 Revision Submitted",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "revision"
+        },
+        {
+          "completeDate": "2025-09-26",
+          "dueDate": "",
+          "id": "node_7_cmp6z70d9000piha8skixaxzr_1779592757",
+          "key": "accept",
+          "name": "Accepted",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "publication"
+        },
+        {
+          "completeDate": "2025-09-26",
+          "dueDate": "",
+          "id": "node_8_cmp6z70d9000piha8skixaxzr_1779592757",
+          "name": "Online Publication",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "publication"
+        }
+      ],
+      "statusHistory": "[{\"status\":\"Experiments Completed\",\"at\":\"2025-06-15T00:00:00.000Z\",\"name\":\"Experiments Completed\"},{\"status\":\"Data Organization\",\"at\":\"2025-06-28T00:00:00.000Z\",\"name\":\"Data Organization\"},{\"status\":\"Draft Completed\",\"at\":\"2025-07-02T00:00:00.000Z\",\"name\":\"Draft Completed\"},{\"status\":\"submitted\",\"at\":\"2025-07-08T00:00:00.000Z\",\"name\":\"Manuscript Submitted\"},{\"status\":\"under_review\",\"at\":\"2025-09-18T00:00:00.000Z\",\"name\":\"Review Comments R1\"},{\"status\":\"revision_requested\",\"at\":\"2025-09-19T00:00:00.000Z\",\"name\":\"R1 Revision Submitted\"},{\"status\":\"accepted\",\"at\":\"2025-09-26T00:00:00.000Z\",\"name\":\"Accepted\"},{\"status\":\"accepted\",\"at\":\"2025-09-26T00:00:00.000Z\",\"name\":\"Online Publication\"}]",
+      "createdAt": "2026-04-18T06:13:07.728Z",
+      "updatedAt": "2026-05-27T05:26:58.034Z"
+    },
+    {
+      "id": "cmp6z715d000xiha8m141inhq",
+      "userId": "user",
+      "manuscriptId": "cmp6z70o3000tiha8cutsiryj",
+      "journalName": "Advanced Functional Materials",
+      "journalAbbrev": "",
+      "publisher": "",
+      "impactFactor": null,
+      "manuscriptNumber": "",
+      "submissionDate": "2026-02-25T12:00:00.000Z",
+      "submissionUrl": "",
+      "decisionDate": "2026-05-19T00:00:00.000Z",
+      "firstDecisionDate": "2026-05-20T12:00:00.000Z",
+      "acceptedAt": null,
+      "status": "submitted",
+      "notes": "",
+      "revisionDeadline": "2026-06-05T00:00:00.000Z",
+      "coverLetter": "",
+      "complianceChecklist": [],
+      "reviewRounds": [],
+      "timelineNodes": [
+        {
+          "completeDate": "2026-01-20",
+          "dueDate": "",
+          "id": "node_1_cmp6z715d000xiha8m141inhq_1779592757",
+          "name": "Experiments Completed",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "research"
+        },
+        {
+          "completeDate": "2026-02-10",
+          "dueDate": "",
+          "id": "node_2_cmp6z715d000xiha8m141inhq_1779592757",
+          "name": "Data Organization",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "research"
+        },
+        {
+          "completeDate": "2026-02-20",
+          "dueDate": "",
+          "id": "node_3_cmp6z715d000xiha8m141inhq_1779592757",
+          "name": "Draft Completed",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "writing"
+        },
+        {
+          "completeDate": "2026-02-25",
+          "dueDate": "",
+          "id": "node_4_cmp6z715d000xiha8m141inhq_1779592757",
+          "key": "submit",
+          "name": "Manuscript Submitted",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "submission"
+        },
+        {
+          "completeDate": "2026-05-20",
+          "dueDate": "",
+          "id": "node_5_cmp6z715d000xiha8m141inhq_1779592757",
+          "key": "r1_comments",
+          "name": "Review Comments R1",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "review"
+        },
+        {
+          "completeDate": "2026-05-22",
+          "dueDate": "",
+          "id": "node_6_cmp6z715d000xiha8m141inhq_1779592757",
+          "name": "R1 Revision Submitted",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "revision"
+        },
+        {
+          "completeDate": "",
+          "dueDate": "",
+          "id": "node_7_cmp6z715d000xiha8m141inhq_1779592757",
+          "name": "Accepted",
+          "notes": "",
+          "planDate": "",
+          "status": "active",
+          "type": "publication"
+        },
+        {
+          "completeDate": "",
+          "dueDate": "",
+          "id": "node_8_cmp6z715d000xiha8m141inhq_1779592757",
+          "name": "Online Publication",
+          "notes": "",
+          "planDate": "",
+          "status": "pending",
+          "type": "publication"
+        }
+      ],
+      "statusHistory": "[{\"status\":\"Experiments Completed\",\"at\":\"2026-01-20T00:00:00.000Z\",\"name\":\"Experiments Completed\"},{\"status\":\"Data Organization\",\"at\":\"2026-02-10T00:00:00.000Z\",\"name\":\"Data Organization\"},{\"status\":\"Draft Completed\",\"at\":\"2026-02-20T00:00:00.000Z\",\"name\":\"Draft Completed\"},{\"status\":\"submitted\",\"at\":\"2026-02-25T00:00:00.000Z\",\"name\":\"Manuscript Submitted\"},{\"status\":\"under_review\",\"at\":\"2026-05-20T00:00:00.000Z\",\"name\":\"Review Comments R1\"},{\"status\":\"revision_requested\",\"at\":\"2026-05-22T00:00:00.000Z\",\"name\":\"R1 Revision Submitted\"}]",
+      "createdAt": "2026-04-18T05:36:09.368Z",
+      "updatedAt": "2026-05-26T06:53:06.911Z"
+    },
+    {
+      "id": "cmp6z71ml0013iha8aka7fo5i",
+      "userId": "user",
+      "manuscriptId": "cmp6z71b8000ziha8n1ikw5vv",
+      "journalName": "Advanced Functional Materials",
+      "journalAbbrev": "",
+      "publisher": "",
+      "impactFactor": null,
+      "manuscriptNumber": "",
+      "submissionDate": "2026-01-07T12:00:00.000Z",
+      "submissionUrl": "",
+      "decisionDate": null,
+      "firstDecisionDate": null,
+      "acceptedAt": null,
+      "status": "under_review",
+      "notes": "",
+      "revisionDeadline": null,
+      "coverLetter": "",
+      "complianceChecklist": [],
+      "reviewRounds": [],
+      "timelineNodes": [
+        {
+          "completeDate": "2025-12-18",
+          "dueDate": "",
+          "id": "node_1_cmp6z71ml0013iha8aka7fo5i_1779592757",
+          "name": "Experiments Completed",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "research"
+        },
+        {
+          "completeDate": "2025-12-25",
+          "dueDate": "",
+          "id": "node_2_cmp6z71ml0013iha8aka7fo5i_1779592757",
+          "name": "Data Organization",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "research"
+        },
+        {
+          "completeDate": "2026-01-02",
+          "dueDate": "",
+          "id": "node_3_cmp6z71ml0013iha8aka7fo5i_1779592757",
+          "name": "Draft Completed",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "writing"
+        },
+        {
+          "completeDate": "2026-01-07",
+          "dueDate": "",
+          "id": "node_4_cmp6z71ml0013iha8aka7fo5i_1779592757",
+          "key": "submit",
+          "name": "Manuscript Submitted",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "submission"
+        },
+        {
+          "completeDate": "",
+          "dueDate": "",
+          "id": "node_5_cmp6z71ml0013iha8aka7fo5i_1779592757",
+          "name": "Review Comments R1",
+          "notes": "",
+          "planDate": "",
+          "status": "active",
+          "type": "review"
+        },
+        {
+          "completeDate": "",
+          "dueDate": "",
+          "id": "node_6_cmp6z71ml0013iha8aka7fo5i_1779592757",
+          "name": "R1 Revision Submitted",
+          "notes": "",
+          "planDate": "",
+          "status": "pending",
+          "type": "revision"
+        },
+        {
+          "completeDate": "",
+          "dueDate": "",
+          "id": "node_7_cmp6z71ml0013iha8aka7fo5i_1779592757",
+          "name": "Accepted",
+          "notes": "",
+          "planDate": "",
+          "status": "pending",
+          "type": "publication"
+        },
+        {
+          "completeDate": "",
+          "dueDate": "",
+          "id": "node_8_cmp6z71ml0013iha8aka7fo5i_1779592757",
+          "name": "Online Publication",
+          "notes": "",
+          "planDate": "",
+          "status": "pending",
+          "type": "publication"
+        }
+      ],
+      "statusHistory": "[{\"status\":\"Experiments Completed\",\"at\":\"2025-12-18T00:00:00.000Z\",\"name\":\"Experiments Completed\"},{\"status\":\"Data Organization\",\"at\":\"2025-12-25T00:00:00.000Z\",\"name\":\"Data Organization\"},{\"status\":\"Draft Completed\",\"at\":\"2026-01-02T00:00:00.000Z\",\"name\":\"Draft Completed\"},{\"status\":\"submitted\",\"at\":\"2026-01-07T00:00:00.000Z\",\"name\":\"Manuscript Submitted\"}]",
+      "createdAt": "2026-04-18T05:35:12.030Z",
+      "updatedAt": "2026-05-26T05:36:01.721Z"
+    },
+    {
+      "id": "cmp6z725p0017iha8sc325km2",
+      "userId": "user",
+      "manuscriptId": "cmp6z71yd0015iha8zoi9pxpc",
+      "journalName": "Applied Physics Letters",
+      "journalAbbrev": "",
+      "publisher": "",
+      "impactFactor": 3.6,
+      "manuscriptNumber": "",
+      "submissionDate": "2025-06-18T12:00:00.000Z",
+      "submissionUrl": "",
+      "decisionDate": "2025-08-28T12:00:00.000Z",
+      "firstDecisionDate": "2025-08-10T12:00:00.000Z",
+      "acceptedAt": null,
+      "status": "accepted",
+      "notes": "DOI: 10.1063/5.0286212",
+      "revisionDeadline": null,
+      "coverLetter": "",
+      "complianceChecklist": [],
+      "reviewRounds": [],
+      "timelineNodes": [
+        {
+          "completeDate": "2025-05-20",
+          "dueDate": "",
+          "id": "node_1_cmp6z725p0017iha8sc325km2_1779592757",
+          "name": "Experiments Completed",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "research"
+        },
+        {
+          "completeDate": "2025-06-01",
+          "dueDate": "",
+          "id": "node_2_cmp6z725p0017iha8sc325km2_1779592757",
+          "name": "Data Organization",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "research"
+        },
+        {
+          "completeDate": "2025-06-10",
+          "dueDate": "",
+          "id": "node_3_cmp6z725p0017iha8sc325km2_1779592757",
+          "name": "Draft Completed",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "writing"
+        },
+        {
+          "completeDate": "2025-06-18",
+          "dueDate": "",
+          "id": "node_4_cmp6z725p0017iha8sc325km2_1779592757",
+          "key": "submit",
+          "name": "Manuscript Submitted",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "submission"
+        },
+        {
+          "completeDate": "2025-08-10",
+          "dueDate": "",
+          "id": "node_5_cmp6z725p0017iha8sc325km2_1779592757",
+          "key": "r1_comments",
+          "name": "Review Comments R1",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "review"
+        },
+        {
+          "completeDate": "2025-08-20",
+          "dueDate": "",
+          "id": "node_6_cmp6z725p0017iha8sc325km2_1779592757",
+          "name": "R1 Revision Submitted",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "revision"
+        },
+        {
+          "completeDate": "2025-08-28",
+          "dueDate": "",
+          "id": "node_7_cmp6z725p0017iha8sc325km2_1779592757",
+          "key": "accept",
+          "name": "Accepted",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "publication"
+        },
+        {
+          "completeDate": "2025-09-15",
+          "dueDate": "",
+          "id": "node_8_cmp6z725p0017iha8sc325km2_1779592757",
+          "name": "Online Publication",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "publication"
+        }
+      ],
+      "statusHistory": "[{\"status\":\"Experiments Completed\",\"at\":\"2025-05-20T00:00:00.000Z\",\"name\":\"Experiments Completed\"},{\"status\":\"Data Organization\",\"at\":\"2025-06-01T00:00:00.000Z\",\"name\":\"Data Organization\"},{\"status\":\"Draft Completed\",\"at\":\"2025-06-10T00:00:00.000Z\",\"name\":\"Draft Completed\"},{\"status\":\"submitted\",\"at\":\"2025-06-18T00:00:00.000Z\",\"name\":\"Manuscript Submitted\"},{\"status\":\"under_review\",\"at\":\"2025-08-10T00:00:00.000Z\",\"name\":\"Review Comments R1\"},{\"status\":\"revision_requested\",\"at\":\"2025-08-20T00:00:00.000Z\",\"name\":\"R1 Revision Submitted\"},{\"status\":\"accepted\",\"at\":\"2025-08-28T00:00:00.000Z\",\"name\":\"Accepted\"},{\"status\":\"accepted\",\"at\":\"2025-09-15T00:00:00.000Z\",\"name\":\"Online Publication\"}]",
+      "createdAt": "2026-04-18T06:18:56.850Z",
+      "updatedAt": "2026-05-26T05:36:20.593Z"
+    },
+    {
+      "id": "cmp6z72tm001fiha8xa8919o2",
+      "userId": "user",
+      "manuscriptId": "cmp6z72gs001biha86ey855e2",
+      "journalName": "Applied Physics Letters",
+      "journalAbbrev": "",
+      "publisher": "",
+      "impactFactor": null,
+      "manuscriptNumber": "",
+      "submissionDate": "2026-04-14T12:00:00.000Z",
+      "submissionUrl": "",
+      "decisionDate": null,
+      "firstDecisionDate": null,
+      "acceptedAt": null,
+      "status": "submitted",
+      "notes": "",
+      "revisionDeadline": null,
+      "coverLetter": "",
+      "complianceChecklist": [],
+      "reviewRounds": [],
+      "timelineNodes": [
+        {
+          "completeDate": "2026-03-15",
+          "dueDate": "",
+          "id": "node_1_cmp6z72tm001fiha8xa8919o2_1779592757",
+          "name": "Experiments Completed",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "research"
+        },
+        {
+          "completeDate": "2026-03-30",
+          "dueDate": "",
+          "id": "node_2_cmp6z72tm001fiha8xa8919o2_1779592757",
+          "name": "Data Organization",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "research"
+        },
+        {
+          "completeDate": "2026-04-10",
+          "dueDate": "",
+          "id": "node_3_cmp6z72tm001fiha8xa8919o2_1779592757",
+          "name": "Draft Completed",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "writing"
+        },
+        {
+          "completeDate": "2026-04-14",
+          "dueDate": "",
+          "id": "node_4_cmp6z72tm001fiha8xa8919o2_1779592757",
+          "key": "submit",
+          "name": "Manuscript Submitted",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "submission"
+        },
+        {
+          "completeDate": "",
+          "dueDate": "",
+          "id": "node_5_cmp6z72tm001fiha8xa8919o2_1779592757",
+          "name": "Review Comments R1",
+          "notes": "",
+          "planDate": "",
+          "status": "active",
+          "type": "review"
+        },
+        {
+          "completeDate": "",
+          "dueDate": "",
+          "id": "node_6_cmp6z72tm001fiha8xa8919o2_1779592757",
+          "name": "R1 Revision Submitted",
+          "notes": "",
+          "planDate": "",
+          "status": "pending",
+          "type": "revision"
+        },
+        {
+          "completeDate": "",
+          "dueDate": "",
+          "id": "node_7_cmp6z72tm001fiha8xa8919o2_1779592757",
+          "name": "Accepted",
+          "notes": "",
+          "planDate": "",
+          "status": "pending",
+          "type": "publication"
+        },
+        {
+          "completeDate": "",
+          "dueDate": "",
+          "id": "node_8_cmp6z72tm001fiha8xa8919o2_1779592757",
+          "name": "Online Publication",
+          "notes": "",
+          "planDate": "",
+          "status": "pending",
+          "type": "publication"
+        }
+      ],
+      "statusHistory": "[{\"status\":\"Experiments Completed\",\"at\":\"2026-03-15T00:00:00.000Z\",\"name\":\"Experiments Completed\"},{\"status\":\"Data Organization\",\"at\":\"2026-03-30T00:00:00.000Z\",\"name\":\"Data Organization\"},{\"status\":\"Draft Completed\",\"at\":\"2026-04-10T00:00:00.000Z\",\"name\":\"Draft Completed\"},{\"status\":\"submitted\",\"at\":\"2026-04-14T00:00:00.000Z\",\"name\":\"Manuscript Submitted\"}]",
+      "createdAt": "2026-04-18T05:40:48.330Z",
+      "updatedAt": "2026-05-26T05:36:01.721Z"
+    },
+    {
+      "id": "sub_dd08fvm",
+      "userId": "user",
+      "manuscriptId": "cmpdyyzm10001ihm8kl7zlyh6",
+      "journalName": "",
+      "journalAbbrev": "",
+      "publisher": "",
+      "impactFactor": null,
+      "manuscriptNumber": "",
+      "submissionDate": "2026-05-26T12:00:00.000Z",
+      "submissionUrl": "",
+      "decisionDate": null,
+      "firstDecisionDate": null,
+      "acceptedAt": null,
+      "status": "under_review",
+      "notes": "",
+      "revisionDeadline": null,
+      "coverLetter": "",
+      "complianceChecklist": [],
+      "reviewRounds": [],
+      "timelineNodes": [
+        {
+          "completeDate": "",
+          "createdAt": "2026-05-26T05:38:01.938Z",
+          "dueDate": "",
+          "id": "node_sub_dd08fvm_1779773881938_sj5y2",
+          "key": "experiment_done",
+          "name": "Experiments Completed",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "research",
+          "updatedAt": "2026-05-26T05:38:01.938Z"
+        },
+        {
+          "completeDate": "",
+          "createdAt": "2026-05-26T05:38:01.938Z",
+          "dueDate": "",
+          "id": "node_sub_dd08fvm_1779773881938_2c8hp",
+          "key": "draft_done",
+          "name": "Draft Completed",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "writing",
+          "updatedAt": "2026-05-26T05:38:01.938Z"
+        },
+        {
+          "completeDate": "2026-05-26",
+          "createdAt": "2026-05-26T05:38:01.938Z",
+          "dueDate": "",
+          "id": "node_sub_dd08fvm_1779773881938_rtn3f",
+          "key": "submit",
+          "name": "Manuscript Submitted",
+          "notes": "",
+          "planDate": "",
+          "status": "completed",
+          "type": "submission",
+          "updatedAt": "2026-05-26T05:38:01.938Z"
+        },
+        {
+          "completeDate": "",
+          "createdAt": "2026-05-26T05:38:01.938Z",
+          "dueDate": "",
+          "id": "node_sub_dd08fvm_1779773881938_uffkx",
+          "key": "accept",
+          "name": "Accepted",
+          "notes": "",
+          "planDate": "",
+          "status": "pending",
+          "type": "publication",
+          "updatedAt": "2026-05-26T05:38:01.938Z"
+        },
+        {
+          "completeDate": "",
+          "createdAt": "2026-05-26T05:38:01.938Z",
+          "dueDate": "",
+          "id": "node_sub_dd08fvm_1779773881938_pmwxg",
+          "key": "online",
+          "name": "Online Publication",
+          "notes": "",
+          "planDate": "",
+          "status": "pending",
+          "type": "publication",
+          "updatedAt": "2026-05-26T05:38:01.938Z"
+        }
+      ],
+      "statusHistory": "[{\"status\":\"submitted\",\"at\":\"2026-05-26T00:00:00.000Z\",\"name\":\"Manuscript Submitted\"}]",
+      "createdAt": "2026-05-26T05:38:01.938Z",
+      "updatedAt": "2026-05-26T08:50:17.444Z"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "cmp9dj8f20001ihtwow31ugzi",
+      "userId": "user",
+      "projectId": "proj_uncategorized",
+      "title": "Offline The shell is cached, but this page is not available without network yet.",
+      "description": "编辑任务编辑任务",
+      "status": "todo",
+      "priority": "medium",
+      "dueDate": null,
+      "completedAt": null,
+      "createdAt": "2026-05-17T06:08:16.346Z",
+      "updatedAt": "2026-05-17T06:56:49.498Z"
+    }
+  ],
+  "researchAreas": [
+    {
+      "id": "cmp6z6yfm0001iha8cn9w7x1d",
+      "userId": "user",
+      "name": "Ferroelectric",
+      "description": "",
+      "color": "#14b8a6",
+      "createdAt": "2026-05-15T13:51:16.646Z",
+      "updatedAt": "2026-05-15T13:51:16.646Z"
+    },
+    {
+      "id": "cmp6z6yps0003iha8ocdr1vvi",
+      "userId": "user",
+      "name": "Flexoelectric",
+      "description": "",
+      "color": "#14b8a6",
+      "createdAt": "2026-05-15T13:51:17.056Z",
+      "updatedAt": "2026-05-15T13:51:17.056Z"
+    },
+    {
+      "id": "cmp7pjbog0004ih3s8kc7jw1n",
+      "userId": "user",
+      "name": "Computational Chemistry",
+      "description": "Computer simulation of chemical systems",
+      "color": "#10b981",
+      "createdAt": "2026-05-16T02:08:43.744Z",
+      "updatedAt": "2026-05-21T07:08:56.553Z"
+    },
+    {
+      "id": "cmp7wpyfm0002ihgojyc8tzia",
+      "userId": "user",
+      "name": "Condensed Matter Physics",
+      "description": "Study of physical properties of condensed phases of matter",
+      "color": "#3b82f6",
+      "createdAt": "2026-05-16T05:29:50.482Z",
+      "updatedAt": "2026-05-21T07:08:56.552Z"
+    },
+    {
+      "id": "cmp7wpyfo0004ihgogx4fj4up",
+      "userId": "user",
+      "name": "Machine Learning",
+      "description": "AI and machine learning research",
+      "color": "#8b5cf6",
+      "createdAt": "2026-05-16T05:29:50.484Z",
+      "updatedAt": "2026-05-21T07:08:56.553Z"
+    }
+  ],
+  "evidence": [],
+  "hypotheses": [],
+  "experiments": [],
+  "_metadata": {
+    "exportedAt": "2026-05-24T03:44:10.000Z",
+    "importedAt": "2026-05-28T10:57:05.848Z",
+    "originalDeviceId": "device_6ueyva63uyrmpm9om5k",
+    "journalPortals": [
+      {
+        "color": "#002C6C",
+        "id": "acs",
+        "isDefault": true,
+        "name": "ACS",
+        "url": "https://publish.acs.org/app/login?code=1000"
+      },
+      {
+        "color": "#00A4E4",
+        "id": "wiley",
+        "isDefault": true,
+        "name": "Wiley",
+        "url": "https://submission.wiley.com/submission/dashboard"
+      },
+      {
+        "color": "#D22630",
+        "id": "apl",
+        "isDefault": true,
+        "name": "APL",
+        "url": "https://apl.peerx-press.org/cgi-bin/main.plex"
+      },
+      {
+        "color": "#B59E50",
+        "id": "nature",
+        "isDefault": true,
+        "name": "Nature",
+        "url": "https://mts-ncomms.nature.com/cgi-bin/main.plex"
+      }
+    ],
+    "achievements": [
+      {
+        "achievementType": "paper_published",
+        "createdAt": "2026-05-15T13:51:18.038Z",
+        "date": "2026-02-16T00:00:00.000Z",
+        "description": null,
+        "doi": "10.1002/adfm.202528029",
+        "id": "cmp6z6zh1000diha8raltbl12",
+        "impactSummary": null,
+        "journal": "Advanced Functional Materials",
+        "metadata": {},
+        "pages": null,
+        "role": "first_author",
+        "tags": [],
+        "title": "Nonvolatile Electrical Programming of Valley Pseudospins in a Ferroelectric Van Der Waals Heterostructure",
+        "updatedAt": "2026-05-15T13:51:18.038Z",
+        "url": null,
+        "userId": "cmp6o5zjy0000ih3kfhwtxizm",
+        "volume": null
+      },
+      {
+        "achievementType": "paper_published",
+        "createdAt": "2026-05-15T13:51:18.721Z",
+        "date": "2025-07-29T00:00:00.000Z",
+        "description": null,
+        "doi": "10.1002/smll.202503316",
+        "id": "cmp6z7000000jiha8kal9adnr",
+        "impactSummary": null,
+        "journal": "Small",
+        "metadata": {},
+        "pages": null,
+        "role": "first_author",
+        "tags": [],
+        "title": "Unveiling spin‐dependent polarization dynamics of interlayer excitons in TMD‐based heterostructures",
+        "updatedAt": "2026-05-15T13:51:18.721Z",
+        "url": null,
+        "userId": "cmp6o5zjy0000ih3kfhwtxizm",
+        "volume": null
+      },
+      {
+        "achievementType": "paper_published",
+        "createdAt": "2026-05-15T13:51:19.345Z",
+        "date": "2025-09-26T00:00:00.000Z",
+        "description": null,
+        "doi": "10.1021/acsnano.5c11442",
+        "id": "cmp6z70hd000riha8j0hjlqqa",
+        "impactSummary": null,
+        "journal": "ACS Nano",
+        "metadata": {},
+        "pages": null,
+        "role": "first_author",
+        "tags": [],
+        "title": "Ferroelectric control of interlayer excitons enables nonvolatile quantum photonic memory in two-dimensional heterostructures",
+        "updatedAt": "2026-05-15T13:51:19.345Z",
+        "url": null,
+        "userId": "cmp6o5zjy0000ih3kfhwtxizm",
+        "volume": null
+      },
+      {
+        "achievementType": "paper_published",
+        "createdAt": "2026-05-15T13:51:21.712Z",
+        "date": "2025-09-15T00:00:00.000Z",
+        "description": null,
+        "doi": "10.1063/5.0286212",
+        "id": "cmp6z72b30019iha8xzas9ehl",
+        "impactSummary": null,
+        "journal": "Applied Physics Letters",
+        "metadata": {},
+        "pages": null,
+        "role": "first_author",
+        "tags": [],
+        "title": "Efficient gate-tunable exciton–trion conversion in atomically thin WSe2 at sub-volt thresholds",
+        "updatedAt": "2026-05-15T13:51:21.712Z",
+        "url": null,
+        "userId": "cmp6o5zjy0000ih3kfhwtxizm",
+        "volume": null
+      }
+    ]
+  }
+}
