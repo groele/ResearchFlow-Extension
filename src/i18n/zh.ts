@@ -54,6 +54,9 @@ export const zh: Record<TranslationKey, string> = {
   'sidebar.group.produce': '写作投稿',
   'sidebar.group.settings': '设置',
   'sidebar.switchLang': '切换语言',
+  'sidebar.collapse': '收起侧边栏',
+  'sidebar.expand': '展开侧边栏',
+  'sidebar.shortcuts': '键盘快捷键',
 
   // 仪表盘
   'dashboard.title': '仪表盘',

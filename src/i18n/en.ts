@@ -52,6 +52,9 @@ export const en = {
   'sidebar.group.produce': 'Produce',
   'sidebar.group.settings': 'Settings',
   'sidebar.switchLang': 'Switch language',
+  'sidebar.collapse': 'Collapse sidebar',
+  'sidebar.expand': 'Expand sidebar',
+  'sidebar.shortcuts': 'Keyboard shortcuts',
 
   // Dashboard
   'dashboard.title': 'Dashboard',
