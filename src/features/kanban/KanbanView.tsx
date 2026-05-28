@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
 import { useManuscripts, type KanbanStatus } from './useManuscripts';
-import { useLang } from '../../i18n';
-import { cn } from '../../ui/cn';
-import { PageHeader } from '../../ui/components/layout/PageHeader';
-import { Card } from '../../ui/components/primitives/Card';
-import { Button } from '../../ui/components/primitives/Button';
-import { Badge } from '../../ui/components/primitives/Badge';
-import { Modal, ModalFooter } from '../../ui/components/primitives/Modal';
-import { Input } from '../../ui/components/primitives/Input';
-import { Textarea } from '../../ui/components/primitives/Textarea';
-import { Select } from '../../ui/components/primitives/Select';
-import { EmptyState } from '../../ui/components/primitives/EmptyState';
-import { IconButton } from '../../ui/components/primitives/IconButton';
-import { ConfirmDialog } from '../../ui/components/primitives/ConfirmDialog';
+import { useLang } from '@/i18n';
+import { cn } from '@/ui/cn';
+import { PageHeader } from '@components/layout/PageHeader';
+import { Card } from '@components/primitives/Card';
+import { Button } from '@components/primitives/Button';
+import { Badge } from '@components/primitives/Badge';
+import { Modal, ModalFooter } from '@components/primitives/Modal';
+import { Input } from '@components/primitives/Input';
+import { Textarea } from '@components/primitives/Textarea';
+import { Select } from '@components/primitives/Select';
+import { EmptyState } from '@components/primitives/EmptyState';
+import { IconButton } from '@components/primitives/IconButton';
+import { ConfirmDialog } from '@components/primitives/ConfirmDialog';
 import { Columns3, Plus, Trash2, Edit2, GripVertical } from 'lucide-react';
 
 export function KanbanView() {

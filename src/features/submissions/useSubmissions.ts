@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../../storage/dexie';
-import { generateId } from '../../storage/id';
+import { db } from '@storage/dexie';
+import { generateId } from '@storage/id';
 
 export function useSubmissions() {
   const submissions = useLiveQuery(() => db.submissions.toArray()) ?? [];

@@ -1,6 +1,20 @@
+export interface WebDAVConfig {
+  url: string;
+  username: string;
+  password: string;
+}
+
+export interface GitHubConfig {
+  token: string;
+  repo: string;
+  branch?: string;
+}
+
+export type CloudConfig = WebDAVConfig | GitHubConfig | Record<string, never>;
+
 export interface SyncProviderConfig {
   provider: 'local' | 'webdav' | 'github';
-  config: Record<string, any>;
+  config: CloudConfig;
 }
 
 export interface AISettings {

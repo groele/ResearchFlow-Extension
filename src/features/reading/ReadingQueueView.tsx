@@ -1,12 +1,12 @@
 import React from 'react';
 import { useReadingQueue, type ReadingStatus, type ReadingFilter } from './useReadingQueue';
-import { useLang } from '../../i18n';
-import { PageHeader } from '../../ui/components/layout/PageHeader';
-import { Card } from '../../ui/components/primitives/Card';
-import { Badge } from '../../ui/components/primitives/Badge';
-import { Input } from '../../ui/components/primitives/Input';
-import { Select } from '../../ui/components/primitives/Select';
-import { EmptyState } from '../../ui/components/primitives/EmptyState';
+import { useLang } from '@/i18n';
+import { PageHeader } from '@components/layout/PageHeader';
+import { Card } from '@components/primitives/Card';
+import { Badge } from '@components/primitives/Badge';
+import { Input } from '@components/primitives/Input';
+import { Select } from '@components/primitives/Select';
+import { EmptyState } from '@components/primitives/EmptyState';
 import { BookOpen, Search, Star, Clock, CheckCircle2, RotateCcw, Eye } from 'lucide-react';
 
 export function ReadingQueueView() {

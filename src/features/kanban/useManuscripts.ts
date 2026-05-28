@@ -1,14 +1,14 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, type Manuscript, type Submission } from '../../storage/dexie';
-import { generateId } from '../../storage/id';
+import { db, type Manuscript, type Submission } from '@storage/dexie';
+import { generateId } from '@storage/id';
 
 export type KanbanStatus = 'preparing' | 'submitted' | 'under_review' | 'accepted';
 
 export function useManuscripts() {
   const manuscripts = useLiveQuery(() => db.manuscripts.toArray()) ?? [];
   const submissions = useLiveQuery(() => db.submissions.toArray()) ?? [];
-  const projects = useLiveQuery(() => db.projects.toArray()) ?? [];
+  const projects = useLiveQuery(() => db.projects.where('userId').equals('user').toArray()) ?? [];
 
   const [isManuscriptModalOpen, setIsManuscriptModalOpen] = useState(false);
   const [editingManuscriptId, setEditingManuscriptId] = useState<string | null>(null);
@@ -23,6 +23,15 @@ export function useManuscripts() {
 
   // Group manuscripts by kanban status
   const kanbanColumns = useMemo(() => {
+    // Build a map of latest submission per manuscript
+    const latestSubByMs = new Map<string, Submission>();
+    for (const sub of submissions) {
+      const existing = latestSubByMs.get(sub.manuscriptId);
+      if (!existing || new Date(sub.updatedAt).getTime() > new Date(existing.updatedAt).getTime()) {
+        latestSubByMs.set(sub.manuscriptId, sub);
+      }
+    }
+
     const columns: Record<KanbanStatus, typeof manuscripts> = {
       preparing: [],
       submitted: [],
@@ -31,11 +40,7 @@ export function useManuscripts() {
     };
 
     for (const ms of manuscripts) {
-      const msSubs = submissions.filter(s => s.manuscriptId === ms.id);
-      const latestSub = msSubs.sort((a, b) =>
-        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-      )[0];
-
+      const latestSub = latestSubByMs.get(ms.id);
       const status = (latestSub?.status || ms.status) as string;
       if (status === 'accepted' || status === 'published') {
         columns.accepted.push(ms);

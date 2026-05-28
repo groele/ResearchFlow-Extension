@@ -1,13 +1,13 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../../storage/dexie';
-import { generateId } from '../../storage/id';
+import { db, type ResearchRecord } from '@storage/dexie';
+import { generateId } from '@storage/id';
 
 export type ReadingStatus = 'unread' | 'reading' | 'read' | 'to-reread';
 
 export function useRecords() {
-  const records = useLiveQuery(() => db.researchRecords.toArray()) ?? [];
-  const projects = useLiveQuery(() => db.projects.toArray()) ?? [];
+  const records = useLiveQuery(() => db.researchRecords.where('userId').equals('user').toArray()) ?? [];
+  const projects = useLiveQuery(() => db.projects.where('userId').equals('user').toArray()) ?? [];
 
   const [recordSearch, setRecordSearch] = useState('');
   const [projectFilter, setProjectFilter] = useState('');
@@ -57,7 +57,7 @@ export function useRecords() {
     setRecordForm({ title: '', recordType: 'literature_review', methodology: '', projectId: '', summary: '', doi: '', tags: '' });
   }, []);
 
-  const openEditRecord = useCallback((rec: any) => {
+  const openEditRecord = useCallback((rec: ResearchRecord) => {
     setEditingRecordId(rec.id);
     setRecordForm({
       title: rec.title,
@@ -97,7 +97,7 @@ export function useRecords() {
       });
       resetForm();
       setIsRecordModalOpen(false);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('Failed to save record:', e);
     }
   }, [editingRecordId, recordForm, resetForm]);
@@ -105,7 +105,7 @@ export function useRecords() {
   const handleDeleteRecord = useCallback(async (id: string) => {
     try {
       await db.researchRecords.delete(id);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('Failed to delete record:', e);
     }
   }, []);
@@ -116,7 +116,7 @@ export function useRecords() {
       if (rec) {
         await db.researchRecords.update(id, { starred: !rec.starred, updatedAt: new Date().toISOString() });
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('Failed to toggle star:', e);
     }
   }, []);
@@ -124,7 +124,7 @@ export function useRecords() {
   const handleReadingStatusChange = useCallback(async (id: string, status: ReadingStatus) => {
     try {
       await db.researchRecords.update(id, { readingStatus: status, updatedAt: new Date().toISOString() });
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('Failed to update reading status:', e);
     }
   }, []);

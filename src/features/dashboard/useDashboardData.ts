@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, type Submission, type Project, type ResearchRecord, type Manuscript, type Task } from '../../storage/dexie';
+import { db, type Submission, type Project, type ResearchRecord, type Manuscript, type Task } from '@storage/dexie';
 
 // --- Utility Functions ---
 const todayString = () => new Date().toISOString().slice(0, 10);
 
-const normalizeDateString = (str: any): string => {
+const normalizeDateString = (str: string | null | undefined): string => {
   if (!str) return '';
   const d = new Date(str);
   return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
@@ -26,7 +26,7 @@ export interface Milestone {
   color: string;
   emphasis: boolean;
   today?: boolean;
-  node?: any;
+  node?: TimelineNode;
 }
 
 export interface DisplayMeta {
@@ -55,7 +55,17 @@ export interface SubmissionAnalysis {
   onlineDate: string | null;
 }
 
-const inferNodeKey = (node: any): string => {
+interface TimelineNode {
+  name: string;
+  type?: string;
+  status?: string;
+  date?: string;
+  planDate?: string;
+  dueDate?: string;
+  completeDate?: string;
+}
+
+const inferNodeKey = (node: TimelineNode): string => {
   const name = (node.name || '').toLowerCase();
   if (name.includes('experiment') || name.includes('实验')) return 'experiment_done';
   if (name.includes('draft') || name.includes('初稿')) return 'draft_done';
@@ -166,20 +176,26 @@ export const analyzeSubmission = (sub: Submission): SubmissionAnalysis => {
 
 // --- Hook ---
 export function useDashboardData() {
-  const projects = useLiveQuery(() => db.projects.toArray()) ?? [];
-  const records = useLiveQuery(() => db.researchRecords.toArray()) ?? [];
+  const projects = useLiveQuery(() => db.projects.where('userId').equals('user').toArray()) ?? [];
+  const records = useLiveQuery(() => db.researchRecords.where('userId').equals('user').toArray()) ?? [];
   const manuscripts = useLiveQuery(() => db.manuscripts.toArray()) ?? [];
   const submissions = useLiveQuery(() => db.submissions.toArray()) ?? [];
-  const tasks = useLiveQuery(() => db.tasks.toArray()) ?? [];
+  const tasks = useLiveQuery(() => db.tasks.where('userId').equals('user').toArray()) ?? [];
 
   // Compute analyses for all submissions
+  const manuscriptMap = useMemo(() => {
+    const map = new Map<string, Manuscript>();
+    for (const m of manuscripts) map.set(m.id, m);
+    return map;
+  }, [manuscripts]);
+
   const analyses = useMemo(() => {
     return submissions.map(sub => ({
       submission: sub,
-      manuscript: manuscripts.find(m => m.id === sub.manuscriptId),
+      manuscript: manuscriptMap.get(sub.manuscriptId),
       analysis: analyzeSubmission(sub),
     }));
-  }, [submissions, manuscripts]);
+  }, [submissions, manuscriptMap]);
 
   // Timeline alerts (pending submissions with milestones due soon)
   const timelineAlerts = useMemo(() => {
@@ -254,9 +270,13 @@ export function useDashboardData() {
 
   // Project progress (records per project)
   const projectProgress = useMemo(() => {
+    const recordCountByProject = new Map<string, number>();
+    for (const r of records) {
+      recordCountByProject.set(r.projectId, (recordCountByProject.get(r.projectId) || 0) + 1);
+    }
     return projects.slice(0, 6).map(p => ({
       label: p.title.slice(0, 15) + (p.title.length > 15 ? '...' : ''),
-      value: records.filter(r => r.projectId === p.id).length,
+      value: recordCountByProject.get(p.id) || 0,
     }));
   }, [projects, records]);
 
@@ -277,6 +297,64 @@ export function useDashboardData() {
     };
   }, [records]);
 
+  // Weekly activity
+  const weeklyActivity = useMemo(() => {
+    const now = new Date();
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const weekAgoStr = weekAgo.toISOString();
+
+    return {
+      records: records.filter(r => r.createdAt >= weekAgoStr).length,
+      tasksCompleted: tasks.filter(t => t.status === 'completed' && t.updatedAt >= weekAgoStr).length,
+      papersRead: records.filter(r =>
+        (r.recordType === 'literature_review' || r.tags.includes('literature')) &&
+        r.readingStatus === 'read' &&
+        r.updatedAt >= weekAgoStr
+      ).length,
+    };
+  }, [records, tasks]);
+
+  // Monthly activity
+  const monthlyActivity = useMemo(() => {
+    const now = new Date();
+    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const monthAgoStr = monthAgo.toISOString();
+
+    return {
+      records: records.filter(r => r.createdAt >= monthAgoStr).length,
+      tasksCompleted: tasks.filter(t => t.status === 'completed' && t.updatedAt >= monthAgoStr).length,
+      papersRead: records.filter(r =>
+        (r.recordType === 'literature_review' || r.tags.includes('literature')) &&
+        r.readingStatus === 'read' &&
+        r.updatedAt >= monthAgoStr
+      ).length,
+    };
+  }, [records, tasks]);
+
+  // Urgent tasks (due within 3 days or overdue)
+  const urgentTasks = useMemo(() => {
+    const today = new Date();
+    const threeDaysLater = new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000);
+    const todayStr = todayString();
+    const threeDaysStr = threeDaysLater.toISOString().slice(0, 10);
+
+    return tasks
+      .filter(t =>
+        t.status === 'todo' &&
+        t.dueDate &&
+        t.dueDate <= threeDaysStr
+      )
+      .sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''));
+  }, [tasks]);
+
+  // Recent reading (last 5 literature records)
+  const recentReading = useMemo(() => {
+    return records
+      .filter(r => r.recordType === 'literature_review' || r.tags.includes('literature'))
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+      .slice(0, 5);
+  }, [records]);
+
   return {
     projects,
     records,
@@ -293,5 +371,9 @@ export function useDashboardData() {
     projectProgress,
     overdueTasks,
     readingStats,
+    weeklyActivity,
+    monthlyActivity,
+    urgentTasks,
+    recentReading,
   };
 }

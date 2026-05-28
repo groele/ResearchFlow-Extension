@@ -1,5 +1,5 @@
-import React from 'react';
-import { cn } from '../../cn';
+import React, { useState } from 'react';
+import { cn } from '@/ui/cn';
 
 interface DonutDatum {
   label: string;
@@ -14,6 +14,7 @@ interface ChartDonutProps {
   className?: string;
   centerLabel?: string;
   centerValue?: string;
+  onSegmentClick?: (datum: DonutDatum, index: number) => void;
 }
 
 export function ChartDonut({
@@ -23,7 +24,10 @@ export function ChartDonut({
   className,
   centerLabel,
   centerValue,
+  onSegmentClick,
 }: ChartDonutProps) {
+  const [hovered, setHovered] = useState<number | null>(null);
+
   const total = data.reduce((s, d) => s + d.value, 0);
   if (total === 0) return null;
 
@@ -41,6 +45,9 @@ export function ChartDonut({
     return { ...d, dashLength, dashOffset, fraction };
   });
 
+  const hoveredItem = hovered !== null ? data[hovered] : null;
+  const hoveredPercent = hovered !== null ? Math.round(segments[hovered].fraction * 100) : null;
+
   return (
     <div className={cn('inline-flex items-center gap-4', className)}>
       <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
@@ -53,23 +60,50 @@ export function ChartDonut({
             r={radius}
             fill="none"
             stroke={seg.color}
-            strokeWidth={thickness}
+            strokeWidth={hovered === i ? thickness + 3 : thickness}
             strokeDasharray={`${seg.dashLength} ${circumference - seg.dashLength}`}
             strokeDashoffset={seg.dashOffset}
-            className="transition-all duration-700"
+            className={cn(
+              'transition-all duration-300',
+              onSegmentClick && 'cursor-pointer'
+            )}
+            style={{ opacity: hovered !== null && hovered !== i ? 0.5 : 1 }}
+            onMouseEnter={() => setHovered(i)}
+            onMouseLeave={() => setHovered(null)}
+            onClick={() => onSegmentClick?.(seg, i)}
           />
         ))}
       </svg>
       {(centerLabel || centerValue) && (
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          {centerValue && <span className="text-lg font-bold text-slate-100 font-display">{centerValue}</span>}
-          {centerLabel && <span className="text-3xs text-slate-500">{centerLabel}</span>}
+          {hoveredItem ? (
+            <>
+              <span className="text-lg font-bold font-display" style={{ color: hoveredItem.color }}>{hoveredItem.value}</span>
+              <span className="text-3xs text-slate-400">{hoveredItem.label}</span>
+              <span className="text-3xs text-slate-500">{hoveredPercent}%</span>
+            </>
+          ) : (
+            <>
+              {centerValue && <span className="text-lg font-bold text-slate-100 font-display">{centerValue}</span>}
+              {centerLabel && <span className="text-3xs text-slate-500">{centerLabel}</span>}
+            </>
+          )}
         </div>
       )}
       </div>
       <div className="space-y-1.5">
         {data.map((d, i) => (
-          <div key={i} className="flex items-center gap-2">
+          <div
+            key={i}
+            className={cn(
+              'flex items-center gap-2 transition-opacity',
+              hovered !== null && hovered !== i && 'opacity-50',
+              onSegmentClick && 'cursor-pointer'
+            )}
+            onMouseEnter={() => setHovered(i)}
+            onMouseLeave={() => setHovered(null)}
+            onClick={() => onSegmentClick?.(d, i)}
+          >
             <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: d.color }} />
             <span className="text-3xs text-slate-400">{d.label}</span>
             <span className="text-3xs text-slate-500 ml-auto font-medium">{d.value}</span>

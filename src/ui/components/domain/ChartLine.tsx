@@ -1,5 +1,5 @@
-import React from 'react';
-import { cn } from '../../cn';
+import React, { useState } from 'react';
+import { cn } from '@/ui/cn';
 
 interface LineDatum {
   label: string;
@@ -13,6 +13,7 @@ interface ChartLineProps {
   color?: string;
   showDots?: boolean;
   showValues?: boolean;
+  onPointClick?: (datum: LineDatum, index: number) => void;
 }
 
 export function ChartLine({
@@ -22,7 +23,10 @@ export function ChartLine({
   color = '#14b8a6',
   showDots = true,
   showValues = false,
+  onPointClick,
 }: ChartLineProps) {
+  const [hovered, setHovered] = useState<number | null>(null);
+
   if (data.length < 2) return null;
 
   const padding = { top: 16, right: 8, bottom: 24, left: 8 };
@@ -73,9 +77,69 @@ export function ChartLine({
         {/* Line */}
         <path d={pathD} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
 
+        {/* Hover crosshair */}
+        {hovered !== null && (
+          <line
+            x1={points[hovered].x}
+            y1={padding.top}
+            x2={points[hovered].x}
+            y2={padding.top + plotHeight}
+            stroke="rgba(148,163,184,0.2)"
+            strokeWidth="1"
+            strokeDasharray="4 3"
+          />
+        )}
+
         {/* Dots */}
         {showDots && points.map((p, i) => (
-          <circle key={i} cx={p.x} cy={p.y} r="3" fill={color} stroke="rgba(15,23,42,0.8)" strokeWidth="1.5" />
+          <g key={i}>
+            {/* Invisible larger hit target */}
+            <circle
+              cx={p.x}
+              cy={p.y}
+              r="12"
+              fill="transparent"
+              className={cn(onPointClick && 'cursor-pointer')}
+              onMouseEnter={() => setHovered(i)}
+              onMouseLeave={() => setHovered(null)}
+              onClick={() => onPointClick?.(data[i], i)}
+            />
+            {/* Visible dot */}
+            <circle
+              cx={p.x}
+              cy={p.y}
+              r={hovered === i ? 5 : 3}
+              fill={color}
+              stroke="rgba(15,23,42,0.8)"
+              strokeWidth="1.5"
+              className="transition-all duration-200 pointer-events-none"
+            />
+            {/* Tooltip */}
+            {hovered === i && (
+              <g className="pointer-events-none">
+                <rect
+                  x={p.x - 28}
+                  y={p.y - 30}
+                  width="56"
+                  height="20"
+                  rx="4"
+                  fill="rgba(30,41,59,0.95)"
+                  stroke="rgba(71,85,105,0.5)"
+                  strokeWidth="0.5"
+                />
+                <text
+                  x={p.x}
+                  y={p.y - 17}
+                  textAnchor="middle"
+                  fill="rgba(226,232,240,1)"
+                  fontSize="10"
+                  fontWeight="600"
+                >
+                  {p.label}: {p.value}
+                </text>
+              </g>
+            )}
+          </g>
         ))}
 
         {/* Values */}

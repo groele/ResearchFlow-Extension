@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { useWriting } from './useWriting';
-import { useLang } from '../../i18n';
-import { PageHeader } from '../../ui/components/layout/PageHeader';
-import { Card } from '../../ui/components/primitives/Card';
-import { Button } from '../../ui/components/primitives/Button';
-import { Badge } from '../../ui/components/primitives/Badge';
-import { Select } from '../../ui/components/primitives/Select';
-import { EmptyState } from '../../ui/components/primitives/EmptyState';
-import { ProgressBar } from '../../ui/components/primitives/ProgressBar';
-import { ConfirmDialog } from '../../ui/components/primitives/ConfirmDialog';
+import { useLang } from '@/i18n';
+import { PageHeader } from '@components/layout/PageHeader';
+import { Card } from '@components/primitives/Card';
+import { Button } from '@components/primitives/Button';
+import { Badge } from '@components/primitives/Badge';
+import { Select } from '@components/primitives/Select';
+import { EmptyState } from '@components/primitives/EmptyState';
+import { ProgressBar } from '@components/primitives/ProgressBar';
+import { ConfirmDialog } from '@components/primitives/ConfirmDialog';
 import { PenLine, Plus, Trash2, ChevronUp, ChevronDown, FileText, LayoutTemplate } from 'lucide-react';
 
 export function WritingView() {

@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import { useSubmissions } from './useSubmissions';
-import { useLang } from '../../i18n';
-import { PageHeader } from '../../ui/components/layout/PageHeader';
-import { Card } from '../../ui/components/primitives/Card';
-import { Button } from '../../ui/components/primitives/Button';
-import { Badge } from '../../ui/components/primitives/Badge';
-import { Modal, ModalFooter } from '../../ui/components/primitives/Modal';
-import { Input } from '../../ui/components/primitives/Input';
-import { Textarea } from '../../ui/components/primitives/Textarea';
-import { Select } from '../../ui/components/primitives/Select';
-import { EmptyState } from '../../ui/components/primitives/EmptyState';
-import { IconButton } from '../../ui/components/primitives/IconButton';
-import { ConfirmDialog } from '../../ui/components/primitives/ConfirmDialog';
+import { useLang } from '@/i18n';
+import { PageHeader } from '@components/layout/PageHeader';
+import { Card } from '@components/primitives/Card';
+import { Button } from '@components/primitives/Button';
+import { Badge } from '@components/primitives/Badge';
+import { Modal, ModalFooter } from '@components/primitives/Modal';
+import { Input } from '@components/primitives/Input';
+import { Textarea } from '@components/primitives/Textarea';
+import { Select } from '@components/primitives/Select';
+import { EmptyState } from '@components/primitives/EmptyState';
+import { IconButton } from '@components/primitives/IconButton';
+import { ConfirmDialog } from '@components/primitives/ConfirmDialog';
 import { Send, Plus, Trash2, Edit2, Search, Clock, CheckCircle2, FileCheck } from 'lucide-react';
 
 export function SubmissionsView() {
@@ -118,8 +118,8 @@ export function SubmissionsView() {
                   </div>
 
                   <div className="flex items-center gap-1">
-                    <IconButton variant="ghost" size="sm" icon={<Edit2 size={13} />} aria-label="Edit" onClick={() => openEdit(sub)} />
-                    <IconButton variant="danger" size="sm" icon={<Trash2 size={13} />} aria-label="Delete" onClick={() => setDeleteSubId(sub.id)} />
+                    <IconButton variant="ghost" size="sm" icon={<Edit2 size={13} />} aria-label={t('a11y.edit')} onClick={() => openEdit(sub)} />
+                    <IconButton variant="danger" size="sm" icon={<Trash2 size={13} />} aria-label={t('a11y.delete')} onClick={() => setDeleteSubId(sub.id)} />
                   </div>
                 </div>
               </Card>

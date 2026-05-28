@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { db } from '../../storage/dexie';
-import { syncEngine } from '../../storage/sync';
-import { loadSettings, saveSettings, DEFAULT_SETTINGS, type ExtensionSettings, type AISettings } from '../../storage/settings';
+import { db } from '@storage/dexie';
+import { syncEngine } from '@storage/sync';
+import { loadSettings, saveSettings, DEFAULT_SETTINGS, type ExtensionSettings, type AISettings, type WebDAVConfig, type GitHubConfig } from '@storage/settings';
 
 export function useSettings() {
   const [settings, setSettings] = useState<ExtensionSettings>(DEFAULT_SETTINGS);
@@ -9,7 +9,7 @@ export function useSettings() {
   const [syncStatus, setSyncStatus] = useState<string | null>(null);
 
   const [webdavConfig, setWebdavConfig] = useState({ url: '', username: '', password: '' });
-  const [githubConfig, setGithubConfig] = useState({ token: '', repo: '', branch: 'main' });
+  const [githubConfig, setGithubConfig] = useState<GitHubConfig>({ token: '', repo: '', branch: 'main' });
   const [aiConfig, setAiConfig] = useState<AISettings>({ provider: 'openai', apiKey: '', endpoint: 'https://api.openai.com/v1', model: 'gpt-4o' });
   const [profileForm, setProfileForm] = useState({ displayName: '', affiliate: '', language: 'en' as 'en' | 'zh', motto: '' });
 
@@ -19,12 +19,12 @@ export function useSettings() {
         const data = await loadSettings();
         setSettings(data);
         if (data.syncProviders?.metadata?.provider === 'webdav') {
-          setWebdavConfig(data.syncProviders.metadata.config as any);
+          setWebdavConfig(data.syncProviders.metadata.config as WebDAVConfig);
         }
         if (data.syncProviders?.metadata?.provider === 'github') {
-          setGithubConfig(data.syncProviders.metadata.config as any);
+          setGithubConfig(data.syncProviders.metadata.config as GitHubConfig);
         }
-        if (data.ai) setAiConfig(data.ai as any);
+        if (data.ai) setAiConfig(data.ai);
         if (data.profile) {
           setProfileForm({
             displayName: data.profile.displayName || '',
@@ -33,7 +33,7 @@ export function useSettings() {
             motto: data.profile.motto || '',
           });
         }
-      } catch (e: any) {
+      } catch (e: unknown) {
         console.error('Failed to load settings:', e);
       }
     }
@@ -63,7 +63,7 @@ export function useSettings() {
       await saveSettings(newSettings);
       setSettings({ ...settings, ...newSettings });
       return true;
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('Failed to save settings:', e);
       return false;
     }
@@ -73,7 +73,7 @@ export function useSettings() {
     try {
       const config = provider === 'webdav' ? webdavConfig : githubConfig;
       return await syncEngine.testConnection(provider, config);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('Connection test failed:', e);
       return false;
     }
@@ -85,8 +85,8 @@ export function useSettings() {
     try {
       const res = await syncEngine.syncDatabaseNow();
       setSyncStatus(res.success ? 'Sync completed' : `Sync failed: ${res.error}`);
-    } catch (e: any) {
-      setSyncStatus(`Sync error: ${e.message}`);
+    } catch (e: unknown) {
+      setSyncStatus(`Sync error: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setIsSyncing(false);
     }
@@ -112,7 +112,7 @@ export function useSettings() {
       a.download = `scholarflow_backup_${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('Failed to export data:', e);
     }
   }, []);
@@ -130,9 +130,9 @@ export function useSettings() {
       if (data.evidence) await db.evidence.bulkPut(data.evidence);
       if (data.hypotheses) await db.hypotheses.bulkPut(data.hypotheses);
       if (data.experiments) await db.experiments.bulkPut(data.experiments);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('Failed to import data:', e);
-      throw new Error('Invalid JSON file: ' + e.message);
+      throw new Error('Invalid JSON file: ' + (e instanceof Error ? e.message : String(e)));
     }
   }, []);
 

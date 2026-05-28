@@ -1,13 +1,13 @@
 import React, { useState, useRef } from 'react';
 import { useCitations } from './useCitations';
-import { useLang } from '../../i18n';
-import { PageHeader } from '../../ui/components/layout/PageHeader';
-import { Card } from '../../ui/components/primitives/Card';
-import { Badge } from '../../ui/components/primitives/Badge';
-import { Button } from '../../ui/components/primitives/Button';
-import { Input } from '../../ui/components/primitives/Input';
-import { Select } from '../../ui/components/primitives/Select';
-import { EmptyState } from '../../ui/components/primitives/EmptyState';
+import { useLang } from '@/i18n';
+import { PageHeader } from '@components/layout/PageHeader';
+import { Card } from '@components/primitives/Card';
+import { Badge } from '@components/primitives/Badge';
+import { Button } from '@components/primitives/Button';
+import { Input } from '@components/primitives/Input';
+import { Select } from '@components/primitives/Select';
+import { EmptyState } from '@components/primitives/EmptyState';
 import { BookMarked, Search, Download, Upload, Copy, Check, FileText, Filter } from 'lucide-react';
 
 export function CitationsView() {

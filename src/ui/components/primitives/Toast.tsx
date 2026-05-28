@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { cn } from '../../cn';
+import { cn } from '@/ui/cn';
 import { Check, AlertCircle, AlertTriangle, Info, X } from 'lucide-react';
 
 // --- Types ---

@@ -129,7 +129,7 @@ export interface Hypothesis {
   projectId: string;
   statement: string;
   status: string; // 'proposed', 'testing', 'confirmed', 'refuted'
-  evidence: string[];
+  evidenceIds: string[];
   notes: string;
   createdAt: string;
   updatedAt: string;
@@ -144,6 +144,32 @@ export interface Experiment {
   variables: string;
   status: string; // 'planned', 'running', 'completed', 'failed'
   results: string;
+  resultSummary: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ExperimentResult {
+  id: string;
+  experimentId: string;
+  projectId: string;
+  title: string;
+  summary: string;
+  conclusionType: string; // 'supporting', 'contradicting', 'inconclusive'
+  evidenceIds: string[];
+  rawData: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface JournalEntry {
+  id: string;
+  userId: string;
+  projectId: string | null;
+  date: string;
+  content: string;
+  mood: string; // 'productive', 'stuck', 'breakthrough', 'neutral'
+  tags: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -160,6 +186,8 @@ class ScholarFlowDatabase extends Dexie {
   schemaTemplates!: Table<SchemaTemplate>;
   hypotheses!: Table<Hypothesis>;
   experiments!: Table<Experiment>;
+  experimentResults!: Table<ExperimentResult>;
+  journalEntries!: Table<JournalEntry>;
 
   constructor() {
     super('ResearchFlowDatabase');
@@ -185,6 +213,21 @@ class ScholarFlowDatabase extends Dexie {
       schemaTemplates: 'id, name',
       hypotheses: 'id, projectId, status',
       experiments: 'id, projectId, hypothesisId, status',
+    });
+    // Version 3: add experimentResults, journalEntries tables
+    this.version(3).stores({
+      projects: 'id, userId, title, status, areaId',
+      researchRecords: 'id, userId, projectId, recordType, recordedDate, readingStatus, starred',
+      manuscripts: 'id, projectId, status, journal',
+      submissions: 'id, manuscriptId, status, journal',
+      tasks: 'id, userId, projectId, status, priority, dueDate',
+      researchAreas: 'id, userId, name',
+      evidence: 'id, userId, projectId, evidenceType',
+      schemaTemplates: 'id, name',
+      hypotheses: 'id, projectId, status',
+      experiments: 'id, projectId, hypothesisId, status',
+      experimentResults: 'id, experimentId, projectId, conclusionType',
+      journalEntries: 'id, userId, projectId, date, mood',
     });
   }
 }
@@ -226,7 +269,6 @@ export async function migrateOldStorage() {
       await chrome.storage.local.set({ settings: legacyDb.settings });
     }
     await chrome.storage.local.set({ migrated_to_dexie: true });
-    console.log('Successfully migrated legacy chrome.storage JSON to relational Dexie tables!');
     return { success: true };
   } catch (err: any) {
     console.error('Migration failed:', err);
@@ -246,6 +288,8 @@ async function importLegacyDataToDexie(data: any) {
     db.schemaTemplates,
     db.hypotheses,
     db.experiments,
+    db.experimentResults,
+    db.journalEntries,
   ], async () => {
     if (Array.isArray(data.projects) && data.projects.length > 0) {
       await db.projects.bulkPut(data.projects);
@@ -276,6 +320,12 @@ async function importLegacyDataToDexie(data: any) {
     }
     if (Array.isArray(data.experiments) && data.experiments.length > 0) {
       await db.experiments.bulkPut(data.experiments);
+    }
+    if (Array.isArray(data.experimentResults) && data.experimentResults.length > 0) {
+      await db.experimentResults.bulkPut(data.experimentResults);
+    }
+    if (Array.isArray(data.journalEntries) && data.journalEntries.length > 0) {
+      await db.journalEntries.bulkPut(data.journalEntries);
     }
   });
 }

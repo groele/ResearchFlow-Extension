@@ -1,6 +1,6 @@
 import React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '../../cn';
+import { cn } from '@/ui/cn';
 
 const progressBarTrackVariants = cva('w-full rounded-full overflow-hidden', {
   variants: {

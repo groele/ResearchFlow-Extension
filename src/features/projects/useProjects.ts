@@ -1,11 +1,11 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../../storage/dexie';
-import { generateId } from '../../storage/id';
+import { db } from '@storage/dexie';
+import { generateId } from '@storage/id';
 
 export function useProjects() {
-  const projects = useLiveQuery(() => db.projects.toArray()) ?? [];
-  const researchAreas = useLiveQuery(() => db.researchAreas.toArray()) ?? [];
+  const projects = useLiveQuery(() => db.projects.where('userId').equals('user').toArray()) ?? [];
+  const researchAreas = useLiveQuery(() => db.researchAreas.where('userId').equals('user').toArray()) ?? [];
 
   // Area modal state
   const [isAreaModalOpen, setIsAreaModalOpen] = useState(false);
@@ -68,9 +68,10 @@ export function useProjects() {
     }
   }, [newAreaName, newAreaDesc, newAreaColor, resetAreaForm]);
 
-  const filteredProjects = areaFilter
-    ? projects.filter(p => p.areaId === areaFilter)
-    : projects;
+  const filteredProjects = useMemo(() =>
+    areaFilter ? projects.filter(p => p.areaId === areaFilter) : projects,
+    [projects, areaFilter]
+  );
 
   const handleSaveProject = useCallback(async () => {
     if (!newProjTitle.trim()) return;
@@ -125,9 +126,8 @@ export function useProjects() {
   const handleDeleteArea = useCallback(async (id: string) => {
     try {
       // Unlink projects from this area before deleting
-      const linkedProjects = await db.researchAreas.get(id);
-      const allProjects = await db.projects.toArray();
-      for (const p of allProjects.filter(p => p.areaId === id)) {
+      const linkedProjects = await db.projects.where('areaId').equals(id).toArray();
+      for (const p of linkedProjects) {
         await db.projects.update(p.id, { areaId: null });
       }
       await db.researchAreas.delete(id);

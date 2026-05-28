@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { cn } from '../../cn';
+import { cn } from '@/ui/cn';
 
 export interface TooltipProps {
   content: React.ReactNode;
