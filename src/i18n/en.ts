@@ -319,6 +319,24 @@ export const en = {
   'planning.deleteHypothesisDesc': 'This will permanently delete the hypothesis and unlink related experiments.',
   'planning.deleteExperimentDesc': 'This will permanently delete this experiment.',
   'planning.variablesLabel': 'Variables:',
+  'planning.linkedExperiments': 'Experiments',
+  'planning.linkedEvidence': 'Evidence',
+  'planning.createExperimentFromHyp': 'Create Experiment',
+  'planning.createEvidenceFromExp': 'Create Evidence',
+  'planning.noLinkedExperiments': 'No experiments yet',
+  'planning.noLinkedEvidence': 'No evidence yet',
+  'planning.experimentCount': 'experiment(s)',
+  'planning.evidenceCount': 'evidence',
+  'planning.evidenceLinkedToHyp': 'Linked via hypothesis',
+  'planning.evidenceLinkedToExp': 'Linked via experiment',
+
+  // Evidence (enhanced)
+  'evidence.linkedHypotheses': 'Linked Hypotheses',
+  'evidence.linkedExperiments': 'Linked Experiments',
+  'evidence.noLinkedHypotheses': 'Not linked to any hypothesis',
+  'evidence.noLinkedExperiments': 'Not linked to any experiment',
+  'evidence.hypothesis': 'Hypothesis',
+  'evidence.experiment': 'Experiment',
 
   // Reading
   'reading.title': 'Reading Queue',
@@ -438,6 +456,16 @@ export const en = {
   'settings.syncComplete': 'Sync completed',
   'settings.syncFailed': 'Sync failed',
 
+  // Keyboard Shortcuts
+  'settings.shortcuts': 'Keyboard Shortcuts',
+  'settings.shortcuts.note': 'Shortcuts work in both the main app and sidepanel.',
+  'settings.shortcut.dashboard': 'Open Dashboard',
+  'settings.shortcut.projects': 'Open Projects',
+  'settings.shortcut.records': 'Open Records',
+  'settings.shortcut.journal': 'Open Journal',
+  'settings.shortcut.citations': 'Open Citations',
+  'settings.shortcut.settings': 'Open Settings',
+
   // Sidepanel
   'sidepanel.capture': 'Capture',
   'sidepanel.copilot': 'AI Copilot',
@@ -549,6 +577,46 @@ export const en = {
   'journal.contentPlaceholder': 'What did you work on today? Any insights or blockers?',
   'journal.tagsLabel': 'Tags',
   'journal.tagsPlaceholder': 'e.g., experiment, literature, analysis',
+
+  // Dashboard charts
+  'dashboard.taskCompletionRate': 'Task Completion Rate',
+  'dashboard.monthlyRecords': 'Monthly Records',
+  'dashboard.monthlyTaskRate': 'Monthly Task Completion Rate',
+  'dashboard.completionRate': 'completion rate',
+
+  // Projects Gantt
+  'projects.ganttChart': 'Project Timeline (Gantt)',
+  'projects.ganttStart': 'Start',
+  'projects.ganttEnd': 'Last Updated',
+  'projects.ganttToday': 'Today',
+  'projects.ganttNoProjects': 'No projects to display',
+
+  // Planning graph
+  'planning.hypothesisGraph': 'Hypothesis-Experiment Network',
+  'planning.graphNoData': 'No data to display',
+  'planning.graphHypotheses': 'Hypotheses',
+  'planning.graphExperiments': 'Experiments',
+  'planning.graphLinked': 'linked',
+  'planning.graphUnlinked': 'unlinked',
+
+  // Global Search
+  'search.placeholder': 'Search records, projects, experiments...',
+  'search.recentSearches': 'Recent Searches',
+  'search.clearHistory': 'Clear History',
+  'search.noResults': 'No results found',
+  'search.noResultsDesc': 'Try different keywords',
+  'search.resultsCount': '{{count}} results',
+  'search.allTypes': 'All',
+  'search.type.project': 'Projects',
+  'search.type.record': 'Records',
+  'search.type.hypothesis': 'Hypotheses',
+  'search.type.experiment': 'Experiments',
+  'search.type.evidence': 'Evidence',
+  'search.type.journal': 'Journal',
+  'search.type.manuscript': 'Manuscripts',
+  'search.type.task': 'Tasks',
+  'search.matchedIn': 'Matched in: {{field}}',
+  'search.searchLabel': 'Global Search',
 
   // Version
   'app.version': 'ScholarFlow v2.1',

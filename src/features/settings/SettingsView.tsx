@@ -8,7 +8,7 @@ import { Input } from '@components/primitives/Input';
 import { Select } from '@components/primitives/Select';
 import { Badge } from '@components/primitives/Badge';
 import { Tabs } from '@components/primitives/Tabs';
-import { Settings, User, Cloud, Bot, Database, Check, AlertCircle } from 'lucide-react';
+import { Settings, User, Cloud, Bot, Database, Check, AlertCircle, Keyboard } from 'lucide-react';
 
 export function SettingsView() {
   const { t, lang, switchLang } = useLang();
@@ -37,6 +37,7 @@ export function SettingsView() {
     { id: 'sync', label: t('settings.sync'), icon: <Cloud size={13} /> },
     { id: 'ai', label: t('settings.ai'), icon: <Bot size={13} /> },
     { id: 'backup', label: t('settings.data'), icon: <Database size={13} /> },
+    { id: 'shortcuts', label: t('settings.shortcuts'), icon: <Keyboard size={13} /> },
   ];
 
   return (
@@ -214,6 +215,31 @@ export function SettingsView() {
                   />
                 </div>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Shortcuts Tab */}
+      {activeTab === 'shortcuts' && (
+        <Card variant="solid" padding="md">
+          <CardHeader><CardTitle>{t('settings.shortcuts')}</CardTitle></CardHeader>
+          <CardContent>
+            <div className="space-y-2 max-w-md">
+              {[
+                { keys: 'Ctrl+Shift+D', action: t('settings.shortcut.dashboard') },
+                { keys: 'Ctrl+Shift+P', action: t('settings.shortcut.projects') },
+                { keys: 'Ctrl+Shift+R', action: t('settings.shortcut.records') },
+                { keys: 'Ctrl+Shift+J', action: t('settings.shortcut.journal') },
+                { keys: 'Ctrl+Shift+C', action: t('settings.shortcut.citations') },
+                { keys: 'Ctrl+Shift+S', action: t('settings.shortcut.settings') },
+              ].map((item) => (
+                <div key={item.keys} className="flex items-center justify-between py-2 px-3 rounded-lg bg-slate-800/40">
+                  <span className="text-xs text-slate-300">{item.action}</span>
+                  <kbd className="px-2 py-0.5 rounded bg-slate-700 text-2xs font-mono text-slate-300 border border-slate-600">{item.keys}</kbd>
+                </div>
+              ))}
+              <p className="text-3xs text-slate-500 pt-2">{t('settings.shortcuts.note')}</p>
             </div>
           </CardContent>
         </Card>

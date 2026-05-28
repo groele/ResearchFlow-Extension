@@ -12,7 +12,7 @@ import { Select } from '@components/primitives/Select';
 import { EmptyState } from '@components/primitives/EmptyState';
 import { IconButton } from '@components/primitives/IconButton';
 import { ConfirmDialog } from '@components/primitives/ConfirmDialog';
-import { Beaker, Plus, Trash2, Edit2, FlaskConical, Target, CheckCircle2, XCircle, Clock, Play } from 'lucide-react';
+import { Beaker, Plus, Trash2, Edit2, FlaskConical, Target, CheckCircle2, XCircle, Clock, Play, Microscope, ArrowRight } from 'lucide-react';
 
 export function PlanningView() {
   const { t } = useLang();

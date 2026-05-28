@@ -13,6 +13,9 @@ export function useSettings() {
   const [aiConfig, setAiConfig] = useState<AISettings>({ provider: 'openai', apiKey: '', endpoint: 'https://api.openai.com/v1', model: 'gpt-4o' });
   const [profileForm, setProfileForm] = useState({ displayName: '', affiliate: '', language: 'en' as 'en' | 'zh', motto: '' });
 
+  const [error, setError] = useState<string | null>(null);
+  const clearError = useCallback(() => setError(null), []);
+
   useEffect(() => {
     async function fetchSettings() {
       try {
@@ -35,6 +38,7 @@ export function useSettings() {
         }
       } catch (e: unknown) {
         console.error('Failed to load settings:', e);
+        setError('Failed to load settings. Some features may not work correctly.');
       }
     }
     fetchSettings();
@@ -65,6 +69,7 @@ export function useSettings() {
       return true;
     } catch (e: unknown) {
       console.error('Failed to save settings:', e);
+      setError('Failed to save settings. Please try again.');
       return false;
     }
   }, [settings, profileForm, aiConfig, webdavConfig, githubConfig]);
@@ -75,6 +80,7 @@ export function useSettings() {
       return await syncEngine.testConnection(provider, config);
     } catch (e: unknown) {
       console.error('Connection test failed:', e);
+      setError('Connection test failed. Please check your configuration.');
       return false;
     }
   }, [webdavConfig, githubConfig]);
@@ -114,6 +120,7 @@ export function useSettings() {
       URL.revokeObjectURL(url);
     } catch (e: unknown) {
       console.error('Failed to export data:', e);
+      setError('Failed to export data. Please try again.');
     }
   }, []);
 
@@ -150,5 +157,7 @@ export function useSettings() {
     handleManualSync,
     handleExportJson,
     handleImportJson,
+    error,
+    clearError,
   };
 }

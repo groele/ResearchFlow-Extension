@@ -85,6 +85,7 @@ export function useWriting() {
       });
     } catch (e: unknown) {
       console.error('Failed to update section:', e);
+      setError('Failed to update section. Please try again.');
     }
   }, [selectedMsId, sections]);
 
@@ -104,6 +105,7 @@ export function useWriting() {
       setActiveSectionId(newSection.id);
     } catch (e: unknown) {
       console.error('Failed to add section:', e);
+      setError('Failed to add section. Please try again.');
     }
   }, [selectedMsId, sections]);
 
@@ -120,6 +122,7 @@ export function useWriting() {
       }
     } catch (e: unknown) {
       console.error('Failed to delete section:', e);
+      setError('Failed to delete section. Please try again.');
     }
   }, [selectedMsId, sections, activeSectionId]);
 
@@ -139,6 +142,7 @@ export function useWriting() {
       });
     } catch (e: unknown) {
       console.error('Failed to reorder section:', e);
+      setError('Failed to reorder section. Please try again.');
     }
   }, [selectedMsId, sections]);
 
@@ -159,5 +163,7 @@ export function useWriting() {
     handleAddSection,
     handleDeleteSection,
     handleReorderSection,
+    error,
+    clearError,
   };
 }

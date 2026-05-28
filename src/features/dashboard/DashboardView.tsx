@@ -1,5 +1,6 @@
 import React, { useMemo, useCallback } from 'react';
 import { useDashboardData } from './useDashboardData';
+import { GlobalSearch } from './GlobalSearch';
 import { PageHeader } from '@components/layout/PageHeader';
 import { StatCard } from '@components/layout/StatCard';
 import { Card, CardHeader, CardTitle, CardContent } from '@components/primitives/Card';
@@ -74,6 +75,9 @@ export function DashboardView({ onNavigate }: DashboardViewProps) {
         description={t('dashboard.description')}
         icon={<LayoutDashboard size={18} />}
       />
+
+      {/* Global Search */}
+      <GlobalSearch onNavigate={onNavigate} />
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">

@@ -1,4 +1,4 @@
-import React, { useState, lazy, Suspense } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Sidebar } from '../../src/ui/components/layout/Sidebar';
 import { PageContainer } from '../../src/ui/components/layout/PageContainer';
 import { ToastProvider } from '../../src/ui/components/primitives/Toast';
@@ -31,7 +31,38 @@ function LoadingFallback() {
 }
 
 function App() {
-  const [activeView, setActiveView] = useState<ActiveView>('dashboard');
+  const getInitialView = (): ActiveView => {
+    const hash = window.location.hash; // e.g. #view=records
+    const match = hash.match(/view=(\w+)/);
+    const validViews: ActiveView[] = ['dashboard', 'projects', 'records', 'kanban', 'submissions', 'evidence', 'planning', 'reading', 'writing', 'citations', 'journal', 'settings'];
+    if (match && validViews.includes(match[1] as ActiveView)) {
+      return match[1] as ActiveView;
+    }
+    return 'dashboard';
+  };
+
+  const [activeView, setActiveView] = useState<ActiveView>(getInitialView);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!e.ctrlKey || !e.shiftKey) return;
+      const keyMap: Record<string, ActiveView> = {
+        r: 'records',
+        p: 'projects',
+        j: 'journal',
+        d: 'dashboard',
+        s: 'settings',
+        c: 'citations',
+      };
+      const view = keyMap[e.key.toLowerCase()];
+      if (view) {
+        e.preventDefault();
+        setActiveView(view);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   return (
     <ToastProvider>

@@ -321,6 +321,24 @@ export const zh: Record<TranslationKey, string> = {
   'planning.deleteHypothesisDesc': '此操作将永久删除假设并解除关联实验。',
   'planning.deleteExperimentDesc': '此操作将永久删除此实验。',
   'planning.variablesLabel': '变量：',
+  'planning.linkedExperiments': '关联实验',
+  'planning.linkedEvidence': '关联证据',
+  'planning.createExperimentFromHyp': '从假设创建实验',
+  'planning.createEvidenceFromExp': '从实验创建证据',
+  'planning.noLinkedExperiments': '暂无关联实验',
+  'planning.noLinkedEvidence': '暂无关联证据',
+  'planning.experimentCount': '个实验',
+  'planning.evidenceCount': '个证据',
+  'planning.evidenceLinkedToHyp': '通过假设关联',
+  'planning.evidenceLinkedToExp': '通过实验关联',
+
+  // 证据增强
+  'evidence.linkedHypotheses': '关联假设',
+  'evidence.linkedExperiments': '关联实验',
+  'evidence.noLinkedHypotheses': '未关联到任何假设',
+  'evidence.noLinkedExperiments': '未关联到任何实验',
+  'evidence.hypothesis': '假设',
+  'evidence.experiment': '实验',
 
   // 阅读
   'reading.title': '阅读队列',
@@ -440,6 +458,16 @@ export const zh: Record<TranslationKey, string> = {
   'settings.syncComplete': '同步完成',
   'settings.syncFailed': '同步失败',
 
+  // 键盘快捷键
+  'settings.shortcuts': '键盘快捷键',
+  'settings.shortcuts.note': '快捷键在主应用和侧边栏中均可使用。',
+  'settings.shortcut.dashboard': '打开仪表盘',
+  'settings.shortcut.projects': '打开项目',
+  'settings.shortcut.records': '打开记录',
+  'settings.shortcut.journal': '打开日志',
+  'settings.shortcut.citations': '打开引用',
+  'settings.shortcut.settings': '打开设置',
+
   // 侧边面板
   'sidepanel.capture': '捕获',
   'sidepanel.copilot': 'AI 助手',
@@ -551,6 +579,46 @@ export const zh: Record<TranslationKey, string> = {
   'a11y.editProject': '编辑项目',
   'a11y.deleteProject': '删除项目',
   'a11y.loading': '加载中',
+
+  // 仪表盘图表
+  'dashboard.taskCompletionRate': '任务完成率',
+  'dashboard.monthlyRecords': '每月记录数',
+  'dashboard.monthlyTaskRate': '每月任务完成率',
+  'dashboard.completionRate': '完成率',
+
+  // 项目甘特图
+  'projects.ganttChart': '项目时间线（甘特图）',
+  'projects.ganttStart': '开始',
+  'projects.ganttEnd': '最近更新',
+  'projects.ganttToday': '今天',
+  'projects.ganttNoProjects': '暂无可显示的项目',
+
+  // 规划关系图
+  'planning.hypothesisGraph': '假设-实验关系网络',
+  'planning.graphNoData': '暂无可显示的数据',
+  'planning.graphHypotheses': '假设',
+  'planning.graphExperiments': '实验',
+  'planning.graphLinked': '已关联',
+  'planning.graphUnlinked': '未关联',
+
+  // 全局搜索
+  'search.placeholder': '搜索记录、项目、实验...',
+  'search.recentSearches': '最近搜索',
+  'search.clearHistory': '清除历史',
+  'search.noResults': '未找到结果',
+  'search.noResultsDesc': '请尝试其他关键词',
+  'search.resultsCount': '{{count}} 条结果',
+  'search.allTypes': '全部',
+  'search.type.project': '项目',
+  'search.type.record': '记录',
+  'search.type.hypothesis': '假设',
+  'search.type.experiment': '实验',
+  'search.type.evidence': '证据',
+  'search.type.journal': '日志',
+  'search.type.manuscript': '稿件',
+  'search.type.task': '任务',
+  'search.matchedIn': '匹配字段：{{field}}',
+  'search.searchLabel': '全局搜索',
 
   // 版本
   'app.version': 'ScholarFlow v2.1',

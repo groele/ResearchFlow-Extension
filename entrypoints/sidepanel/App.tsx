@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../src/storage/dexie';
 import { aiCopilot } from '../../src/core/ai';
@@ -23,6 +23,28 @@ function SidepanelContent() {
   const [metaAbstract, setMetaAbstract] = useState('');
 
   const projects = useLiveQuery(() => db.projects.toArray()) ?? [];
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!e.ctrlKey || !e.shiftKey) return;
+      const viewMap: Record<string, string> = {
+        r: 'records',
+        p: 'projects',
+        j: 'journal',
+        d: 'dashboard',
+        s: 'settings',
+        c: 'citations',
+      };
+      const view = viewMap[e.key.toLowerCase()];
+      if (view) {
+        e.preventDefault();
+        const url = chrome.runtime.getURL(`options.html#view=${view}`);
+        chrome.tabs.create({ url });
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const handleAiExtraction = async (title: string, abstract: string, url: string) => {
     setMetaTitle(title);

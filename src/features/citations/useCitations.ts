@@ -15,6 +15,8 @@ export function useCitations() {
   const [sortBy, setSortBy] = useState<'year' | 'title' | 'author'>('year');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [exportFormat, setExportFormat] = useState<CitationFormat>('apa7');
+  const [error, setError] = useState<string | null>(null);
+  const clearError = useCallback(() => setError(null), []);
 
   const literatureRecords = useMemo(() =>
     records.filter(r => r.recordType === 'literature_review' || r.tags.includes('literature')),
@@ -161,6 +163,7 @@ export function useCitations() {
       }
     } catch (e: unknown) {
       console.error('BibTeX import error:', e);
+      setError('Failed to import BibTeX file. Please check the file format.');
     }
     return imported;
   }, []);
@@ -201,6 +204,7 @@ export function useCitations() {
       }
     } catch (e: unknown) {
       console.error('RIS import error:', e);
+      setError('Failed to import RIS file. Please check the file format.');
     }
     return imported;
   }, []);
@@ -246,5 +250,7 @@ export function useCitations() {
     exportAsBibTeX,
     importBibTeX,
     importRIS,
+    error,
+    clearError,
   };
 }
