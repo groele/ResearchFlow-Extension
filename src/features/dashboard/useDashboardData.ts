@@ -253,6 +253,22 @@ export function useDashboardData() {
     return months;
   }, [records]);
 
+  // Monthly task completion rate (past 12 months)
+  const monthlyTaskCompletionRate = useMemo(() => {
+    const months: { label: string; value: number }[] = [];
+    const now = new Date();
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const label = d.toLocaleString('default', { month: 'short' });
+      const monthTasks = tasks.filter(t => t.createdAt.slice(0, 7) === key);
+      const completed = monthTasks.filter(t => t.status === 'completed').length;
+      const rate = monthTasks.length > 0 ? Math.round((completed / monthTasks.length) * 100) : 0;
+      months.push({ label, value: rate });
+    }
+    return months;
+  }, [tasks]);
+
   // Record type distribution
   const recordTypeDistribution = useMemo(() => {
     const types: Record<string, number> = {};
@@ -367,6 +383,7 @@ export function useDashboardData() {
     recentRecords,
     taskStats,
     monthlyTrend,
+    monthlyTaskCompletionRate,
     recordTypeDistribution,
     projectProgress,
     overdueTasks,

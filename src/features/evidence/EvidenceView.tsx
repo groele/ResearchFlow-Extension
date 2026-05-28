@@ -12,7 +12,7 @@ import { Select } from '@components/primitives/Select';
 import { EmptyState } from '@components/primitives/EmptyState';
 import { IconButton } from '@components/primitives/IconButton';
 import { ConfirmDialog } from '@components/primitives/ConfirmDialog';
-import { Microscope, Plus, Trash2, Edit2, Search, FileImage, FileCode, FileSpreadsheet } from 'lucide-react';
+import { Microscope, Plus, Trash2, Edit2, Search, FileImage, FileCode, FileSpreadsheet, Target, FlaskConical } from 'lucide-react';
 
 const evidenceTypeIcons: Record<string, React.ReactNode> = {
   figure: <FileImage size={14} />,
@@ -38,6 +38,8 @@ export function EvidenceView() {
     isModalOpen, setIsModalOpen,
     editingId, form, setForm,
     handleSave, openEdit, resetForm, handleDelete,
+    // Workflow coherence
+    hypothesesByEvidence, experimentsByEvidence,
   } = useEvidence();
 
   const evidenceTypeLabel: Record<string, string> = {
@@ -83,7 +85,10 @@ export function EvidenceView() {
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {filtered.map((item) => (
+          {filtered.map((item) => {
+            const linkedHyps = hypothesesByEvidence[item.id] || [];
+            const linkedExps = experimentsByEvidence[item.id] || [];
+            return (
             <Card key={item.id} variant="solid" padding="md" hover="lift">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
@@ -102,6 +107,24 @@ export function EvidenceView() {
                   {item.filePath && (
                     <p className="text-2xs text-slate-600 mt-1.5 font-mono truncate">{item.filePath}</p>
                   )}
+
+                  {/* Linked hypotheses & experiments */}
+                  {(linkedHyps.length > 0 || linkedExps.length > 0) && (
+                    <div className="mt-2 space-y-1">
+                      {linkedHyps.map(hyp => (
+                        <div key={hyp.id} className="flex items-center gap-1 text-3xs text-teal-500">
+                          <Target size={10} />
+                          <span className="truncate">{hyp.statement.slice(0, 50)}{hyp.statement.length > 50 ? '...' : ''}</span>
+                        </div>
+                      ))}
+                      {linkedExps.map(exp => (
+                        <div key={exp.id} className="flex items-center gap-1 text-3xs text-blue-400">
+                          <FlaskConical size={10} />
+                          <span className="truncate">{exp.title.slice(0, 50)}{exp.title.length > 50 ? '...' : ''}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className="flex flex-col gap-1">
                   <IconButton variant="ghost" size="sm" icon={<Edit2 size={13} />} aria-label={t('a11y.edit')} onClick={() => openEdit(item)} />
@@ -112,7 +135,8 @@ export function EvidenceView() {
                 {new Date(item.updatedAt).toLocaleDateString()}
               </div>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
 

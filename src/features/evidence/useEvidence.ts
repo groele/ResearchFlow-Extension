@@ -1,11 +1,41 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, type Evidence } from '@storage/dexie';
+import { db, type Evidence, type Hypothesis, type Experiment } from '@storage/dexie';
 import { generateId } from '@storage/id';
 
 export function useEvidence() {
   const evidence = useLiveQuery(() => db.evidence.where('userId').equals('user').toArray()) ?? [];
   const projects = useLiveQuery(() => db.projects.where('userId').equals('user').toArray()) ?? [];
+  const allHypotheses = useLiveQuery(() => db.hypotheses.toArray()) ?? [];
+  const allExperiments = useLiveQuery(() => db.experiments.toArray()) ?? [];
+
+  // Reverse-lookup maps: evidenceId -> Hypothesis[] and Experiment[]
+  const hypothesesByEvidence = useMemo(() => {
+    const map: Record<string, Hypothesis[]> = {};
+    for (const hyp of allHypotheses) {
+      for (const evId of (hyp.evidenceIds || [])) {
+        if (!map[evId]) map[evId] = [];
+        map[evId].push(hyp);
+      }
+    }
+    return map;
+  }, [allHypotheses]);
+
+  const experimentsByEvidence = useMemo(() => {
+    const map: Record<string, Experiment[]> = {};
+    for (const hyp of allHypotheses) {
+      const exps = allExperiments.filter(e => e.hypothesisId === hyp.id);
+      for (const evId of (hyp.evidenceIds || [])) {
+        if (!map[evId]) map[evId] = [];
+        for (const exp of exps) {
+          if (!map[evId].find(e => e.id === exp.id)) {
+            map[evId].push(exp);
+          }
+        }
+      }
+    }
+    return map;
+  }, [allHypotheses, allExperiments]);
 
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -100,5 +130,8 @@ export function useEvidence() {
     handleDelete,
     error,
     clearError,
+    // Workflow coherence
+    hypothesesByEvidence,
+    experimentsByEvidence,
   };
 }

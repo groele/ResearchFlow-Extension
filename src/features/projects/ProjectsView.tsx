@@ -12,9 +12,10 @@ import { EmptyState } from '@components/primitives/EmptyState';
 import { IconButton } from '@components/primitives/IconButton';
 import { ConfirmDialog } from '@components/primitives/ConfirmDialog';
 import { ProgressBar } from '@components/primitives/ProgressBar';
+import { ChartGantt, type GanttItem } from '@components/domain/ChartGantt';
 import {
   FolderOpen, Plus, Trash2, Edit2, Filter,
-  LayoutList, LayoutGrid, FileText, ListTodo, Clock,
+  LayoutList, LayoutGrid, FileText, ListTodo, Clock, GanttChart,
 } from 'lucide-react';
 import { useLang } from '@/i18n';
 
@@ -65,6 +66,18 @@ export function ProjectsView() {
   const areaOptionsForSelect = useMemo(
     () => researchAreas.map(a => ({ value: a.id, label: a.name })),
     [researchAreas]
+  );
+
+  const ganttItems = useMemo<GanttItem[]>(
+    () => enrichedProjects.map((proj, i) => ({
+      id: proj.id,
+      label: proj.title,
+      start: proj.createdAt,
+      end: proj.updatedAt,
+      color: researchAreas.find(a => a.id === proj.areaId)?.color || undefined,
+      progress: proj.progress,
+    })),
+    [enrichedProjects, researchAreas]
   );
 
   const viewToggle = (
@@ -155,6 +168,18 @@ export function ProjectsView() {
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* Gantt Chart */}
+      {enrichedProjects.length > 0 && (
+        <div className="mb-6">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+            <GanttChart size={13} /> {t('projects.ganttChart')}
+          </h2>
+          <Card variant="solid" padding="md">
+            <ChartGantt items={ganttItems} height={Math.max(160, ganttItems.length * 36 + 50)} />
+          </Card>
         </div>
       )}
 

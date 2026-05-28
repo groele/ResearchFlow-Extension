@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { usePlanning } from './usePlanning';
 import { useLang } from '@/i18n';
 import { PageHeader } from '@components/layout/PageHeader';
@@ -12,7 +12,8 @@ import { Select } from '@components/primitives/Select';
 import { EmptyState } from '@components/primitives/EmptyState';
 import { IconButton } from '@components/primitives/IconButton';
 import { ConfirmDialog } from '@components/primitives/ConfirmDialog';
-import { Beaker, Plus, Trash2, Edit2, FlaskConical, Target, CheckCircle2, XCircle, Clock, Play, Microscope, ArrowRight } from 'lucide-react';
+import { HypothesisGraph, type GraphNode, type GraphEdge } from '@components/domain/HypothesisGraph';
+import { Beaker, Plus, Trash2, Edit2, FlaskConical, Target, CheckCircle2, XCircle, Clock, Play, Microscope, ArrowRight, Share2 } from 'lucide-react';
 
 export function PlanningView() {
   const { t } = useLang();
@@ -41,9 +42,35 @@ export function PlanningView() {
     isExpModalOpen, setIsExpModalOpen,
     editingExpId, expForm, setExpForm,
     handleSaveExperiment, openEditExp, resetExpForm, handleDeleteExperiment, handleExpStatusChange,
+    // Workflow coherence
+    experimentsByHypothesis, evidenceByHypothesis,
+    handleCreateExperimentFromHypothesis, handleCreateEvidenceFromExperiment,
   } = usePlanning();
 
   const hypColumns = ['proposed', 'testing', 'confirmed', 'refuted'];
+
+  // Hypothesis-Experiment graph data
+  const graphNodes = useMemo<GraphNode[]>(() => {
+    const hypNodes: GraphNode[] = hypotheses.map(h => ({
+      id: h.id,
+      label: h.statement,
+      type: 'hypothesis' as const,
+      status: h.status,
+    }));
+    const expNodes: GraphNode[] = experiments.map(e => ({
+      id: e.id,
+      label: e.title,
+      type: 'experiment' as const,
+      status: e.status,
+    }));
+    return [...hypNodes, ...expNodes];
+  }, [hypotheses, experiments]);
+
+  const graphEdges = useMemo<GraphEdge[]>(() => {
+    return experiments
+      .filter(e => e.hypothesisId && hypotheses.some(h => h.id === e.hypothesisId))
+      .map(e => ({ from: e.hypothesisId!, to: e.id }));
+  }, [experiments, hypotheses]);
 
   return (
     <div>
@@ -72,6 +99,36 @@ export function PlanningView() {
         }
       />
 
+      {/* Hypothesis-Experiment Network Graph */}
+      {graphNodes.length > 0 && (
+        <div className="mb-8">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+            <Share2 size={13} /> {t('planning.hypothesisGraph')}
+          </h3>
+          <Card variant="solid" padding="md">
+            <HypothesisGraph
+              nodes={graphNodes}
+              edges={graphEdges}
+              height={Math.max(220, graphNodes.length * 30 + 60)}
+            />
+            <div className="flex items-center gap-4 mt-3 pt-3 border-t border-slate-800/60">
+              <span className="text-3xs text-slate-500">
+                {t('planning.graphHypotheses')}: {hypotheses.length}
+              </span>
+              <span className="text-3xs text-slate-500">
+                {t('planning.graphExperiments')}: {experiments.length}
+              </span>
+              <span className="text-3xs text-slate-500">
+                {t('planning.graphLinked')}: {graphEdges.length}
+              </span>
+              <span className="text-3xs text-slate-500">
+                {t('planning.graphUnlinked')}: {experiments.filter(e => !e.hypothesisId).length}
+              </span>
+            </div>
+          </Card>
+        </div>
+      )}
+
       {/* Hypothesis Board */}
       <div className="mb-8">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
@@ -95,10 +152,39 @@ export function PlanningView() {
                     <span className="text-3xs text-slate-600">{colHyps.length}</span>
                   </div>
                   <div className="space-y-2 min-h-[80px]">
-                    {colHyps.map(h => (
+                    {colHyps.map(h => {
+                      const linkedExps = experimentsByHypothesis[h.id] || [];
+                      const linkedEv = evidenceByHypothesis[h.id] || [];
+                      return (
                       <Card key={h.id} variant="solid" padding="sm" hover="subtle">
                         <p className="text-xs text-slate-200 line-clamp-3 mb-2">{h.statement}</p>
                         {h.notes && <p className="text-3xs text-slate-500 line-clamp-2 mb-2">{h.notes}</p>}
+
+                        {/* Linked experiments & evidence */}
+                        <div className="mb-2 space-y-1">
+                          {linkedExps.length > 0 && (
+                            <div className="flex items-center gap-1 text-3xs text-slate-400">
+                              <FlaskConical size={10} />
+                              <span>{linkedExps.length} {t('planning.experimentCount')}</span>
+                            </div>
+                          )}
+                          {linkedEv.length > 0 && (
+                            <div className="flex items-center gap-1 text-3xs text-slate-400">
+                              <Microscope size={10} />
+                              <span>{linkedEv.length} {t('planning.evidenceCount')}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Quick action: create experiment from hypothesis */}
+                        <button
+                          onClick={() => handleCreateExperimentFromHypothesis(h.id)}
+                          className="w-full mb-2 flex items-center justify-center gap-1 text-3xs text-teal-400 hover:text-teal-300 px-2 py-1 rounded bg-teal-900/30 hover:bg-teal-900/50 transition border border-teal-800/30"
+                        >
+                          <ArrowRight size={10} />
+                          {t('planning.createExperimentFromHyp')}
+                        </button>
+
                         <div className="flex items-center justify-between">
                           <div className="flex gap-1">
                             {hypColumns.filter(s => s !== h.status).map(s => (
@@ -118,7 +204,8 @@ export function PlanningView() {
                           </div>
                         </div>
                       </Card>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               );
@@ -143,6 +230,7 @@ export function PlanningView() {
             {experiments.map(exp => {
               const cfg = expStatusConfig[exp.status] || expStatusConfig.planned;
               const linkedHyp = allHypotheses.find(h => h.id === exp.hypothesisId);
+              const linkedEv = linkedHyp ? (evidenceByHypothesis[linkedHyp.id] || []) : [];
               return (
                 <Card key={exp.id} variant="solid" padding="md" hover="subtle">
                   <div className="flex items-start justify-between">
@@ -150,17 +238,48 @@ export function PlanningView() {
                       <div className="flex items-center gap-2 mb-1">
                         <Badge variant={cfg.variant as any} size="sm">{cfg.icon} {cfg.label}</Badge>
                         {linkedHyp && (
-                          <span className="text-3xs text-slate-500">{t('planning.hypothesisLabel')}: {linkedHyp.statement.slice(0, 40)}...</span>
+                          <Badge variant="default" size="sm">
+                            <Target size={10} /> {linkedHyp.statement.slice(0, 30)}...
+                          </Badge>
                         )}
                       </div>
                       <h4 className="text-sm font-medium text-slate-200">{exp.title}</h4>
                       {exp.design && <p className="text-2xs text-slate-400 mt-1 line-clamp-2">{exp.design}</p>}
                       {exp.variables && <p className="text-3xs text-slate-500 mt-1">{t('planning.variablesLabel')} {exp.variables}</p>}
+
+                      {/* Linked hypothesis detail */}
+                      {linkedHyp && (
+                        <div className="mt-2 flex items-center gap-1.5 text-3xs text-slate-500">
+                          <Target size={10} className="text-teal-500" />
+                          <span className="truncate">{linkedHyp.statement}</span>
+                          <Badge variant={hypStatusConfig[linkedHyp.status]?.variant as any || 'default'} size="sm">
+                            {hypStatusConfig[linkedHyp.status]?.label || linkedHyp.status}
+                          </Badge>
+                        </div>
+                      )}
+
+                      {/* Linked evidence */}
+                      {linkedEv.length > 0 && (
+                        <div className="mt-1.5 flex items-center gap-1 text-3xs text-slate-500">
+                          <Microscope size={10} />
+                          <span>{linkedEv.length} {t('planning.evidenceCount')}</span>
+                        </div>
+                      )}
+
                       {exp.results && (
                         <div className="mt-2 p-2 rounded bg-slate-950/40 border border-slate-800/50">
                           <p className="text-2xs text-slate-300">{exp.results}</p>
                         </div>
                       )}
+
+                      {/* Quick action: create evidence from experiment */}
+                      <button
+                        onClick={() => handleCreateEvidenceFromExperiment(exp.id)}
+                        className="mt-2 flex items-center gap-1 text-3xs text-teal-400 hover:text-teal-300 px-2 py-1 rounded bg-teal-900/30 hover:bg-teal-900/50 transition border border-teal-800/30"
+                      >
+                        <ArrowRight size={10} />
+                        {t('planning.createEvidenceFromExp')}
+                      </button>
                     </div>
                     <div className="flex items-center gap-1 ml-3">
                       {expStatusConfig && Object.entries(expStatusConfig)

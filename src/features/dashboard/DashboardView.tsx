@@ -29,7 +29,7 @@ export function DashboardView({ onNavigate }: DashboardViewProps) {
   const {
     projects, records, manuscripts, submissions, analyses,
     timelineAlerts, metrics, recentRecords, taskStats,
-    monthlyTrend, recordTypeDistribution, projectProgress,
+    monthlyTrend, monthlyTaskCompletionRate, recordTypeDistribution, projectProgress,
     overdueTasks, readingStats, weeklyActivity, monthlyActivity,
     urgentTasks,
   } = useDashboardData();
@@ -386,6 +386,44 @@ export function DashboardView({ onNavigate }: DashboardViewProps) {
             ) : (
               <EmptyState title={t('dashboard.noLiterature')} description={t('dashboard.noLiteratureDesc')} />
             )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Research Trend Charts */}
+      <div className="grid grid-cols-2 gap-3 mb-6">
+        {/* Monthly Records Trend */}
+        <Card variant="solid" padding="md" hover="subtle" className="cursor-pointer" onClick={navigateRecords}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp size={14} className="text-primary-400" />
+              {t('dashboard.monthlyRecords')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ChartLine data={monthlyTrend} height={100} color="#14b8a6" />
+          </CardContent>
+        </Card>
+
+        {/* Monthly Task Completion Rate */}
+        <Card variant="solid" padding="md" hover="subtle" className="cursor-pointer" onClick={navigateKanban}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CheckCircle2 size={14} className="text-success-400" />
+              {t('dashboard.monthlyTaskRate')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ChartBar
+              data={monthlyTaskCompletionRate.map(d => ({
+                ...d,
+                label: d.label,
+                value: d.value,
+              }))}
+              height={100}
+              showValues
+              maxValue={100}
+            />
           </CardContent>
         </Card>
       </div>
