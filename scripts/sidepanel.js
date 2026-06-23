@@ -46,8 +46,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Database State
   let db = await window.storage.loadAll();
+  let captureFormDirty = false;
+  let lastCapturedTabKey = '';
   populateProjects(db);
   loadScratchpad();
+
+  [metaTitle, metaDoi, metaAuthors, metaAbstract, metaPdf, metaBreakthrough, metaEquations, metaDatasets, metaLimitations]
+    .filter(Boolean)
+    .forEach(input => {
+      input.addEventListener('input', () => {
+        captureFormDirty = true;
+      });
+    });
 
   // Listeners for global database changes and async PDF updates
   chrome.runtime.onMessage.addListener((message) => {
@@ -65,7 +75,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (!currentPdf || currentPdf === currentTab) {
         metaPdf.value = message.pdfUrl;
         metaPdf.dataset.unpaywallEnriched = 'true';
-        showNotification('📄 Open access PDF found via Unpaywall!', 'success');
+        showNotification('Open access PDF found via Unpaywall', 'success');
         updateCitationPreview();
       }
       // 移除「正在搜索」徽章
@@ -122,6 +132,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let tab;
     try {
       [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      lastCapturedTabKey = window.RFUI.getTabKey(tab);
     } catch (e) {
       showNotification('Could not access browser tabs', 'danger');
       resetBtn();
@@ -209,7 +220,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (response.pdfUrl) {
       metaPdf.value = response.pdfUrl;
-      showNotification('✅ PDF detected!', 'success');
+      showNotification('PDF detected', 'success');
     } else {
       metaPdf.value = tab.url;
       showNotification('Page captured — searching open access PDF...', 'info');
@@ -234,7 +245,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               metaPdf.value = res.pdfUrl;
               metaPdf.dataset.unpaywallEnriched = 'true';
               updateCitationPreview();
-              showNotification('📄 Open access PDF found via Unpaywall!', 'success');
+              showNotification('Open access PDF found via Unpaywall', 'success');
             }
           }
         }
@@ -244,10 +255,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // AI 结构化参数提取
     if (db.settings?.ai?.apiKey && response.abstract) {
       detailsStructuredNotes.open = true;
-      metaBreakthrough.placeholder = '🔬 AI is analyzing breakthroughs...';
-      metaEquations.placeholder    = '🔬 AI is mapping methods...';
-      metaDatasets.placeholder     = '🔬 AI is identifying tools...';
-      metaLimitations.placeholder  = '🔬 AI is locating limitations...';
+      metaBreakthrough.placeholder = 'AI is analyzing breakthroughs...';
+      metaEquations.placeholder    = 'AI is mapping methods...';
+      metaDatasets.placeholder     = 'AI is identifying tools...';
+      metaLimitations.placeholder  = 'AI is locating limitations...';
 
       const aiPrompt       = `Title: ${response.title}\nAbstract: ${response.abstract}\nURL: ${tab.url}`;
       const aiSystemPrompt = `You are a scientific data miner. Extract the paper key parameters as a clean JSON object ONLY. Respond ONLY in valid JSON. JSON format:\n{\n  "breakthrough": "Concise core novelty or breakthrough",\n  "equations": "Key methods, materials, or math equations cited",\n  "datasets": "Datasets, tools, or compute platforms used",\n  "limitations": "Direct limitations or unresolved challenges mentioned"\n}`;
@@ -270,6 +281,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           metaLimitations.placeholder  = 'e.g. Poor cyclability';
         });
     }
+
+    captureFormDirty = false;
   }
 
   // 显示Unpaywall搜索中徽章
@@ -335,6 +348,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       db.researchRecords.push(newRecord);
       await window.storage.saveAll(db);
       showNotification('Literature Record logged!', 'success');
+      captureFormDirty = false;
     } catch (e) {
       showNotification('Save failed', 'danger');
     } finally {
@@ -374,6 +388,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       db.evidence.push(newEvidence);
       await window.storage.saveAll(db);
       showNotification('Evidence linked to project!', 'success');
+      captureFormDirty = false;
     } catch (e) {
       showNotification('Failed to link evidence', 'danger');
     } finally {
@@ -706,7 +721,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function showNotification(msg, type = 'success') {
     const notification = document.createElement('div');
-    notification.className = `badge badge-${type === 'success' ? 'success' : 'warning'}`;
+    notification.className = window.RFUI.getToastBadgeClass(type);
     notification.style.position = 'fixed';
     notification.style.top = '12px';
     notification.style.left = '50%';
@@ -724,14 +739,26 @@ document.addEventListener('DOMContentLoaded', async () => {
   let autoCaptureTimer = null;
   function scheduleAutoCapture() {
     clearTimeout(autoCaptureTimer);
-    // 延迟从 500ms 降至 80ms：当页面加载完成和侧面板打开时
-    // 缓存通常已由 background 预充，命中时几乎不需要情感延迟
-    autoCaptureTimer = setTimeout(() => {
+    autoCaptureTimer = setTimeout(async () => {
       const capturePaneActive = document.getElementById('tab-capture')?.classList.contains('active');
-      if (capturePaneActive && !btnScrape.disabled) {
+      let activeTabKey = '';
+      try {
+        const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        activeTabKey = window.RFUI.getTabKey(activeTab);
+      } catch (_) {}
+
+      const canCapture = window.RFUI.shouldAutoCapture({
+        capturePaneActive,
+        scrapeButtonDisabled: btnScrape.disabled,
+        formDirty: captureFormDirty,
+        activeTabKey,
+        lastCapturedTabKey
+      });
+
+      if (canCapture) {
         btnScrape.click();
       }
-    }, 80);
+    }, 120);
   }
 
   scheduleAutoCapture();

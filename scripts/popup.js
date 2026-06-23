@@ -30,26 +30,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (tab && tab.url) {
       const url = tab.url;
-      const tabTitle = tab.title;
+      const tabTitle = tab.title || '';
 
       // Extract DOI using standard regex
-      const doiRegex = /(10\.\d{4,9}\/[-._;()/:A-Z0-9]+)/i;
-      const match = url.match(doiRegex) || tabTitle.match(doiRegex);
+      const detectedDoi = window.RFUI.cleanDoiFromText(url) || window.RFUI.cleanDoiFromText(tabTitle);
       
-      if (match) {
-        const detectedDoi = match[1];
+      if (detectedDoi) {
         if (doiInput) doiInput.value = detectedDoi;
         if (banner) {
           banner.style.display = 'flex';
-          document.getElementById('detected-status-text').textContent = `📄 Paper Found: ${detectedDoi}`;
+          document.getElementById('detected-status-text').textContent = `Paper found: ${detectedDoi}`;
         }
         
         // Clean and pre-fill paper title
-        let cleanTitle = tabTitle
-          .replace(/^(arXiv|PubMed|bioRxiv|Nature|Science|IEEE|Springer|Wiley|ACS)\s*(:|：|-)\s*/i, '')
-          .replace(/\s*\|\s*.*$/g, '') // Remove site postfixes
-          .replace(/\s*-\s*PubMed$/i, '')
-          .trim();
+        let cleanTitle = window.RFUI.cleanResearchTitle(tabTitle);
         
         if (noteTitleInput) noteTitleInput.value = cleanTitle;
       }
@@ -105,12 +99,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (chrome.sidePanel && typeof chrome.sidePanel.open === 'function') {
         chrome.sidePanel.open({ windowId: tab.windowId });
       } else {
-        alert('Please open the Sidepanel manually using Chrome Toolbar (Extensions -> ResearchFlow -> Toggle Sidepanel).');
+        showToast('Use Chrome toolbar to open the side panel', 'info');
+        return;
       }
       window.close(); // Close popup
     } catch (e) {
       console.error(e);
-      alert('Error opening Side Panel.');
+      showToast('Error opening side panel', 'danger');
     }
   });
 
@@ -254,7 +249,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (existing) existing.remove();
 
     const toast = document.createElement('div');
-    toast.className = `popup-toast badge badge-${type === 'success' ? 'success' : 'danger'}`;
+    toast.className = `popup-toast ${window.RFUI.getToastBadgeClass(type)}`;
     toast.style.position = 'fixed';
     toast.style.bottom = '12px';
     toast.style.left = '50%';
