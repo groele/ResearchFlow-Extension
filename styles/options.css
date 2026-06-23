@@ -30,6 +30,13 @@
   padding-left: 4px;
 }
 
+.brand .logo-orb {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  flex: 0 0 36px;
+}
+
 .brand h2 {
   font-size: 18px;
   font-weight: 800;
@@ -448,6 +455,20 @@
   gap: 4px;
 }
 
+.record-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.record-row-actions button {
+  min-height: 26px;
+  padding: 4px 8px;
+  border-radius: 7px;
+  font-size: 11px;
+}
+
 /* Manuscripts Kanban Board */
 .kanban-board {
   display: grid;
@@ -761,6 +782,184 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+.submission-edit-center {
+  padding: 0;
+  overflow: hidden;
+  border-color: hsl(var(--accent-cyan) / 0.18);
+  background:
+    linear-gradient(135deg, hsl(var(--accent-cyan) / 0.08), transparent 34%),
+    linear-gradient(315deg, hsl(var(--accent-purple) / 0.07), transparent 30%),
+    hsl(var(--card-bg) / 0.88);
+}
+
+.submission-edit-center-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid hsl(var(--card-border));
+}
+
+.submission-edit-title-row {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.submission-edit-title-row h3 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+.submission-edit-title-row p {
+  margin-top: 3px;
+  color: hsl(var(--text-muted));
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.submission-edit-emblem,
+.submission-edit-section-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  border: 1px solid hsl(var(--accent-cyan) / 0.22);
+  background: hsl(var(--accent-cyan) / 0.1);
+  color: hsl(var(--accent-cyan));
+}
+
+.submission-edit-emblem {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  box-shadow: 0 10px 28px hsl(var(--accent-cyan) / 0.12);
+}
+
+.submission-edit-emblem .svg-icon,
+.submission-edit-section-icon .svg-icon {
+  width: 17px;
+  height: 17px;
+  stroke-width: 2;
+}
+
+.submission-edit-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.submission-edit-section {
+  padding: 14px 18px 4px;
+}
+
+.submission-edit-section + .submission-edit-section {
+  border-top: 1px solid hsl(var(--card-border) / 0.72);
+}
+
+.submission-edit-section-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  color: hsl(var(--text-primary));
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.submission-edit-section-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+}
+
+.submission-edit-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.35fr) minmax(160px, 0.85fr) minmax(180px, 1fr) minmax(140px, 0.7fr);
+  gap: 12px;
+  align-items: end;
+}
+
+.submission-edit-grid-identity {
+  grid-template-columns: minmax(240px, 1.4fr) minmax(160px, 0.85fr) minmax(190px, 1fr) minmax(140px, 0.7fr);
+}
+
+.submission-edit-grid-dates {
+  grid-template-columns: repeat(4, minmax(150px, 1fr));
+}
+
+.submission-edit-grid-publication {
+  grid-template-columns: minmax(190px, 0.85fr) minmax(260px, 1.35fr);
+}
+
+.submission-edit-center .form-group {
+  margin: 0;
+}
+
+.submission-edit-center label {
+  color: hsl(var(--text-muted));
+  font-size: 10px;
+}
+
+.submission-edit-center input,
+.submission-edit-center select {
+  min-height: 38px;
+  border-radius: 8px;
+  background: hsl(var(--card-bg) / 0.54);
+}
+
+.submission-edit-title-field input {
+  font-weight: 700;
+}
+
+.submission-edit-actions {
+  justify-content: flex-end;
+}
+
+.submission-edit-savebar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(170px, 220px);
+  gap: 12px;
+  align-items: center;
+  margin-top: 10px;
+  padding: 14px 18px 18px;
+  border-top: 1px solid hsl(var(--card-border));
+  background: hsl(var(--card-fill));
+}
+
+.submission-edit-savebar p {
+  margin: 0;
+  color: hsl(var(--text-muted));
+  font-size: 10.5px;
+  line-height: 1.45;
+}
+
+.submission-edit-save {
+  min-height: 40px;
+  border-radius: 8px;
+  justify-content: center;
+}
+
+.submission-edit-save .svg-icon {
+  width: 15px;
+  height: 15px;
+}
+
+.quick-new-manuscript-panel {
+  padding: 12px;
+  border: 1px solid hsl(var(--accent-cyan) / 0.18);
+  border-radius: 10px;
+  background: hsl(var(--accent-cyan) / 0.06);
 }
 
 /* Rebuttal Response Matrix Grid */
@@ -2375,6 +2574,22 @@ select option {
   .submission-list-card,
   .submission-detail-card {
     overflow-y: visible;
+  }
+  .submission-edit-center-head {
+    flex-direction: column;
+  }
+  .submission-edit-badges {
+    justify-content: flex-start;
+  }
+  .submission-edit-grid,
+  .submission-edit-grid-identity,
+  .submission-edit-grid-dates,
+  .submission-edit-grid-publication,
+  .submission-edit-savebar {
+    grid-template-columns: 1fr;
+  }
+  .submission-edit-savebar {
+    align-items: stretch;
   }
   .pipeline-card {
     grid-template-columns: 1fr;

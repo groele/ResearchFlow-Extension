@@ -31,14 +31,14 @@ body {
 .logo-orb {
   width: 32px;
   height: 32px;
-  border-radius: 50%;
-  box-shadow: 0 0 12px hsl(var(--accent-purple) / 0.5);
+  border-radius: 9px;
+  box-shadow: 0 6px 14px hsl(var(--accent-cyan) / 0.28);
   animation: logoGlow 3s ease-in-out infinite alternate;
 }
 
 @keyframes logoGlow {
-  0% { transform: scale(1); filter: hue-rotate(0deg) brightness(1); }
-  100% { transform: scale(1.05); filter: hue-rotate(45deg) brightness(1.2); }
+  0% { transform: scale(1); filter: brightness(1); }
+  100% { transform: scale(1.03); filter: brightness(1.08); }
 }
 
 .popup-header h2 {

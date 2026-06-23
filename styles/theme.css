@@ -144,7 +144,7 @@ body {
 }
 
 .glass-panel:hover {
-  border-color: rgba(255, 255, 255, 0.12);
+  border-color: hsl(var(--accent-cyan) / 0.18);
 }
 
 .glass-card {
@@ -189,7 +189,13 @@ body {
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
+}
+
+.logo-orb {
+  background: url('../assets/icons/icon-32.png') center / contain no-repeat;
+  border-radius: 10px;
+  box-shadow: 0 6px 14px hsl(var(--accent-cyan) / 0.28);
 }
 
 /* Interactive Components */
@@ -260,6 +266,7 @@ button:focus-visible, .btn:focus-visible {
 input[type="text"],
 input[type="password"],
 input[type="email"],
+input[type="url"],
 input[type="date"],
 input[type="number"],
 textarea,

@@ -12,7 +12,7 @@
     <!-- Header -->
     <header class="workspace-header">
       <div class="logo-area">
-        <div class="logo-orb gradient-bg-purple"></div>
+        <div class="logo-orb" aria-hidden="true"></div>
         <h2>ResearchFlow OS</h2>
       </div>
       <button id="btn-options" class="btn-secondary btn-icon" title="Go to Dashboard">
@@ -80,7 +80,7 @@
 
           <!-- Structured Reading Dimensions -->
           <details class="glass-card" style="margin-top: 10px; border: 1px solid var(--glass-border); padding: 8px 12px; border-radius: 8px;" id="details-structured-notes">
-            <summary style="font-size:11px; font-weight:700; color:hsl(var(--accent-purple)); cursor:pointer; user-select:none; outline:none;">🔬 Structured Reading Notes</summary>
+            <summary style="font-size:11px; font-weight:700; color:hsl(var(--accent-purple)); cursor:pointer; user-select:none; outline:none;">Structured Reading Notes</summary>
             <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
               <div class="form-group">
                 <label style="font-size:9px;">Core Breakthrough</label>
@@ -121,7 +121,7 @@
             <!-- Rendered dynamically -->
           </div>
           <button id="btn-copy-citation" class="btn-secondary w-full" style="padding: 4px 8px; font-size: 11px; margin-top:8px; display:flex; align-items:center; justify-content:center; gap:6px;">
-            📋 Copy Citation
+            Copy Citation
           </button>
         </div>
       </section>
@@ -129,8 +129,8 @@
       <!-- TAB 2: AI COPILOT -->
       <section id="tab-copilot" class="tab-pane">
         <div class="ai-quick-shortcuts">
-          <button id="btn-ai-summarize" class="btn-secondary">📝 Summarize Page</button>
-          <button id="btn-ai-rebuttal" class="btn-secondary">✉️ Review Response</button>
+          <button id="btn-ai-summarize" class="btn-secondary">Summarize Page</button>
+          <button id="btn-ai-rebuttal" class="btn-secondary">Review Response</button>
         </div>
 
         <div class="chat-container glass-card">
@@ -152,13 +152,13 @@
       <!-- TAB 3: NOTES & TASKS -->
       <section id="tab-notes" class="tab-pane">
         <div class="notes-workspace glass-card">
-          <h3>📝 Working Scratchpad</h3>
+          <h3>Working Scratchpad</h3>
           <textarea id="scratchpad" placeholder="Type temporary notes, computational code snippets, or thoughts here. Autosaves instantly."></textarea>
         </div>
 
         <div class="tasks-workspace glass-card">
           <div class="tasks-header">
-            <h3>📋 Project Checklist</h3>
+            <h3>Project Checklist</h3>
             <button id="btn-add-task" class="btn-secondary" style="padding: 4px 8px; font-size: 11px;">+ Add Task</button>
           </div>
           <div id="side-tasks-list" class="tasks-list">

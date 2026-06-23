@@ -31,10 +31,10 @@ body {
 }
 
 .logo-orb {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  box-shadow: 0 0 8px hsl(var(--accent-purple) / 0.5);
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  box-shadow: 0 5px 12px hsl(var(--accent-cyan) / 0.26);
 }
 
 .workspace-header h2 {
@@ -211,7 +211,7 @@ body {
   border-top: 1px solid var(--glass-border);
   padding: 8px 12px;
   gap: 8px;
-  background: rgba(0, 0, 0, 0.2);
+  background: hsl(var(--card-bg) / 0.72);
 }
 
 .chat-input-area textarea {

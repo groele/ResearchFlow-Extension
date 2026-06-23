@@ -143,17 +143,13 @@ const I18N = {
     status: 'Status',
     keyEventMapping: 'Key Event Mapping',
     eventDate: 'Event Date',
-    eventDateHelp: 'One timeline event only needs one date: the day this mapped event happened. Deadlines and source dates are managed in the submission timeline panel.',
+    eventDateHelp: 'One timeline event only needs one date: the day this mapped event happened. Deadlines and source dates are managed in the Submission Edit Center.',
     plannedDate: 'Planned Date',
     initialSubmissionDate: 'Initial Submission Date',
     deadlineDate: 'Deadline / Due Date',
     completionDate: 'Completion Date',
     firstDecisionDate: 'First Decision / R1 Date',
     revisionDueDateLabel: 'Revision Due Date',
-    timelineDateControlTitle: 'Timeline Date Source',
-    timelineDateControlHelp: 'Dashboard timing uses these submission-level dates first, then mirrors them onto timeline events. Editing the submit/acceptance timeline events also updates these source dates.',
-    saveTimelineDates: 'Save Timeline Dates',
-    timelineDatesSaved: 'Timeline dates saved and synced to Dashboard.',
     timelineDateSource: 'Date source',
     doiLabel: 'DOI',
     articlePage: 'Article page',
@@ -163,10 +159,6 @@ const I18N = {
     targetJournalInput: 'Target Journal',
     articleUrlLabel: 'Article / Journal URL',
     articleUrlPlaceholder: 'https://doi.org/10.xxxx/xxxxx',
-    publicationLinkTitle: 'Publication Link',
-    savePublicationLink: 'Save DOI / Link',
-    publicationLinkSaved: 'Publication DOI and link saved.',
-    publicationLinkRequiresAcceptance: 'DOI and article links are available after acceptance or publication.',
     trackSubmissionButton: 'Track Submission',
     manuscriptJournalRequired: 'Manuscript and Journal are required',
     submissionAddedToast: 'New submission added to pipeline!',
@@ -351,17 +343,13 @@ const I18N = {
     status: '状态',
     keyEventMapping: '关键事件映射',
     eventDate: '事件日期',
-    eventDateHelp: '一个时间线事件只需要一个日期：该映射事件实际发生的日期。截止日期和来源日期在投稿详情的时间线面板中维护。',
+    eventDateHelp: '一个时间线事件只需要一个日期：该映射事件实际发生的日期。截止日期和来源日期在 Submission Edit Center 中维护。',
     plannedDate: '计划日期',
     initialSubmissionDate: '初始投稿日期',
     deadlineDate: '截止日期',
     completionDate: '完成日期',
     firstDecisionDate: '首次决定 / R1 日期',
     revisionDueDateLabel: '返修截止日期',
-    timelineDateControlTitle: '时间线日期来源',
-    timelineDateControlHelp: 'Dashboard 计时优先使用这里的投稿级日期，并自动同步到时间线事件。编辑“投稿/接收”等时间线事件时，也会反向更新这些来源日期。',
-    saveTimelineDates: '保存时间线日期',
-    timelineDatesSaved: '时间线日期已保存并同步到 Dashboard。',
     timelineDateSource: '日期来源',
     doiLabel: 'DOI',
     articlePage: '文章主页',
@@ -371,10 +359,6 @@ const I18N = {
     targetJournalInput: '目标期刊',
     articleUrlLabel: '文章 / 期刊页面 URL',
     articleUrlPlaceholder: 'https://doi.org/10.xxxx/xxxxx',
-    publicationLinkTitle: '发表链接',
-    savePublicationLink: '保存 DOI / 链接',
-    publicationLinkSaved: 'DOI 和文章链接已保存。',
-    publicationLinkRequiresAcceptance: '未接收前不显示 DOI 或文章链接。',
     trackSubmissionButton: '开始跟踪投稿',
     manuscriptJournalRequired: '请填写手稿和目标期刊',
     submissionAddedToast: '新的投稿已加入时间线。',
@@ -2702,8 +2686,10 @@ function renderRecords() {
   
   if (searchVal) {
     filtered = filtered.filter(r => 
-      r.title.toLowerCase().includes(searchVal) ||
-      (r.summary && r.summary.toLowerCase().includes(searchVal))
+      String(r.title || '').toLowerCase().includes(searchVal) ||
+      String(r.summary || '').toLowerCase().includes(searchVal) ||
+      String(r.methodology || '').toLowerCase().includes(searchVal) ||
+      (Array.isArray(r.tags) && r.tags.some(tag => String(tag).toLowerCase().includes(searchVal)))
     );
   }
 
@@ -2722,29 +2708,46 @@ function renderRecords() {
     // Find project title
     const proj = db.projects.find(p => p.id === rec.projectId);
     const projTitle = proj ? proj.title : 'Unlinked';
+    const recId = escapeHTML(rec.id);
+    const recTitle = escapeHTML(rec.title || 'Untitled Record');
+    const recType = escapeHTML(rec.recordType || 'other');
+    const tagHtml = (rec.tags || []).map(tag => `<span class="badge badge-info">${escapeHTML(tag)}</span>`).join('');
     const recordDate = rec.recordedDate || rec.occurredAt || rec.createdAt || rec.updatedAt || '';
     const recordDateText = recordDate && !isNaN(new Date(recordDate)) ? new Date(recordDate).toLocaleDateString() : '-';
 
     tr.innerHTML = `
       <td style="text-align: center;">
-        <input type="checkbox" class="chk-record-row" data-id="${rec.id}" style="width: 14px; height: 14px; cursor: pointer; accent-color: hsl(var(--accent-purple));">
+        <input type="checkbox" class="chk-record-row" data-id="${recId}" style="width: 14px; height: 14px; cursor: pointer; accent-color: hsl(var(--accent-purple));">
       </td>
-      <td><strong>${rec.title}</strong></td>
-      <td><span class="badge badge-purple">${rec.recordType}</span></td>
-      <td>${projTitle}</td>
+      <td><strong>${recTitle}</strong></td>
+      <td><span class="badge badge-purple">${recType}</span></td>
+      <td>${escapeHTML(projTitle)}</td>
       <td>${recordDateText}</td>
-      <td><div class="tags-cell">${(rec.tags || []).map(t => `<span class="badge badge-info">${t}</span>`).join('')}</div></td>
+      <td><div class="tags-cell">${tagHtml}</div></td>
       <td>
-        <button class="btn-secondary" style="padding: 4px 8px; font-size:11px;" id="btn-edit-rec-${rec.id}">✏️ Edit</button>
-        <button class="btn-danger" style="padding: 4px 8px; font-size:11px;" id="btn-del-rec-${rec.id}">🗑️</button>
+        <div class="record-row-actions">
+          <button class="btn-secondary" id="btn-edit-rec-${recId}" title="Edit this record">Edit</button>
+          <button class="btn-secondary" id="btn-copy-rec-${recId}" title="Duplicate this record as a new entry">Duplicate</button>
+          <button class="btn-danger" id="btn-del-rec-${recId}" title="Delete this record">Delete</button>
+        </div>
       </td>
     `;
     
     tbody.appendChild(tr);
+    tr.title = 'Double-click to edit this record';
+    tr.addEventListener('dblclick', (e) => {
+      if (e.target.closest('button, input, a, select')) return;
+      openRecordFormModal(rec);
+    });
 
     // Edit
     document.getElementById(`btn-edit-rec-${rec.id}`).addEventListener('click', () => {
-      editRecordModal(rec);
+      openRecordFormModal(rec);
+    });
+
+    // Duplicate
+    document.getElementById(`btn-copy-rec-${rec.id}`).addEventListener('click', () => {
+      openRecordFormModal(rec, { duplicate: true });
     });
 
     // Delete
@@ -2753,6 +2756,7 @@ function renderRecords() {
         db.researchRecords = db.researchRecords.filter(r => r.id !== rec.id);
         await window.storage.saveAll(db);
         renderRecords();
+        showGlobalToast('Research record deleted.', 'success');
       }
     });
   });
@@ -2786,8 +2790,14 @@ document.getElementById('btn-add-record').addEventListener('click', () => {
   openRecordFormModal(null);
 });
 
-function openRecordFormModal(record = null) {
-  const isEdit = !!record;
+function openRecordFormModal(record = null, options = {}) {
+  const formMode = window.RFUI.getRecordFormMode(record, options);
+  const isEdit = formMode.isEdit;
+  const defaultDate = new Date().toISOString().split('T')[0];
+  const recordDateValue = window.RFUI.toDateInputValue(
+    record?.recordedDate || record?.occurredAt || record?.createdAt || record?.updatedAt,
+    defaultDate
+  );
   
   let projectOpts = `
     <option value="" ${!record || !record.projectId ? 'selected' : ''}>-- Uncategorized / Personal Notes --</option>
@@ -2797,7 +2807,7 @@ function openRecordFormModal(record = null) {
 
   openModal(`
     <div class="modal-header">
-      <h2>${isEdit ? 'Modify Research Record' : 'Log New Research Record'}</h2>
+      <h2>${formMode.title}</h2>
       <button class="btn-secondary btn-icon" id="btn-close-modal">✕</button>
     </div>
     
@@ -2825,7 +2835,7 @@ function openRecordFormModal(record = null) {
       </div>
       <div class="form-group">
         <label>Date Conducted</label>
-        <input type="date" id="rec-date" value="${isEdit ? record.recordedDate.split('T')[0] : new Date().toISOString().split('T')[0]}">
+        <input type="date" id="rec-date" value="${recordDateValue}">
       </div>
     </div>
 
@@ -2850,7 +2860,7 @@ function openRecordFormModal(record = null) {
       </div>
     </div>
 
-    <button class="btn-primary w-full" style="margin-top: 12px;" id="btn-submit-record">${isEdit ? 'Save Changes' : 'Log Record'}</button>
+    <button class="btn-primary w-full" style="margin-top: 12px;" id="btn-submit-record">${formMode.submitLabel}</button>
   `);
 
   // Dynamically load existing attributes if editing
@@ -2942,7 +2952,7 @@ function openRecordFormModal(record = null) {
     await window.storage.saveAll(db);
     closeModal();
     renderRecords();
-    showGlobalToast(isEdit ? 'Record updated!' : 'Record logged!', 'success');
+    showGlobalToast(isEdit ? 'Record updated!' : (formMode.isDuplicate ? 'Record duplicated!' : 'Record logged!'), 'success');
   });
 }
 
@@ -3933,9 +3943,10 @@ function renderSubmissionDetails(sub) {
   normalizeSubmissionTimeline(sub);
   const detailPanel = document.getElementById('submission-detail-panel');
   const man = db.manuscripts.find(m => m.id === sub.manuscriptId);
+  const manuscriptTitle = man ? man.title : (sub.title || t('untitledManuscript'));
   const manAbstract = man ? man.abstract || '' : '';
   const journalName = getSubmissionJournalName(sub);
-  const publicationReady = canHavePublicationLink(sub);
+  const submissionJournalUrl = sub.journalUrl || sub.submissionUrl || '';
   const submissionDoi = getSubmissionDoi(sub);
   const articleUrl = getSubmissionArticleUrl(sub);
   const timelineAnalysis = analyzeSubmission(sub);
@@ -3985,6 +3996,115 @@ function renderSubmissionDetails(sub) {
       <span class="recent-item-date">Tracked since: ${sub.createdAt ? new Date(sub.createdAt).toLocaleDateString() : t('noDate')}</span>
     </div>
 
+    <div class="glass-card submission-edit-center" style="margin-top: 12px;">
+      <div class="submission-edit-center-head">
+        <div class="submission-edit-title-row">
+          <span class="submission-edit-emblem" aria-hidden="true">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/><line x1="9" y1="18" x2="13" y2="18"/></svg>
+          </span>
+          <div>
+            <h3>Submission Edit Center</h3>
+            <p>Title, journal, status, dates, DOI.</p>
+          </div>
+        </div>
+        <div class="submission-edit-badges">
+          <span class="badge badge-purple">${man ? 'Linked manuscript' : 'Detached submission'}</span>
+          <span class="badge badge-info">${escapeHTML(String(sub.status || 'submitted').replace('_', ' '))}</span>
+          ${articleUrl ? `<a class="doi-link" href="${escapeHTML(articleUrl)}" target="_blank" rel="noopener noreferrer">${t('articlePage')}</a>` : ''}
+        </div>
+      </div>
+
+      <div class="submission-edit-section">
+        <div class="submission-edit-section-head">
+          <span class="submission-edit-section-icon" aria-hidden="true">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          </span>
+          <span>Manuscript</span>
+        </div>
+        <div class="submission-edit-grid submission-edit-grid-identity">
+          <div class="form-group submission-edit-title-field">
+            <label>Manuscript Title</label>
+            <input type="text" id="sub-edit-title" value="${escapeHTML(manuscriptTitle)}" placeholder="Paper title">
+          </div>
+          <div class="form-group">
+            <label>${t('targetJournalInput')}</label>
+            <input type="text" id="sub-edit-journal" value="${escapeHTML(journalName)}" placeholder="Target journal">
+          </div>
+          <div class="form-group">
+            <label>Submission Portal URL</label>
+            <input type="url" id="sub-edit-journal-url" value="${escapeHTML(submissionJournalUrl)}" placeholder="https://...">
+          </div>
+          <div class="form-group">
+            <label>${t('status')}</label>
+            <select id="sub-edit-status">
+              <option value="submitted" ${sub.status === 'submitted' ? 'selected' : ''}>Submitted</option>
+              <option value="under_review" ${sub.status === 'under_review' ? 'selected' : ''}>Under Review</option>
+              <option value="revision" ${sub.status === 'revision' ? 'selected' : ''}>Revision</option>
+              <option value="accepted" ${sub.status === 'accepted' ? 'selected' : ''}>Accepted</option>
+              <option value="published" ${sub.status === 'published' ? 'selected' : ''}>Published</option>
+              <option value="rejected" ${sub.status === 'rejected' ? 'selected' : ''}>Rejected</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="submission-edit-section">
+        <div class="submission-edit-section-head">
+          <span class="submission-edit-section-icon" aria-hidden="true">
+            <svg class="svg-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </span>
+          <span>Review Timing</span>
+        </div>
+        <div class="submission-edit-grid submission-edit-grid-dates">
+          <div class="form-group">
+            <label>${t('initialSubmissionDate')}</label>
+            <input type="date" id="sub-edit-submission-date" value="${escapeHTML(timelineSubmissionDate)}">
+          </div>
+          <div class="form-group">
+            <label>${t('firstDecisionDate')}</label>
+            <input type="date" id="sub-edit-r1-date" value="${escapeHTML(timelineFirstDecisionDate)}">
+          </div>
+          <div class="form-group">
+            <label>${t('revisionDueDateLabel')}</label>
+            <input type="date" id="sub-edit-revision-due" value="${escapeHTML(timelineRevisionDueDate)}">
+          </div>
+          <div class="form-group">
+            <label>${t('completionDate')} / ${t('stateAccepted')}</label>
+            <input type="date" id="sub-edit-decision-date" value="${escapeHTML(timelineDecisionDate)}">
+          </div>
+        </div>
+      </div>
+
+      <div class="submission-edit-section">
+        <div class="submission-edit-section-head">
+          <span class="submission-edit-section-icon" aria-hidden="true">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.5 4.43"/><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07l1.33-1.33"/></svg>
+          </span>
+          <span>Publication</span>
+        </div>
+        <div class="submission-edit-grid submission-edit-grid-publication">
+          <div class="form-group">
+            <label>${t('doiLabel')}</label>
+            <input type="text" id="sub-edit-doi" value="${escapeHTML(submissionDoi)}" placeholder="10.1002/adfm.202528029">
+          </div>
+          <div class="form-group">
+            <label>${t('articleUrlLabel')}</label>
+            <input type="url" id="sub-edit-article-url" value="${escapeHTML(articleUrl)}" placeholder="${t('articleUrlPlaceholder')}">
+          </div>
+        </div>
+      </div>
+
+      <div class="submission-edit-savebar">
+        <p>${t('timelineDateSource')}: ${escapeHTML(timelineAnalysis.submitDateSource)}. Publication links are kept for Accepted or Published submissions.</p>
+        <div class="form-group submission-edit-actions">
+          <button class="btn-primary w-full submission-edit-save" id="btn-save-sub-edit-center">
+            <svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            <span>Save All Changes</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div class="glass-card" style="margin-top: 12px;">
       <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
         <div>
@@ -4000,83 +4120,6 @@ function renderSubmissionDetails(sub) {
     
     <!-- Cycle Time Stats Panel -->
     ${cycleTimeHtml}
-
-    ${publicationReady ? `
-      <div class="glass-card" style="margin-top: 16px;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
-          <div>
-            <h3>${t('publicationLinkTitle')}</h3>
-            <p class="text-muted" style="font-size:11px; line-height:1.5; margin-top:4px;">${t('doiLabel')} and article URL are shown on Dashboard timeline cards and open the paper page directly.</p>
-          </div>
-          ${articleUrl ? `<a class="doi-link" href="${escapeHTML(articleUrl)}" target="_blank" rel="noopener noreferrer">${t('articlePage')}</a>` : ''}
-        </div>
-        <div class="grid-cols-2" style="gap:10px; margin-top:12px;">
-          <div class="form-group">
-            <label>${t('doiLabel')}</label>
-            <input type="text" id="sub-publication-doi" value="${escapeHTML(submissionDoi)}" placeholder="10.1002/adfm.202528029">
-          </div>
-          <div class="form-group">
-            <label>${t('articleUrlLabel')}</label>
-            <input type="url" id="sub-publication-url" value="${escapeHTML(articleUrl)}" placeholder="${t('articleUrlPlaceholder')}">
-          </div>
-          <div class="form-group" style="display:flex; align-items:flex-end; grid-column:1 / -1;">
-            <button class="btn-primary w-full" id="btn-save-sub-publication">${t('savePublicationLink')}</button>
-          </div>
-        </div>
-      </div>
-    ` : `
-      <div class="glass-card" style="margin-top: 16px;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
-          <div>
-            <h3>${t('publicationLinkTitle')}</h3>
-            <p class="text-muted" style="font-size:11px; line-height:1.5; margin-top:4px;">${t('publicationLinkRequiresAcceptance')}</p>
-          </div>
-          <span class="doi-missing">${t('doiNotSet')}</span>
-        </div>
-      </div>
-    `}
-
-    <div class="glass-card" style="margin-top: 16px;">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
-        <div>
-          <h3>⏱ ${t('timelineDateControlTitle')}</h3>
-          <p class="text-muted" style="font-size:11px; line-height:1.5; margin-top:4px;">${t('timelineDateControlHelp')}</p>
-        </div>
-        <span class="badge badge-info">${t('timelineDateSource')}: ${escapeHTML(timelineAnalysis.submitDateSource)}</span>
-      </div>
-      <div class="grid-cols-2" style="gap:10px; margin-top:12px;">
-        <div class="form-group">
-          <label>${t('initialSubmissionDate')}</label>
-          <input type="date" id="sub-timeline-submission-date" value="${escapeHTML(timelineSubmissionDate)}">
-        </div>
-        <div class="form-group">
-          <label>${t('firstDecisionDate')}</label>
-          <input type="date" id="sub-timeline-r1-date" value="${escapeHTML(timelineFirstDecisionDate)}">
-        </div>
-        <div class="form-group">
-          <label>${t('revisionDueDateLabel')}</label>
-          <input type="date" id="sub-timeline-revision-due" value="${escapeHTML(timelineRevisionDueDate)}">
-        </div>
-        <div class="form-group">
-          <label>${t('completionDate')} / ${t('stateAccepted')}</label>
-          <input type="date" id="sub-timeline-decision-date" value="${escapeHTML(timelineDecisionDate)}">
-        </div>
-        <div class="form-group">
-          <label>${t('status')}</label>
-          <select id="sub-timeline-status">
-            <option value="submitted" ${sub.status === 'submitted' ? 'selected' : ''}>Submitted</option>
-            <option value="under_review" ${sub.status === 'under_review' ? 'selected' : ''}>Under Review</option>
-            <option value="revision" ${sub.status === 'revision' ? 'selected' : ''}>Revision</option>
-            <option value="accepted" ${sub.status === 'accepted' ? 'selected' : ''}>Accepted</option>
-            <option value="published" ${sub.status === 'published' ? 'selected' : ''}>Published</option>
-            <option value="rejected" ${sub.status === 'rejected' ? 'selected' : ''}>Rejected</option>
-          </select>
-        </div>
-        <div class="form-group" style="display:flex; align-items:flex-end;">
-          <button class="btn-primary w-full" id="btn-save-sub-timeline">${t('saveTimelineDates')}</button>
-        </div>
-      </div>
-    </div>
 
     <!-- Compliance Checklist Section -->
     <div class="glass-card" style="margin-top: 16px;">
@@ -4103,22 +4146,6 @@ function renderSubmissionDetails(sub) {
       </div>
     </div>
   `;
-
-  const publicationSaveButton = document.getElementById('btn-save-sub-publication');
-  if (publicationSaveButton) {
-    publicationSaveButton.addEventListener('click', async () => {
-      const doi = normalizeDoi(document.getElementById('sub-publication-doi').value);
-      const url = document.getElementById('sub-publication-url').value.trim();
-      sub.doi = doi || null;
-      sub.articleUrl = url || (doi ? `https://doi.org/${doi}` : null);
-      sub.updatedAt = new Date().toISOString();
-      await window.storage.saveAll(db);
-      renderDashboard();
-      renderSubmissions();
-      renderSubmissionDetails(sub);
-      showGlobalToast(t('publicationLinkSaved'), 'success');
-    });
-  }
 
   document.getElementById('btn-mark-sub-rejected').addEventListener('click', async () => {
     if (!confirm('Mark this submission as rejected?')) return;
@@ -4154,34 +4181,56 @@ function renderSubmissionDetails(sub) {
     }
   });
 
-  document.getElementById('btn-save-sub-timeline').addEventListener('click', async () => {
-    const submissionDateValue = document.getElementById('sub-timeline-submission-date').value;
-    const firstDecisionDateValue = document.getElementById('sub-timeline-r1-date').value;
-    const revisionDueDateValue = document.getElementById('sub-timeline-revision-due').value;
-    const decisionDateValue = document.getElementById('sub-timeline-decision-date').value;
-    const nextStatus = document.getElementById('sub-timeline-status').value;
-
-    sub.submissionDate = dateInputToIso(submissionDateValue);
-    sub.firstDecisionDate = dateInputToIso(firstDecisionDateValue);
-    sub.revisionDueDate = dateInputToIso(revisionDueDateValue);
-    sub.decisionDate = dateInputToIso(decisionDateValue);
-    if (nextStatus === 'rejected') {
-      markSubmissionRejected(sub, decisionDateValue || firstDecisionDateValue || todayString());
-    } else {
-      sub.status = nextStatus;
+  document.getElementById('btn-save-sub-edit-center').addEventListener('click', async () => {
+    const syncPlan = window.RFUI.buildSubmissionEditSyncPlan({
+      title: document.getElementById('sub-edit-title').value,
+      journal: document.getElementById('sub-edit-journal').value,
+      journalUrl: document.getElementById('sub-edit-journal-url').value,
+      status: document.getElementById('sub-edit-status').value,
+      submissionDate: document.getElementById('sub-edit-submission-date').value,
+      firstDecisionDate: document.getElementById('sub-edit-r1-date').value,
+      revisionDueDate: document.getElementById('sub-edit-revision-due').value,
+      decisionDate: document.getElementById('sub-edit-decision-date').value,
+      doi: document.getElementById('sub-edit-doi').value,
+      articleUrl: document.getElementById('sub-edit-article-url').value
+    });
+    if (!syncPlan.ok) {
+      alert(syncPlan.error);
+      return;
     }
-    if (nextStatus === 'accepted') {
+
+    if (man) {
+      Object.assign(man, syncPlan.manuscriptPatch);
+      man.updatedAt = new Date().toISOString();
+    } else {
+      sub.title = syncPlan.detachedSubmissionTitle;
+    }
+
+    Object.assign(sub, syncPlan.submissionPatch);
+
+    if (syncPlan.shouldMarkRejected) {
+      markSubmissionRejected(sub, syncPlan.rejectionDate || todayString());
+    } else {
+      sub.status = syncPlan.submissionPatch.status;
+    }
+
+    if (syncPlan.submissionPatch.status === 'accepted') {
       sub.acceptedAt = sub.decisionDate || sub.acceptedAt || new Date().toISOString();
-    } else if (nextStatus === 'published') {
+    } else if (syncPlan.submissionPatch.status === 'published') {
       sub.publishedAt = sub.decisionDate || sub.publishedAt || new Date().toISOString();
       sub.acceptedAt = sub.acceptedAt || sub.publishedAt;
     }
-    if (nextStatus !== 'accepted' && nextStatus !== 'published') {
+
+    if (syncPlan.publicationPatch) {
+      const doi = normalizeDoi(syncPlan.publicationPatch.doi);
+      sub.doi = doi || null;
+      sub.articleUrl = syncPlan.publicationPatch.articleUrl || (doi ? `https://doi.org/${doi}` : null);
+    } else if (syncPlan.shouldClearPublication) {
       clearPublicationLinkFields(sub);
       clearPublicationTimelineCompletion(sub);
     }
-    sub.updatedAt = new Date().toISOString();
 
+    sub.updatedAt = new Date().toISOString();
     normalizeSubmissionTimeline(sub);
     syncManuscriptStatusFromSubmission(sub);
     await window.storage.saveAll(db);
@@ -4189,7 +4238,7 @@ function renderSubmissionDetails(sub) {
     renderKanban();
     renderSubmissions();
     renderSubmissionDetails(sub);
-    showGlobalToast(t('timelineDatesSaved'), 'success');
+    showGlobalToast('Submission edits saved.', 'success');
   });
 
   // Render compliance checkboxes
@@ -4602,7 +4651,13 @@ function openTransferSubmissionModal(sourceSub) {
 // Track New Submission trigger
 document.getElementById('btn-add-submission').addEventListener('click', () => {
   let manOpts = db.manuscripts.map(m => `
-    <option value="${m.id}">${m.title}</option>
+    <option value="${escapeHTML(m.id)}">${escapeHTML(m.title || t('untitledManuscript'))}</option>
+  `).join('');
+  manOpts += '<option value="__new__">+ Create new manuscript...</option>';
+  const defaultManuscriptMode = db.manuscripts.length === 0 ? '__new__' : (db.manuscripts[0]?.id || '__new__');
+  manOpts = manOpts.replace(`value="${escapeHTML(defaultManuscriptMode)}"`, `value="${escapeHTML(defaultManuscriptMode)}" selected`);
+  const projectOpts = db.projects.map(p => `
+    <option value="${escapeHTML(p.id)}">${escapeHTML(p.title || 'Untitled Project')}</option>
   `).join('');
 
   openModal(`
@@ -4614,6 +4669,19 @@ document.getElementById('btn-add-submission').addEventListener('click', () => {
     <div class="form-group">
       <label>${t('manuscriptPaper')}</label>
       <select id="sub-man-select">${manOpts}</select>
+    </div>
+
+    <div class="quick-new-manuscript-panel" id="sub-new-manuscript-panel" ${defaultManuscriptMode === '__new__' ? '' : 'hidden'}>
+      <div class="grid-cols-2" style="gap:10px;">
+        <div class="form-group">
+          <label>New Manuscript Title</label>
+          <input type="text" id="sub-new-man-title" placeholder="Paper title">
+        </div>
+        <div class="form-group">
+          <label>Linked Project</label>
+          <select id="sub-new-man-project">${projectOpts || '<option value="">No project yet</option>'}</select>
+        </div>
+      </div>
     </div>
 
     <div class="form-group">
@@ -4629,14 +4697,48 @@ document.getElementById('btn-add-submission').addEventListener('click', () => {
     <button class="btn-primary w-full" id="btn-submit-sub">${t('trackSubmissionButton')}</button>
   `);
 
+  const manuscriptSelect = document.getElementById('sub-man-select');
+  const newManuscriptPanel = document.getElementById('sub-new-manuscript-panel');
+  manuscriptSelect.addEventListener('change', () => {
+    newManuscriptPanel.hidden = manuscriptSelect.value !== '__new__';
+  });
+
   document.getElementById('btn-submit-sub').addEventListener('click', async () => {
-    const manuscriptId = document.getElementById('sub-man-select').value;
-    const targetJournal = document.getElementById('sub-journal').value.trim();
+    const createMode = window.RFUI.buildSubmissionCreateMode({
+      selectedManuscriptId: manuscriptSelect.value,
+      newManuscriptTitle: document.getElementById('sub-new-man-title')?.value || '',
+      targetJournal: document.getElementById('sub-journal').value
+    });
     const subDate = document.getElementById('sub-date').value;
 
-    if (!manuscriptId || !targetJournal) {
-      alert(t('manuscriptJournalRequired'));
+    if (!createMode.ok) {
+      alert(createMode.error);
       return;
+    }
+
+    let manuscriptId = createMode.manuscriptId;
+    if (createMode.mode === 'new') {
+      const newMan = {
+        id: 'man_' + Math.random().toString(36).substring(2, 9),
+        userId: 'user',
+        projectId: document.getElementById('sub-new-man-project')?.value || null,
+        title: createMode.title,
+        shortTitle: null,
+        manuscriptType: 'article',
+        status: 'submitted',
+        abstract: '',
+        keywords: [],
+        authors: [],
+        correspondingAuthors: [],
+        targetJournals: [createMode.targetJournal],
+        currentVersion: '1.0',
+        plannedFigures: [],
+        notes: 'Created inline while tracking a new submission',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      db.manuscripts.push(newMan);
+      manuscriptId = newMan.id;
     }
 
     const newSub = {
@@ -4644,7 +4746,7 @@ document.getElementById('btn-add-submission').addEventListener('click', () => {
       userId: 'user',
       manuscriptId,
       projectId: db.manuscripts.find(m => m.id === manuscriptId)?.projectId || null,
-      targetJournal,
+      targetJournal: createMode.targetJournal,
       journalUrl: null,
       doi: null,
       articleUrl: null,

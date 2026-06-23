@@ -116,6 +116,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   `;
 
   btnScrape.addEventListener('click', async () => {
+    const isAutomaticCapture = btnScrape.dataset.autoCapture === 'true';
+    delete btnScrape.dataset.autoCapture;
     btnScrape.disabled = true;
     btnScrape.innerHTML = '<span class="loader"></span> Scanning...';
 
@@ -175,10 +177,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 区分“页面受限”和“真实错误”
         const isRestricted = runtimeErr?.message?.includes('Cannot access') ||
                              runtimeErr?.message?.includes('receiving end');
-        if (!isRestricted) {
-          showNotification('Could not read page metadata. Try refreshing.', 'warning');
-        } else {
-          showNotification('This page type cannot be scanned.', 'info');
+        const shouldNotifyFailure = window.RFUI.shouldNotifyMetadataCaptureFailure({
+          isAutomaticCapture,
+          isRestrictedPage: isRestricted
+        });
+        if (shouldNotifyFailure) {
+          if (!isRestricted) {
+            showNotification('Could not read page metadata. Try refreshing.', 'warning');
+          } else {
+            showNotification('This page type cannot be scanned.', 'info');
+          }
         }
         metaPdf.value = tab.url;
         metaPdf.dataset.sourceUrl = tab.url;
@@ -756,6 +764,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
 
       if (canCapture) {
+        btnScrape.dataset.autoCapture = 'true';
         btnScrape.click();
       }
     }, 120);

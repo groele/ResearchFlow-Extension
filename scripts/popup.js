@@ -62,11 +62,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         newProjectInput.style.display = 'block';
         newProjectInput.value = '';
         projectSelect.style.display = 'none';
-        btnToggleProject.textContent = '✕ Cancel';
+        btnToggleProject.textContent = 'Cancel';
       } else {
         newProjectInput.style.display = 'none';
         projectSelect.style.display = 'block';
-        btnToggleProject.textContent = '➕ New Project';
+        btnToggleProject.textContent = 'New Project';
       }
     });
   }
@@ -196,7 +196,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (newProjectInput && newProjectInput.style.display === 'block') {
         newProjectInput.style.display = 'none';
         projectSelect.style.display = 'block';
-        btnToggleProject.textContent = '➕ New Project';
+        btnToggleProject.textContent = 'New Project';
       }
 
       // Re-populate project selector dropdown with the new project included
