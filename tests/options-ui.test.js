@@ -267,7 +267,7 @@ assert(
 );
 
 assert(
-  optionsHtml.includes('v1.2.13 Companion'),
+  optionsHtml.includes('v1.2.14 Companion'),
   'options page should display the current extension version'
 );
 

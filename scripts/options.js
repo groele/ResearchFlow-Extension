@@ -10,7 +10,7 @@ let currentDashboardFilter = 'all'; // 'all', 'accepted', 'active'
 let currentLanguage = 'en';
 let isPipelineExpanded = false;
 
-const RF_OPTIONS_RENDER_VERSION = '1.2.13';
+const RF_OPTIONS_RENDER_VERSION = '1.2.14';
 
 const I18N = {
   en: {

@@ -58,23 +58,23 @@
 
         <div class="metadata-form glass-card animate-slide-in">
           <div class="form-group">
-            <label>Publication Title</label>
+            <label for="meta-title">Publication Title</label>
             <input type="text" id="meta-title" placeholder="Academic paper title...">
           </div>
           <div class="form-group">
-            <label>DOI Number</label>
+            <label for="meta-doi">DOI Number</label>
             <input type="text" id="meta-doi" placeholder="e.g. 10.1038/s41586-024-xxxx">
           </div>
           <div class="form-group">
-            <label>Authors</label>
+            <label for="meta-authors">Authors</label>
             <input type="text" id="meta-authors" placeholder="Comma separated authors list...">
           </div>
           <div class="form-group">
-            <label>Abstract</label>
+            <label for="meta-abstract">Abstract</label>
             <textarea id="meta-abstract" placeholder="Abstract or paper overview text..."></textarea>
           </div>
           <div class="form-group">
-            <label>Source Link / PDF</label>
+            <label for="meta-pdf">Source Link / PDF</label>
             <input type="text" id="meta-pdf" placeholder="https://...">
           </div>
 
@@ -83,19 +83,19 @@
             <summary style="font-size:11px; font-weight:700; color:hsl(var(--accent-purple)); cursor:pointer; user-select:none; outline:none;">Structured Reading Notes</summary>
             <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
               <div class="form-group">
-                <label style="font-size:9px;">Core Breakthrough</label>
+                <label for="meta-breakthrough" style="font-size:9px;">Core Breakthrough</label>
                 <input type="text" id="meta-breakthrough" placeholder="e.g. Novel carbon anode design">
               </div>
               <div class="form-group">
-                <label style="font-size:9px;">Methodology & Equations</label>
+                <label for="meta-equations" style="font-size:9px;">Methodology & Equations</label>
                 <input type="text" id="meta-equations" placeholder="e.g. CVD synthesis, Eq (3)">
               </div>
               <div class="form-group">
-                <label style="font-size:9px;">Datasets & Compute</label>
+                <label for="meta-datasets" style="font-size:9px;">Datasets & Compute</label>
                 <input type="text" id="meta-datasets" placeholder="e.g. arXiv corpus, PyTorch">
               </div>
               <div class="form-group">
-                <label style="font-size:9px;">Open Limitations</label>
+                <label for="meta-limitations" style="font-size:9px;">Open Limitations</label>
                 <input type="text" id="meta-limitations" placeholder="e.g. Poor cyclability at high C-rate">
               </div>
             </div>
@@ -110,7 +110,7 @@
         <!-- Academic Citation Previewer -->
         <div class="citation-previewer glass-card" style="margin-top: 12px; display: none;" id="sec-citation">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <h4 style="font-size:10px; text-transform:uppercase; color:hsl(var(--text-muted)); margin-bottom:0; font-weight:700;">🎓 Academic Citation</h4>
+            <h4 style="font-size:10px; text-transform:uppercase; color:hsl(var(--text-muted)); margin-bottom:0; font-weight:700;">Academic Citation</h4>
             <select id="sel-citation-style" style="width:auto; font-size:10px !important; padding:2px 4px !important; height:24px;">
               <option value="apa">APA 7th</option>
               <option value="mla">MLA 9th</option>
