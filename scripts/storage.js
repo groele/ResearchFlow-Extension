@@ -107,7 +107,7 @@ class StorageEngine {
     await this.persistLocal(normalized);
 
     // Notify other pages (e.g. side panel or dashboard) of data changes
-    chrome.runtime.sendMessage({ action: 'DATABASE_UPDATED', data: normalized });
+    chrome.runtime.sendMessage({ action: 'DATABASE_UPDATED', data: normalized }).catch(() => {});
 
     // Trigger asynchronous background cloud database sync
     this.scheduleBackgroundSync();
@@ -342,7 +342,7 @@ class StorageEngine {
         if (shouldUpdateLocal) {
           this.cache = merged;
           await this.persistLocal(merged);
-          chrome.runtime.sendMessage({ action: 'DATABASE_UPDATED', data: merged });
+          chrome.runtime.sendMessage({ action: 'DATABASE_UPDATED', data: merged }).catch(() => {});
         }
 
         if (shouldPush) {

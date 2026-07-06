@@ -15,6 +15,105 @@ assert.equal(RFUI.getToastBadgeClass('error'), 'badge badge-danger');
 assert.equal(RFUI.getToastBadgeClass('info'), 'badge badge-info');
 assert.equal(RFUI.getToastBadgeClass('unknown'), 'badge badge-warning');
 
+assert.equal(RFUI.getSubmissionStatusBadgeClass('published'), 'badge badge-success');
+assert.equal(RFUI.getSubmissionStatusBadgeClass('accepted'), 'badge badge-success');
+assert.equal(RFUI.getSubmissionStatusBadgeClass('rejected'), 'badge badge-danger');
+assert.equal(RFUI.getSubmissionStatusBadgeClass('revision'), 'badge badge-warning');
+assert.equal(RFUI.getSubmissionStatusBadgeClass('under_review'), 'badge badge-info');
+assert.equal(RFUI.getSubmissionStatusBadgeClass('submitted'), 'badge badge-purple');
+assert.equal(RFUI.getSubmissionStatusBadgeClass('unknown'), 'badge badge-info');
+
+assert.equal(RFUI.getWorkflowStatusBadgeClass('submission', 'rejected'), 'badge badge-danger');
+assert.equal(RFUI.getWorkflowStatusBadgeClass('manuscript', 'published'), 'badge badge-success');
+assert.equal(RFUI.getWorkflowStatusBadgeClass('manuscript', 'drafting'), 'badge badge-warning');
+assert.equal(RFUI.getWorkflowStatusBadgeClass('timeline', 'completed'), 'badge badge-success');
+assert.equal(RFUI.getWorkflowStatusBadgeClass('timeline', 'blocked'), 'badge badge-danger');
+assert.equal(RFUI.getWorkflowStatusBadgeClass('record', 'literature_review'), 'badge badge-info');
+assert.equal(RFUI.getWorkflowStatusBadgeClass('project', 'active'), 'badge badge-purple');
+
+assert.deepEqual(RFUI.buildSubmissionRelationshipSummary({
+  submission: {
+    id: 'sub_1',
+    manuscriptId: 'man_1',
+    projectId: 'proj_1',
+    timelineNodes: [
+      { status: 'completed' },
+      { status: 'completed' },
+      { status: 'pending' }
+    ],
+    rebuttalMatrix: [{}, {}]
+  },
+  manuscript: { id: 'man_1', title: 'Interface Ferroelectricity', projectId: 'proj_1' },
+  project: { id: 'proj_1', title: 'ReS2 sliding project' },
+  records: [
+    { id: 'rec_1', projectId: 'proj_1' },
+    { id: 'rec_2', projectId: 'other' }
+  ]
+}), {
+  projectTitle: 'ReS2 sliding project',
+  manuscriptTitle: 'Interface Ferroelectricity',
+  recordCount: 1,
+  timelineNodeCount: 3,
+  completedTimelineNodeCount: 2,
+  reviewerCommentCount: 2,
+  isOrphanSubmission: false,
+  summaryLine: 'Interface Ferroelectricity in ReS2 sliding project: 1 record, 3 timeline events, 2 reviewer comments.'
+});
+
+assert.deepEqual(RFUI.buildSubmissionRelationshipSummary({
+  submission: {
+    id: 'sub_review_matrix',
+    manuscriptId: 'man_1',
+    projectId: 'proj_1',
+    timelineNodes: [],
+    reviewMatrix: [{}, {}, {}]
+  },
+  manuscript: { id: 'man_1', title: 'Review Matrix Manuscript', projectId: 'proj_1' },
+  project: { id: 'proj_1', title: 'Central review project' },
+  records: []
+}).reviewerCommentCount, 3);
+
+assert.deepEqual(RFUI.buildSubmissionRelationshipSummary({
+  submission: {
+    id: 'sub_prefers_review_matrix',
+    manuscriptId: 'man_1',
+    projectId: 'proj_1',
+    timelineNodes: [],
+    reviewMatrix: [],
+    rebuttalMatrix: [{}, {}]
+  },
+  manuscript: { id: 'man_1', title: 'Empty Review Matrix Manuscript', projectId: 'proj_1' },
+  project: { id: 'proj_1', title: 'Central review project' },
+  records: []
+}).reviewerCommentCount, 0);
+
+assert.deepEqual(RFUI.buildSubmissionRelationshipSummary({
+  submission: { id: 'sub_orphan', timelineNodes: [] },
+  manuscript: null,
+  project: null,
+  records: []
+}).isOrphanSubmission, true);
+
+assert.deepEqual(RFUI.buildProjectDeleteImpactSummary({
+  project: { id: 'proj_1', title: 'ReS2 sliding project' },
+  db: {
+    tasks: [{ projectId: 'proj_1' }, { projectId: 'proj_1' }, { projectId: 'other' }],
+    researchRecords: [{ projectId: 'proj_1' }],
+    manuscripts: [{ id: 'man_1', projectId: 'proj_1' }, { id: 'man_2', projectId: 'proj_1' }],
+    submissions: [{ manuscriptId: 'man_1' }, { projectId: 'proj_1' }, { projectId: 'other' }],
+    evidence: [{ projectId: 'proj_1' }]
+  }
+}), {
+  projectTitle: 'ReS2 sliding project',
+  taskCount: 2,
+  recordCount: 1,
+  manuscriptCount: 2,
+  submissionCount: 2,
+  evidenceCount: 1,
+  totalLinkedItems: 8,
+  confirmationMessage: 'Delete "ReS2 sliding project"? This affects 2 tasks, 1 research record, 2 manuscripts, 2 submissions, and 1 evidence link.'
+});
+
 assert.equal(RFUI.toDateInputValue('2026-06-23T08:30:00.000Z'), '2026-06-23');
 assert.equal(RFUI.toDateInputValue('not-a-date', '2026-01-02'), '2026-01-02');
 assert.equal(RFUI.toDateInputValue(null, '2026-01-02'), '2026-01-02');

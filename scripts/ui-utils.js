@@ -32,6 +32,118 @@
     return `badge badge-${normalizeFeedbackType(type)}`;
   }
 
+  function getSubmissionStatusBadgeClass(status) {
+    const normalized = String(status || '').trim().toLowerCase();
+    if (normalized === 'published' || normalized === 'accepted' || normalized === 'accept') {
+      return 'badge badge-success';
+    }
+    if (normalized === 'rejected') return 'badge badge-danger';
+    if (normalized === 'revision' || normalized === 'revise' || normalized === 'major_revision' || normalized === 'minor_revision') {
+      return 'badge badge-warning';
+    }
+    if (normalized === 'submitted') return 'badge badge-purple';
+    return 'badge badge-info';
+  }
+
+  function getWorkflowStatusBadgeClass(entityType, status) {
+    const entity = String(entityType || '').trim().toLowerCase();
+    const normalized = String(status || '').trim().toLowerCase();
+    if (entity === 'submission') return getSubmissionStatusBadgeClass(normalized);
+    if (entity === 'timeline') {
+      if (normalized === 'completed' || normalized === 'done') return 'badge badge-success';
+      if (normalized === 'blocked' || normalized === 'overdue') return 'badge badge-danger';
+      if (normalized === 'active' || normalized === 'in_progress') return 'badge badge-info';
+      return 'badge badge-warning';
+    }
+    if (entity === 'manuscript') {
+      if (normalized === 'published' || normalized === 'accepted') return 'badge badge-success';
+      if (normalized === 'submitted' || normalized === 'under_review') return 'badge badge-info';
+      if (normalized === 'revision' || normalized === 'drafting' || normalized === 'figure_preparation' || normalized === 'internal_review') return 'badge badge-warning';
+      return 'badge badge-purple';
+    }
+    if (entity === 'record') {
+      if (normalized === 'literature_review') return 'badge badge-info';
+      if (normalized === 'experiment' || normalized === 'analysis') return 'badge badge-success';
+      if (normalized === 'simulation') return 'badge badge-purple';
+      return 'badge badge-warning';
+    }
+    if (entity === 'project') {
+      if (normalized === 'archived' || normalized === 'blocked') return 'badge badge-danger';
+      if (normalized === 'completed') return 'badge badge-success';
+      return 'badge badge-purple';
+    }
+    return 'badge badge-info';
+  }
+
+  function pluralize(count, singular, plural = `${singular}s`) {
+    return `${count} ${count === 1 ? singular : plural}`;
+  }
+
+  function buildSubmissionRelationshipSummary(values = {}) {
+    const submission = values.submission || {};
+    const manuscript = values.manuscript || null;
+    const project = values.project || null;
+    const records = Array.isArray(values.records) ? values.records : [];
+    const timelineNodes = Array.isArray(submission.timelineNodes) ? submission.timelineNodes : [];
+    const reviewMatrix = Array.isArray(submission.reviewMatrix)
+      ? submission.reviewMatrix
+      : (Array.isArray(submission.rebuttalMatrix) ? submission.rebuttalMatrix : []);
+    const projectId = project?.id || manuscript?.projectId || submission.projectId || '';
+    const recordCount = records.filter(record => record && record.projectId === projectId).length;
+    const completedTimelineNodeCount = timelineNodes.filter(node => {
+      const status = String(node?.status || '').toLowerCase();
+      return status === 'completed' || status === 'done';
+    }).length;
+    const manuscriptTitle = manuscript?.title || submission.title || 'Detached submission';
+    const projectTitle = project?.title || 'Unlinked project';
+
+    return {
+      projectTitle,
+      manuscriptTitle,
+      recordCount,
+      timelineNodeCount: timelineNodes.length,
+      completedTimelineNodeCount,
+      reviewerCommentCount: reviewMatrix.length,
+      isOrphanSubmission: !manuscript || !project,
+      summaryLine: `${manuscriptTitle} in ${projectTitle}: ${pluralize(recordCount, 'record')}, ${pluralize(timelineNodes.length, 'timeline event')}, ${pluralize(reviewMatrix.length, 'reviewer comment')}.`
+    };
+  }
+
+  function buildProjectDeleteImpactSummary(values = {}) {
+    const project = values.project || {};
+    const db = values.db || {};
+    const projectId = project.id || '';
+    const tasks = Array.isArray(db.tasks) ? db.tasks : [];
+    const records = Array.isArray(db.researchRecords) ? db.researchRecords : [];
+    const manuscripts = Array.isArray(db.manuscripts) ? db.manuscripts : [];
+    const submissions = Array.isArray(db.submissions) ? db.submissions : [];
+    const evidence = Array.isArray(db.evidence) ? db.evidence : [];
+    const linkedManuscripts = manuscripts.filter(man => man && man.projectId === projectId);
+    const linkedManuscriptIds = new Set(linkedManuscripts.map(man => man.id));
+    const linkedSubmissions = submissions.filter(sub => {
+      if (!sub) return false;
+      return sub.projectId === projectId || linkedManuscriptIds.has(sub.manuscriptId);
+    });
+    const taskCount = tasks.filter(task => task && task.projectId === projectId).length;
+    const recordCount = records.filter(record => record && record.projectId === projectId).length;
+    const evidenceCount = evidence.filter(item => item && item.projectId === projectId).length;
+    const manuscriptCount = linkedManuscripts.length;
+    const submissionCount = linkedSubmissions.length;
+    const totalLinkedItems = taskCount + recordCount + manuscriptCount + submissionCount + evidenceCount;
+    const projectTitle = project.title || 'Untitled Project';
+
+    return {
+      projectTitle,
+      taskCount,
+      recordCount,
+      manuscriptCount,
+      submissionCount,
+      evidenceCount,
+      totalLinkedItems,
+      confirmationMessage: `Delete "${projectTitle}"? This affects ${pluralize(taskCount, 'task')}, ${pluralize(recordCount, 'research record')}, ${pluralize(manuscriptCount, 'manuscript')}, ${pluralize(submissionCount, 'submission')}, and ${pluralize(evidenceCount, 'evidence link')}.`
+    };
+  }
+
   function getTabKey(tab) {
     if (!tab) return '';
     return `${tab.id || 'active'}:${tab.url || ''}`;
@@ -219,6 +331,10 @@
     cleanResearchTitle,
     normalizeFeedbackType,
     getToastBadgeClass,
+    getSubmissionStatusBadgeClass,
+    getWorkflowStatusBadgeClass,
+    buildSubmissionRelationshipSummary,
+    buildProjectDeleteImpactSummary,
     getTabKey,
     toDateInputValue,
     getRecordFormMode,

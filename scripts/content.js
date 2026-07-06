@@ -53,6 +53,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
     return true;
   }
+  // 显示网页悬浮 Toast 消息
+  if (request.action === 'SHOW_PAGE_TOAST') {
+    try {
+      showPageToast(request.message, request.type);
+      sendResponse({ ok: true });
+    } catch (e) {
+      sendResponse({ ok: false });
+    }
+    return true;
+  }
   return false; // 未处理的消息：不保持通道
 });
 
@@ -65,6 +75,81 @@ function pushToBackgroundCache(metadata) {
       () => { void chrome.runtime.lastError; }
     );
   } catch (_) { /* 扩展上下文失效时忽略 */ }
+}
+
+function showPageToast(message, type = 'success') {
+  let container = document.getElementById('rf-page-toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'rf-page-toast-container';
+    container.style.cssText = `
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 2147483647;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+      font-family: 'Inter', -apple-system, sans-serif;
+    `;
+    document.body.appendChild(container);
+  }
+
+  const toast = document.createElement('div');
+  toast.className = `rf-page-toast rf-toast-${type}`;
+  toast.style.cssText = `
+    padding: 12px 20px;
+    background: rgba(19, 23, 34, 0.95);
+    color: #f1f5f9;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(12px);
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    pointer-events: auto;
+  `;
+
+  const colors = {
+    success: '#10b981',
+    info: '#06b6d4',
+    warning: '#f59e0b',
+    danger: '#ef4444'
+  };
+
+  const color = colors[type] || colors.success;
+
+  toast.innerHTML = `
+    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: ${color}; box-shadow: 0 0 8px ${color}"></span>
+    <span>${message}</span>
+  `;
+
+  container.appendChild(toast);
+
+  // Trigger animation
+  requestAnimationFrame(() => {
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateY(0)';
+  });
+
+  // Remove toast after duration
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(-20px)';
+    setTimeout(() => {
+      toast.remove();
+      if (container.children.length === 0) {
+        container.remove();
+      }
+    }, 300);
+  }, 3500);
 }
 
 // ─── 主入口 ──────────────────────────────────────────────────────────────────

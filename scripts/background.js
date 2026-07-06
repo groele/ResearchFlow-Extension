@@ -280,6 +280,17 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     db.researchRecords.push(highlightedRecord);
     await storage.saveAll(db);
     console.log('[ResearchFlow] Highlight record logged.');
+
+    // Send visual feedback toast message to content script in the target tab
+    if (tab && tab.id) {
+      chrome.tabs.sendMessage(tab.id, {
+        action: 'SHOW_PAGE_TOAST',
+        message: 'Highlight logged as research note!',
+        type: 'success'
+      }, () => {
+        void chrome.runtime.lastError; // Consume lastError silently if page doesn't listen
+      });
+    }
   } catch (e) {
     console.error('[ResearchFlow] Error logging highlight:', e);
   }

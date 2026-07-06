@@ -16,7 +16,7 @@
         <div class="logo-orb" aria-hidden="true"></div>
         <div>
           <h2>ResearchFlow OS</h2>
-          <span class="version">v1.2.0 Companion</span>
+          <span class="version">v1.2.13 Companion</span>
         </div>
       </div>
       
@@ -290,7 +290,7 @@
             <div class="submission-list-head">
               <div>
                 <h3>Active Submissions</h3>
-                <p class="text-muted">Newest submissions first.</p>
+                <p class="text-muted">Select a row or its edit button; the right panel opens the editor under Workflow Context.</p>
               </div>
             </div>
             <div class="submission-cards-list" id="submissions-list-container">
@@ -302,7 +302,7 @@
           <div class="glass-panel submission-detail-card" id="submission-detail-panel">
             <div class="empty-state">
               <svg class="svg-icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-              <h3>Select a submission to manage its checklist and rebuttal response matrix.</h3>
+              <h3>Select a submission; the entry editor opens under Workflow Context.</h3>
             </div>
           </div>
         </div>
@@ -392,15 +392,15 @@
           <div class="glass-panel settings-card" id="settings-webdav-card">
             <h3>🌐 WebDAV Credentials</h3>
             <div class="form-group">
-              <label>WebDAV Server Base URL</label>
+              <label for="webdav-url">WebDAV Server Base URL</label>
               <input type="text" id="webdav-url" placeholder="https://dav.jianguoyun.com/dav">
             </div>
             <div class="form-group">
-              <label>Username / Email</label>
+              <label for="webdav-username">Username / Email</label>
               <input type="text" id="webdav-username" placeholder="your@email.com">
             </div>
             <div class="form-group">
-              <label>App-Specific Password</label>
+              <label for="webdav-password">App-Specific Password</label>
               <input type="password" id="webdav-password" placeholder="••••••••••••••••">
             </div>
             <div class="flex-row" style="margin-top: 12px;">
@@ -412,15 +412,15 @@
           <div class="glass-panel settings-card" id="settings-github-card">
             <h3>🐙 GitHub Private Repository Sync</h3>
             <div class="form-group">
-              <label>GitHub Personal Access Token (PAT)</label>
+              <label for="github-token">GitHub Personal Access Token (PAT)</label>
               <input type="password" id="github-token" placeholder="ghp_••••••••••••••••">
             </div>
             <div class="form-group">
-              <label>Repository Name (owner/repo)</label>
+              <label for="github-repo">Repository Name (owner/repo)</label>
               <input type="text" id="github-repo" placeholder="username/my-research-flow">
             </div>
             <div class="form-group">
-              <label>Branch Name</label>
+              <label for="github-branch">Branch Name</label>
               <input type="text" id="github-branch" value="main">
             </div>
             <div class="flex-row" style="margin-top: 12px;">
@@ -432,7 +432,7 @@
           <div class="glass-panel settings-card" id="settings-ai-card">
             <h3>🧠 AI Copilot Credentials</h3>
             <div class="form-group">
-              <label>AI API Provider</label>
+              <label for="ai-provider">AI API Provider</label>
               <select id="ai-provider">
                 <option value="openai">OpenAI Endpoint</option>
                 <option value="deepseek">DeepSeek Endpoint</option>
@@ -440,15 +440,15 @@
               </select>
             </div>
             <div class="form-group">
-              <label>API Endpoint Base URL</label>
+              <label for="ai-endpoint">API Endpoint Base URL</label>
               <input type="text" id="ai-endpoint" value="https://api.openai.com/v1">
             </div>
             <div class="form-group">
-              <label>API Key</label>
+              <label for="ai-key">API Key</label>
               <input type="password" id="ai-key" placeholder="sk-••••••••••••••••">
             </div>
             <div class="form-group">
-              <label>Preferred LLM Model</label>
+              <label for="ai-model">Preferred LLM Model</label>
               <input type="text" id="ai-model" value="gpt-4o">
             </div>
             <button id="btn-save-ai" class="btn-primary" style="margin-top: 16px;">Save AI Configuration</button>
@@ -481,6 +481,7 @@
 
   <script src="../scripts/storage.js"></script>
   <script src="../scripts/ai.js"></script>
+  <script src="../scripts/ui-utils.js"></script>
   <script src="../scripts/options.js"></script>
 </body>
 </html>

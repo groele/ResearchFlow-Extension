@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ResearchFlow OS - Options Dashboard Controller
  * Manages full routing, CRUD forms, kanbans, timeline charts, and sync settings.
  */
@@ -9,6 +9,8 @@ let selectedSubmissionId = null;
 let currentDashboardFilter = 'all'; // 'all', 'accepted', 'active'
 let currentLanguage = 'en';
 let isPipelineExpanded = false;
+
+const RF_OPTIONS_RENDER_VERSION = '1.2.13';
 
 const I18N = {
   en: {
@@ -73,6 +75,7 @@ const I18N = {
     zoteroSync: 'Import to Zotero',
     untitledEvent: 'Untitled Event',
     untitledManuscript: 'Untitled Manuscript',
+    untitledProject: 'Untitled Project',
     targetJournal: 'Target Journal',
     typeNoEvent: 'No Event',
     eventTypeResearch: 'Research',
@@ -143,7 +146,7 @@ const I18N = {
     status: 'Status',
     keyEventMapping: 'Key Event Mapping',
     eventDate: 'Event Date',
-    eventDateHelp: 'One timeline event only needs one date: the day this mapped event happened. Deadlines and source dates are managed in the Submission Edit Center.',
+    eventDateHelp: 'One timeline event only needs one date: the day this mapped event happened. Deadlines and source dates are managed in the Submission Entry Editor.',
     plannedDate: 'Planned Date',
     initialSubmissionDate: 'Initial Submission Date',
     deadlineDate: 'Deadline / Due Date',
@@ -209,7 +212,180 @@ const I18N = {
     rejectionNote: 'Decision note',
     transferButton: 'Create New Submission',
     rejectedToast: 'Submission marked rejected.',
-    transferToast: 'New target journal submission created.'
+    transferToast: 'New target journal submission created.',
+    projectsTitle: 'Areas & Projects Tree',
+    projectsSubtitle: 'Manage your research domains, hypotheses, and projects.',
+    addProject: '+ Add New Project',
+    foldersGroups: 'Folders & Groups',
+    projectEmptyState: 'Select a project from the tree to view and edit its details.',
+    recordsTitle: 'Research Records',
+    recordsSubtitle: 'Spreadsheet log for experiments, simulations, surveys, and literature reviews.',
+    createNewRecord: '+ Create New Record',
+    searchRecordsPlaceholder: 'Search records by title, tags or summary...',
+    allTypesOption: '-- All Types --',
+    typeExperiment: 'Experiment',
+    typeSimulation: 'Simulation',
+    typeSurvey: 'Survey',
+    typeAnalysis: 'Analysis',
+    typeLiteratureReview: 'Literature Review',
+    typeOther: 'Other',
+    tableTitle: 'Title',
+    tableType: 'Type',
+    tableProjectContext: 'Project Context',
+    tableRecordedDate: 'Recorded Date',
+    tableTags: 'Tags',
+    tableActions: 'Actions',
+    manuscriptsTitle: 'Manuscripts Kanban',
+    manuscriptsSubtitle: 'Track your writing process from outline/drafting to final peer-review.',
+    addManuscript: '+ Add Manuscript',
+    kanbanIdea: 'Idea & Outline',
+    kanbanDrafting: 'Drafting & Figures',
+    kanbanSubmitted: 'Submitted',
+    kanbanAccepted: 'Accepted / Published',
+    submissionsPageTitle: 'Submissions & Peer Review Matrix',
+    submissionsPageSubtitle: 'Draft rebuttal response matrices and checklist compliance reports.',
+    activeSubmissionsTitle: 'Active Submissions',
+    activeSubmissionsHelp: 'Select a row or its edit button; the right panel opens the editor under Workflow Context.',
+    submissionEmptyDetail: 'Select a submission; the entry editor opens under Workflow Context.',
+    journalPortalsTitle: 'Journal Portals',
+    trackNewSubmissionButton: '+ Track New Submission',
+    submissionDetailKicker: 'Journal Submission',
+    currentStageLabel: 'Current Stage',
+    trackedSinceLabel: 'Tracked since',
+    workflowContextTitle: 'Workflow Context',
+    workflowNeedsLinking: 'Needs linking',
+    workflowLinkedFlow: 'Linked flow',
+    workflowProjectLabel: 'Project',
+    workflowManuscriptLabel: 'Manuscript',
+    workflowRecordsLabel: 'Research Records',
+    workflowTimelineLabel: 'Timeline',
+    workflowReviewerCommentsLabel: 'Reviewer Comments',
+    relationshipSummaryLine: '{manuscript} in {project}: {records} records, {timeline} timeline events, {comments} reviewer comments.',
+    editableSummary: 'Editable Summary',
+    editFields: 'Edit fields',
+    submissionEntryEditorTitle: 'Submission Entry Editor',
+    submissionEntryEditorHelp: 'Edit the selected entry here: title, journal, status, dates, DOI and article URL.',
+    linkedManuscriptBadge: 'Linked manuscript',
+    detachedSubmissionBadge: 'Detached submission',
+    manuscriptSection: 'Manuscript',
+    manuscriptTitleLabel: 'Manuscript Title',
+    paperTitlePlaceholder: 'Paper title',
+    submissionPortalUrl: 'Submission Portal URL',
+    reviewTimingSection: 'Review Timing',
+    publicationSection: 'Publication',
+    submissionChecklistSection: 'Submission Checklist',
+    parseGuidelines: 'Parse Guidelines',
+    peerReviewMatrixSection: 'Peer Review Response Matrix',
+    addComment: 'Add Comment',
+    reviewEditorHelp: 'Edit reviewer comments and author responses here, then use Save All Changes to persist the full submission state.',
+    saveAllChanges: 'Save All Changes',
+    transferRoundHelp: 'Close the current round and create the next target journal record in one step.',
+    savedReviewPreviewTitle: 'Saved Review Preview',
+    savedReviewPreviewHelp: 'Read-only snapshot from the Submission Entry Editor. Edit above, then save.',
+    exportTable: 'Export Table',
+    emptyReviewEditor: 'No reviewer comments recorded. Add one here and save all changes.',
+    emptyReviewPreview: 'No saved reviewer comments yet.',
+    reviewerCommentLabel: 'Reviewer Comment #{count}',
+    reviewerCommentPlaceholder: 'Paste reviewer comment...',
+    authorResponseLabel: 'Author Response',
+    authorResponsePlaceholder: 'Draft your professional response...',
+    copy: 'Copy',
+    aiDraft: 'AI Draft',
+    generating: 'Generating...',
+    removeComment: 'Remove comment',
+    checklistLabel: 'Checklist',
+    responsesLabel: 'Responses',
+    responseSaved: 'Response saved',
+    responsePending: 'Response pending',
+    noCommentText: 'No comment text saved yet.',
+    submissionEditsSaved: 'Submission edits saved.',
+    confirmDeleteSubmission: 'Delete tracking for this submission?',
+    confirmMarkRejected: 'Mark this submission as rejected?',
+    deleteSubmissionTitle: 'Delete submission tracking',
+    cycleTimeCompleted: 'Cycle Time Completed',
+    cycleTimeCompletedText: 'Submitted {start}; accepted/published {end}. Total duration: {days} days.',
+    submissionCycleTracking: 'Submission Cycle Tracking',
+    submissionCycleText: 'Submitted {start}. Current elapsed time: {days} days in review.',
+    publicationLinksKept: 'Publication links are kept for Accepted or Published submissions.',
+    editorRenderFailedTitle: 'Submission editor failed to render',
+    editorRenderFailedHelp: 'The submission detail template did not create the edit form. Reload the extension and report this state if it persists.',
+    editorMounted: 'Edit form active v{version}',
+    editorMissing: 'Edit form missing v{version}',
+    noSubmissionsTracked: 'No submissions tracked yet.',
+    portalEmpty: 'No journal portals saved.',
+    portalDeleteTitle: 'Delete portal',
+    portalDeleteConfirm: 'Are you sure you want to delete the portal for {name}?',
+    portalDeletedToast: 'Portal "{name}" deleted',
+    addPortalTitle: 'Add Journal Submission Portal',
+    portalNameLabel: 'Journal / Publisher Name',
+    portalNamePlaceholder: 'e.g. ACS, Wiley, Nature, APL',
+    portalUrlLabel: 'Portal Login URL',
+    portalColorLabel: 'Brand Theme Color',
+    portalColorHelp: 'Pick custom color for brand avatar badge',
+    addPortalButton: 'Add Portal',
+    fillAllFields: 'Please fill out all fields.',
+    validUrlRequired: 'Please enter a valid URL (e.g. https://example.com)',
+    portalAddedToast: 'Journal portal "{name}" added.',
+    evidenceTitle: 'Evidence Locker',
+    evidenceSubtitle: 'A dedicated vault for certificate captures, manuscript PDFs, and research data.',
+    uploadEvidence: '+ Upload Evidence File',
+    tableLinkedProject: 'Linked Project',
+    tableStoredDrive: 'Stored Drive',
+    tableUploadedDate: 'Uploaded Date',
+    storageRoutingHelp: 'Map separate storage locations for metadata databases and raw evidence attachments.',
+    routeDbLabel: 'Database JSON Sync Destination',
+    routeFilesLabel: 'Raw Evidence Files (PDF/Binary) Upload Destination',
+    optionLocalCache: 'None (Local Cache Only)',
+    optionWebDavDrive: 'WebDAV Drive (Jianguoyun, Nextcloud)',
+    optionGithubRepo: 'GitHub Private Repository',
+    optionLocalBrowser: 'Local Browser Storage',
+    optionWebDavFolder: 'WebDAV Server Folder',
+    optionGithubFolder: 'GitHub Repository Folder',
+    webdavUrlLabel: 'WebDAV Server Base URL',
+    usernameEmailLabel: 'Username / Email',
+    appPasswordLabel: 'App-Specific Password',
+    testWebdav: 'Test WebDAV Connection',
+    githubPatLabel: 'GitHub Personal Access Token (PAT)',
+    githubRepoLabel: 'Repository Name (owner/repo)',
+    githubBranchLabel: 'Branch Name',
+    testGithub: 'Test GitHub Repository',
+    aiProviderLabel: 'AI API Provider',
+    aiEndpointLabel: 'API Endpoint Base URL',
+    aiKeyLabel: 'API Key',
+    aiModelLabel: 'Preferred LLM Model',
+    backupHelp: 'Export your research database to JSON, or import/migrate existing ResearchFlow JSON backups.',
+    guidelinesParserTitle: 'AI Journal Compliance Guidelines Parser',
+    guidelinesTextLabel: 'Journal Guideline / Author Instructions Text',
+    guidelinesPlaceholder: "Copy and paste guideline text from the journal website, including word limits, formatting requirements, and file lists...",
+    extractCustomChecklist: 'Extract Custom Checklist',
+    pasteGuidelinesRequired: 'Please paste some guideline text.',
+    extractingGuidelines: 'Extracting guidelines...',
+    checklistCompiled: 'Custom checklist compiled successfully.',
+    invalidJsonFormat: 'Invalid JSON format returned.',
+    guidelinesParsingError: 'Guidelines parsing error: {message}. Set your AI API keys in settings.',
+    noReviewerCommentsExport: 'No reviewer comments to export.',
+    latexDownloaded: 'LaTeX template downloaded.',
+    currentJournalLabel: 'Current journal',
+    transferModalHelp: 'This will mark the current submission as rejected and create a new active submission for the next journal.',
+    validPortalUrlOrBlank: 'Please enter a valid portal URL, or leave it blank.',
+    newManuscriptTitleLabel: 'New Manuscript Title',
+    linkedProjectLabel: 'Linked Project',
+    noProjectYet: 'No project yet',
+    createNewManuscriptOption: '+ Create new manuscript...',
+    targetJournalPlaceholder: 'e.g. Advanced Functional Materials',
+    rejectionNotePlaceholder: 'Optional editor decision, scope mismatch, reviewer summary, or next-action note...',
+    editManuscriptMetadata: 'Edit Manuscript Metadata',
+    addNewManuscriptTitle: 'Add New Manuscript',
+    linkedProjectContext: 'Linked Project Context',
+    writingStatus: 'Writing Status',
+    statusIdea: 'Idea',
+    statusOutline: 'Outline',
+    statusFiguresPrep: 'Figures Prep',
+    statusDrafting: 'Drafting',
+    statusInternalReview: 'Internal Review',
+    abstractDraft: 'Abstract Draft',
+    abstractPlaceholder: 'Outline manuscript abstract draft...',
+    createManuscript: 'Create Manuscript'
   },
   zh: {
     dashboardNav: '仪表盘总览',
@@ -273,6 +449,7 @@ const I18N = {
     zoteroSync: '导入 Zotero',
     untitledEvent: '未命名事件',
     untitledManuscript: '未命名手稿',
+    untitledProject: '未命名项目',
     targetJournal: '目标期刊',
     typeNoEvent: '暂无事件',
     eventTypeResearch: '研究',
@@ -343,7 +520,7 @@ const I18N = {
     status: '状态',
     keyEventMapping: '关键事件映射',
     eventDate: '事件日期',
-    eventDateHelp: '一个时间线事件只需要一个日期：该映射事件实际发生的日期。截止日期和来源日期在 Submission Edit Center 中维护。',
+    eventDateHelp: '一个时间线事件只需要一个日期：该映射事件实际发生的日期。截止日期和来源日期在投稿条目编辑区中维护。',
     plannedDate: '计划日期',
     initialSubmissionDate: '初始投稿日期',
     deadlineDate: '截止日期',
@@ -409,7 +586,180 @@ const I18N = {
     rejectionNote: '决定备注',
     transferButton: '创建新投稿',
     rejectedToast: '已标记为拒稿。',
-    transferToast: '新的目标期刊投稿已创建。'
+    transferToast: '新的目标期刊投稿已创建。',
+    projectsTitle: '领域与项目树',
+    projectsSubtitle: '管理研究领域、科学假设和项目。',
+    addProject: '+ 新建项目',
+    foldersGroups: '文件夹与分组',
+    projectEmptyState: '从左侧项目树选择项目后，可查看并编辑详细信息。',
+    recordsTitle: '研究记录',
+    recordsSubtitle: '用于实验、模拟、调研和文献综述的表格化记录。',
+    createNewRecord: '+ 新建记录',
+    searchRecordsPlaceholder: '按标题、标签或摘要搜索记录...',
+    allTypesOption: '-- 全部类型 --',
+    typeExperiment: '实验',
+    typeSimulation: '模拟',
+    typeSurvey: '调研',
+    typeAnalysis: '分析',
+    typeLiteratureReview: '文献综述',
+    typeOther: '其他',
+    tableTitle: '标题',
+    tableType: '类型',
+    tableProjectContext: '项目上下文',
+    tableRecordedDate: '记录日期',
+    tableTags: '标签',
+    tableActions: '操作',
+    manuscriptsTitle: '手稿看板',
+    manuscriptsSubtitle: '跟踪从提纲、写作到投稿和同行评审的全过程。',
+    addManuscript: '+ 新建手稿',
+    kanbanIdea: '想法与提纲',
+    kanbanDrafting: '写作与图件',
+    kanbanSubmitted: '已投稿',
+    kanbanAccepted: '已接收 / 已发表',
+    submissionsPageTitle: '投稿与同行评审矩阵',
+    submissionsPageSubtitle: '集中管理审稿回复矩阵和投稿清单。',
+    activeSubmissionsTitle: '进行中的投稿',
+    activeSubmissionsHelp: '选择条目或编辑按钮；右侧会在工作流上下文下方打开编辑区。',
+    submissionEmptyDetail: '选择一个投稿；编辑区会在工作流上下文下方打开。',
+    journalPortalsTitle: '期刊投稿入口',
+    trackNewSubmissionButton: '+ 跟踪新投稿',
+    submissionDetailKicker: '期刊投稿',
+    currentStageLabel: '当前阶段',
+    trackedSinceLabel: '跟踪自',
+    workflowContextTitle: '工作流上下文',
+    workflowNeedsLinking: '需要关联',
+    workflowLinkedFlow: '已关联流程',
+    workflowProjectLabel: '项目',
+    workflowManuscriptLabel: '手稿',
+    workflowRecordsLabel: '研究记录',
+    workflowTimelineLabel: '时间线',
+    workflowReviewerCommentsLabel: '审稿意见',
+    relationshipSummaryLine: '“{manuscript}”属于“{project}”：{records} 条研究记录，{timeline} 个时间线事件，{comments} 条审稿意见。',
+    editableSummary: '可编辑摘要',
+    editFields: '编辑字段',
+    submissionEntryEditorTitle: '投稿条目编辑区',
+    submissionEntryEditorHelp: '在这里集中编辑当前条目的题目、期刊、状态、日期、DOI 和文章链接。',
+    linkedManuscriptBadge: '已关联手稿',
+    detachedSubmissionBadge: '独立投稿',
+    manuscriptSection: '手稿信息',
+    manuscriptTitleLabel: '手稿题目',
+    paperTitlePlaceholder: '论文题目',
+    submissionPortalUrl: '投稿系统 URL',
+    reviewTimingSection: '审稿时间',
+    publicationSection: '发表信息',
+    submissionChecklistSection: '投稿清单',
+    parseGuidelines: '解析投稿指南',
+    peerReviewMatrixSection: '同行评审回复矩阵',
+    addComment: '新增意见',
+    reviewEditorHelp: '在这里编辑审稿意见和作者回复，然后通过“保存全部修改”统一保存。',
+    saveAllChanges: '保存全部修改',
+    transferRoundHelp: '关闭当前投稿轮次，并一步创建下一个目标期刊记录。',
+    savedReviewPreviewTitle: '已保存回复预览',
+    savedReviewPreviewHelp: '只读预览来自投稿条目编辑区。需要修改请回到上方编辑区并保存。',
+    exportTable: '导出表格',
+    emptyReviewEditor: '尚未记录审稿意见。可在这里新增并保存全部修改。',
+    emptyReviewPreview: '尚无已保存的审稿意见。',
+    reviewerCommentLabel: '审稿意见 #{count}',
+    reviewerCommentPlaceholder: '粘贴审稿意见...',
+    authorResponseLabel: '作者回复',
+    authorResponsePlaceholder: '撰写专业回复...',
+    copy: '复制',
+    aiDraft: 'AI 起草',
+    generating: '生成中...',
+    removeComment: '删除意见',
+    checklistLabel: '清单',
+    responsesLabel: '回复',
+    responseSaved: '已保存回复',
+    responsePending: '待回复',
+    noCommentText: '尚未保存意见文本。',
+    submissionEditsSaved: '投稿修改已保存。',
+    confirmDeleteSubmission: '确定删除该投稿跟踪吗？',
+    confirmMarkRejected: '确定将该投稿标记为拒稿吗？',
+    deleteSubmissionTitle: '删除投稿跟踪',
+    cycleTimeCompleted: '投稿周期已完成',
+    cycleTimeCompletedText: '投稿于 {start}；接收/发表于 {end}。总耗时：{days} 天。',
+    submissionCycleTracking: '投稿周期跟踪',
+    submissionCycleText: '投稿于 {start}。当前已审稿等待：{days} 天。',
+    publicationLinksKept: '已接收或已发表稿件会保留发表链接。',
+    editorRenderFailedTitle: '投稿编辑区渲染失败',
+    editorRenderFailedHelp: '投稿详情模板未创建编辑表单。请重新加载扩展；若仍存在，请报告此状态。',
+    editorMounted: '编辑表单已加载 v{version}',
+    editorMissing: '编辑表单缺失 v{version}',
+    noSubmissionsTracked: '尚未跟踪任何投稿。',
+    portalEmpty: '尚未保存期刊入口。',
+    portalDeleteTitle: '删除入口',
+    portalDeleteConfirm: '确定删除 {name} 的投稿入口吗？',
+    portalDeletedToast: '入口“{name}”已删除',
+    addPortalTitle: '添加期刊投稿入口',
+    portalNameLabel: '期刊 / 出版商名称',
+    portalNamePlaceholder: '例如 ACS、Wiley、Nature、APL',
+    portalUrlLabel: '投稿系统登录 URL',
+    portalColorLabel: '品牌主题色',
+    portalColorHelp: '为品牌头像徽标选择自定义颜色',
+    addPortalButton: '添加入口',
+    fillAllFields: '请填写所有字段。',
+    validUrlRequired: '请输入有效 URL（例如 https://example.com）',
+    portalAddedToast: '期刊入口“{name}”已添加。',
+    evidenceTitle: '证据库',
+    evidenceSubtitle: '集中保存证明截图、手稿 PDF 和研究数据。',
+    uploadEvidence: '+ 上传证据文件',
+    tableLinkedProject: '关联项目',
+    tableStoredDrive: '存储位置',
+    tableUploadedDate: '上传日期',
+    storageRoutingHelp: '为元数据库和原始证据附件分别映射存储位置。',
+    routeDbLabel: '数据库 JSON 同步目标',
+    routeFilesLabel: '原始证据文件（PDF/二进制）上传目标',
+    optionLocalCache: '无（仅本地缓存）',
+    optionWebDavDrive: 'WebDAV 网盘（坚果云、Nextcloud）',
+    optionGithubRepo: 'GitHub 私有仓库',
+    optionLocalBrowser: '浏览器本地存储',
+    optionWebDavFolder: 'WebDAV 服务器文件夹',
+    optionGithubFolder: 'GitHub 仓库文件夹',
+    webdavUrlLabel: 'WebDAV 服务器基础 URL',
+    usernameEmailLabel: '用户名 / 邮箱',
+    appPasswordLabel: '应用专用密码',
+    testWebdav: '测试 WebDAV 连接',
+    githubPatLabel: 'GitHub 个人访问令牌（PAT）',
+    githubRepoLabel: '仓库名称（owner/repo）',
+    githubBranchLabel: '分支名称',
+    testGithub: '测试 GitHub 仓库',
+    aiProviderLabel: 'AI API 提供方',
+    aiEndpointLabel: 'API Endpoint 基础 URL',
+    aiKeyLabel: 'API Key',
+    aiModelLabel: '首选 LLM 模型',
+    backupHelp: '将研究数据库导出为 JSON，或导入/迁移已有 ResearchFlow JSON 备份。',
+    guidelinesParserTitle: 'AI 期刊投稿指南解析器',
+    guidelinesTextLabel: '期刊指南 / 作者说明文本',
+    guidelinesPlaceholder: '复制并粘贴期刊网站上的投稿指南，包括字数限制、格式要求和文件清单...',
+    extractCustomChecklist: '提取自定义清单',
+    pasteGuidelinesRequired: '请先粘贴投稿指南文本。',
+    extractingGuidelines: '正在解析指南...',
+    checklistCompiled: '自定义清单已生成。',
+    invalidJsonFormat: '返回的 JSON 格式无效。',
+    guidelinesParsingError: '投稿指南解析错误：{message}。请在设置中配置 AI API Key。',
+    noReviewerCommentsExport: '没有可导出的审稿意见。',
+    latexDownloaded: 'LaTeX 模板已下载。',
+    currentJournalLabel: '当前期刊',
+    transferModalHelp: '这会将当前投稿标记为拒稿，并为下一个目标期刊创建新的进行中投稿。',
+    validPortalUrlOrBlank: '请输入有效的投稿系统 URL，或留空。',
+    newManuscriptTitleLabel: '新手稿题目',
+    linkedProjectLabel: '关联项目',
+    noProjectYet: '暂无项目',
+    createNewManuscriptOption: '+ 创建新手稿...',
+    targetJournalPlaceholder: '例如 Advanced Functional Materials',
+    rejectionNotePlaceholder: '可填写编辑决定、范围不匹配、审稿摘要或下一步行动备注...',
+    editManuscriptMetadata: '编辑手稿元数据',
+    addNewManuscriptTitle: '新建手稿',
+    linkedProjectContext: '关联项目上下文',
+    writingStatus: '写作状态',
+    statusIdea: '想法',
+    statusOutline: '提纲',
+    statusFiguresPrep: '图件准备',
+    statusDrafting: '写作中',
+    statusInternalReview: '内部审阅',
+    abstractDraft: '摘要草稿',
+    abstractPlaceholder: '填写手稿摘要草稿...',
+    createManuscript: '创建手稿'
   }
 };
 
@@ -421,6 +771,18 @@ function tf(key, vars = {}) {
   return t(key).replace(/\{(\w+)\}/g, (_, name) => vars[name] ?? '');
 }
 
+function getSubmissionStatusLabel(status) {
+  const keyMap = {
+    submitted: 'stateSubmitted',
+    under_review: 'stateUnderReview',
+    revision: 'eventTypeRevision',
+    accepted: 'stateAccepted',
+    published: 'stateOnline',
+    rejected: 'statusRejected'
+  };
+  return t(keyMap[normalizeSyncedPublicationStatus(status)] || keyMap[status] || 'stateSubmitted');
+}
+
 function setText(selector, value) {
   const el = document.querySelector(selector);
   if (el) el.textContent = value;
@@ -430,7 +792,36 @@ function setAllText(selector, value) {
   document.querySelectorAll(selector).forEach(el => { el.textContent = value; });
 }
 
+function setPlaceholder(selector, value) {
+  const el = document.querySelector(selector);
+  if (el) el.setAttribute('placeholder', value);
+}
+
+function setTitle(selector, value) {
+  const el = document.querySelector(selector);
+  if (el) el.setAttribute('title', value);
+}
+
+function setOptionText(selector, value, text) {
+  const option = document.querySelector(`${selector} option[value="${value}"]`);
+  if (option) option.textContent = text;
+}
+
+function setTableHeaderText(selector, index, value) {
+  const header = document.querySelectorAll(`${selector} th`)[index];
+  if (header) header.textContent = value;
+}
+
 function setNavText(selector, value) {
+  const el = document.querySelector(selector);
+  if (!el) return;
+  const icon = el.querySelector('svg');
+  el.innerHTML = '';
+  if (icon) el.appendChild(icon);
+  el.appendChild(document.createTextNode(value));
+}
+
+function setButtonText(selector, value) {
   const el = document.querySelector(selector);
   if (!el) return;
   const icon = el.querySelector('svg');
@@ -475,22 +866,107 @@ function applyLanguage() {
   if (recentHeads[0]) recentHeads[0].textContent = t('recentLogs');
   if (recentHeads[1]) recentHeads[1].textContent = t('timelineAlerts');
 
+  setText('#view-projects .view-header h1', t('projectsTitle'));
+  setText('#view-projects .view-header .text-muted', t('projectsSubtitle'));
+  setButtonText('#btn-add-project', t('addProject'));
+  setText('#view-projects .tree-header h3', t('foldersGroups'));
+  setText('#project-detail-panel .empty-state h3', t('projectEmptyState'));
+
+  setText('#view-records .view-header h1', t('recordsTitle'));
+  setText('#view-records .view-header .text-muted', t('recordsSubtitle'));
+  setButtonText('#btn-zotero-sync', t('zoteroSync'));
+  setButtonText('#btn-add-record', t('createNewRecord'));
+  setPlaceholder('#record-search', t('searchRecordsPlaceholder'));
+  setOptionText('#record-filter-type', '', t('allTypesOption'));
+  setOptionText('#record-filter-type', 'experiment', t('typeExperiment'));
+  setOptionText('#record-filter-type', 'simulation', t('typeSimulation'));
+  setOptionText('#record-filter-type', 'survey', t('typeSurvey'));
+  setOptionText('#record-filter-type', 'analysis', t('typeAnalysis'));
+  setOptionText('#record-filter-type', 'literature_review', t('typeLiteratureReview'));
+  setOptionText('#record-filter-type', 'other', t('typeOther'));
+  setTableHeaderText('#records-grid-table', 1, t('tableTitle'));
+  setTableHeaderText('#records-grid-table', 2, t('tableType'));
+  setTableHeaderText('#records-grid-table', 3, t('tableProjectContext'));
+  setTableHeaderText('#records-grid-table', 4, t('tableRecordedDate'));
+  setTableHeaderText('#records-grid-table', 5, t('tableTags'));
+  setTableHeaderText('#records-grid-table', 6, t('tableActions'));
+
+  setText('#view-manuscripts .view-header h1', t('manuscriptsTitle'));
+  setText('#view-manuscripts .view-header .text-muted', t('manuscriptsSubtitle'));
+  setButtonText('#btn-add-manuscript', t('addManuscript'));
+  setText('.kanban-col[data-status="idea"] .col-header h3', `💡 ${t('kanbanIdea')}`);
+  setText('.kanban-col[data-status="drafting"] .col-header h3', `📝 ${t('kanbanDrafting')}`);
+  setText('.kanban-col[data-status="submitted"] .col-header h3', `🚀 ${t('kanbanSubmitted')}`);
+  setText('.kanban-col[data-status="accepted"] .col-header h3', `🎉 ${t('kanbanAccepted')}`);
+
+  setText('#view-submissions .view-header h1', t('submissionsPageTitle'));
+  setText('#view-submissions .view-header .text-muted', t('submissionsPageSubtitle'));
+  setText('.portal-dock-title', t('journalPortalsTitle'));
+  setTitle('#btn-add-portal', t('addPortalTitle'));
+  setButtonText('#btn-add-submission', t('trackNewSubmissionButton'));
+  setText('.submission-list-head h3', t('activeSubmissionsTitle'));
+  setText('.submission-list-head .text-muted', t('activeSubmissionsHelp'));
+  setText('#submission-detail-panel .empty-state h3', t('submissionEmptyDetail'));
+
+  setText('#view-evidence .view-header h1', t('evidenceTitle'));
+  setText('#view-evidence .view-header .text-muted', t('evidenceSubtitle'));
+  setButtonText('#btn-add-evidence', t('uploadEvidence'));
+  const evidenceTable = '#view-evidence .grid-table';
+  setTableHeaderText(evidenceTable, 0, t('tableTitle'));
+  setTableHeaderText(evidenceTable, 1, t('tableType'));
+  setTableHeaderText(evidenceTable, 2, t('tableLinkedProject'));
+  setTableHeaderText(evidenceTable, 3, t('tableStoredDrive'));
+  setTableHeaderText(evidenceTable, 4, t('tableUploadedDate'));
+  setTableHeaderText(evidenceTable, 5, t('tableActions'));
+
   setText('#view-settings .view-header h1', t('settingsTitle'));
   setText('#view-settings .view-header .text-muted', t('settingsSubtitle'));
   setText('#settings-language-card h3', t('languageCardTitle'));
   setText('label[for="ui-language"]', t('languageLabel'));
   setText('#language-help', t('languageHelp'));
-  setText('#btn-save-language', t('saveLanguage'));
+  setButtonText('#btn-save-language', t('saveLanguage'));
   setText('#settings-cloud-card h3', t('cloudRoutingTitle'));
   setText('#settings-webdav-card h3', t('webdavTitle'));
   setText('#settings-github-card h3', t('githubTitle'));
   setText('#settings-ai-card h3', t('aiTitle'));
   setText('#settings-backup-card h3', t('backupTitle'));
-  setText('#btn-save-settings', t('saveMappings'));
-  setText('#btn-save-ai', t('saveAI'));
-  setText('#btn-export-db', t('exportDb'));
-  setText('#btn-trigger-import', t('importJson'));
-  setText('#btn-zotero-sync', t('zoteroSync'));
+  setText('#settings-cloud-card .text-muted', t('storageRoutingHelp'));
+  setText('label[for="route-db"]', t('routeDbLabel'));
+  setText('label[for="route-files"]', t('routeFilesLabel'));
+  setOptionText('#route-db', 'local', t('optionLocalCache'));
+  setOptionText('#route-db', 'webdav', t('optionWebDavDrive'));
+  setOptionText('#route-db', 'github', t('optionGithubRepo'));
+  setOptionText('#route-files', 'local', t('optionLocalBrowser'));
+  setOptionText('#route-files', 'webdav', t('optionWebDavFolder'));
+  setOptionText('#route-files', 'github', t('optionGithubFolder'));
+  setButtonText('#btn-save-settings', t('saveMappings'));
+  setText('label[for="webdav-url"]', t('webdavUrlLabel'));
+  setText('label[for="webdav-username"]', t('usernameEmailLabel'));
+  setText('label[for="webdav-password"]', t('appPasswordLabel'));
+  setButtonText('#btn-test-webdav', t('testWebdav'));
+  setText('label[for="github-token"]', t('githubPatLabel'));
+  setText('label[for="github-repo"]', t('githubRepoLabel'));
+  setText('label[for="github-branch"]', t('githubBranchLabel'));
+  setButtonText('#btn-test-github', t('testGithub'));
+  setText('label[for="ai-provider"]', t('aiProviderLabel'));
+  setText('label[for="ai-endpoint"]', t('aiEndpointLabel'));
+  setText('label[for="ai-key"]', t('aiKeyLabel'));
+  setText('label[for="ai-model"]', t('aiModelLabel'));
+  setButtonText('#btn-save-ai', t('saveAI'));
+  setText('#settings-backup-card .text-muted', t('backupHelp'));
+  setButtonText('#btn-export-db', t('exportDb'));
+  setButtonText('#btn-trigger-import', t('importJson'));
+}
+
+function refreshActiveViewForLanguage() {
+  const activeViewId = document.querySelector('.content-view.active')?.id || 'view-dashboard';
+  if (activeViewId === 'view-dashboard') renderDashboard();
+  if (activeViewId === 'view-projects') renderProjectsTree();
+  if (activeViewId === 'view-records') renderRecords();
+  if (activeViewId === 'view-manuscripts') renderKanban();
+  if (activeViewId === 'view-submissions') renderSubmissions();
+  if (activeViewId === 'view-evidence') renderEvidence();
+  if (activeViewId === 'view-settings') loadSettings();
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -532,7 +1008,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const originalLength = sub.timelineNodes.length;
         // Filter out '手稿定稿'
         sub.timelineNodes = sub.timelineNodes.filter(node => {
-          const nameTrimmed = node.name.trim();
+          const nameTrimmed = (node.name || '').trim();
           return nameTrimmed !== '手稿定稿' && nameTrimmed !== 'Manuscript Finalization';
         });
         
@@ -551,7 +1027,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
         
         sub.timelineNodes.forEach(node => {
-          const nameTrimmed = node.name.trim();
+          const nameTrimmed = (node.name || '').trim();
           if (nameMapping[nameTrimmed]) {
             node.name = nameMapping[nameTrimmed];
             dbMigrationChanged = true;
@@ -584,7 +1060,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           if (sub.timelineNodes && sub.timelineNodes.length > 0) {
             const origLen = sub.timelineNodes.length;
             sub.timelineNodes = sub.timelineNodes.filter(node => {
-              const nameTrimmed = node.name.trim();
+              const nameTrimmed = (node.name || '').trim();
               return nameTrimmed !== '手稿定稿' && nameTrimmed !== 'Manuscript Finalization';
             });
             const nameMapping = {
@@ -601,7 +1077,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               'Proof': 'Proof'
             };
             sub.timelineNodes.forEach(node => {
-              const nameTrimmed = node.name.trim();
+              const nameTrimmed = (node.name || '').trim();
               if (nameMapping[nameTrimmed]) {
                 node.name = nameMapping[nameTrimmed];
                 updateChanged = true;
@@ -862,6 +1338,16 @@ function escapeHTML(value) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+function escapeLatex(value) {
+  return String(value ?? '')
+    .replace(/\\/g, '\\textbackslash{}')
+    .replace(/([&%#_{}])/g, '\\$1')
+    .replace(/\$/g, '\\$')
+    .replace(/\^/g, '\\textasciicircum{}')
+    .replace(/~/g, '\\textasciitilde{}')
+    .replace(/\n/g, '\\\\ ');
 }
 
 function getNodeDate(node) {
@@ -2199,10 +2685,11 @@ function getSubmissionCycleTime(sub) {
       end = new Date(sub.decisionDate);
     } else {
       // Fallback: look for completed milestone nodes like '接收', 'Online'
-      const completionNode = sub.timelineNodes?.find(n => 
-        (n.name.includes('接收') || n.name.toLowerCase().includes('accept') || n.name.toLowerCase().includes('online')) && 
-        n.completeDate
-      );
+      const completionNode = sub.timelineNodes?.find(n => {
+        if (!n.name || !n.completeDate) return false;
+        const nodeName = n.name.toLowerCase();
+        return n.name.includes('接收') || nodeName.includes('accept') || nodeName.includes('online');
+      });
       if (completionNode) {
         end = new Date(completionNode.completeDate);
       } else if (sub.updatedAt) {
@@ -3651,48 +4138,48 @@ function openManuscriptModal(man = null) {
 
   openModal(`
     <div class="modal-header">
-      <h2>${isEdit ? 'Edit Manuscript Metadata' : 'Add New Manuscript'}</h2>
+      <h2>${escapeHTML(isEdit ? t('editManuscriptMetadata') : t('addNewManuscriptTitle'))}</h2>
       <button class="btn-secondary btn-icon" id="btn-close-modal">✕</button>
     </div>
     
     <div class="form-group">
-      <label>Linked Project Context</label>
+      <label>${escapeHTML(t('linkedProjectContext'))}</label>
       <select id="man-proj-select">${projectOpts}</select>
     </div>
 
     <div class="form-group">
-      <label>Manuscript Title</label>
-      <input type="text" id="man-title" value="${isEdit ? man.title : ''}" placeholder="e.g. Dynamic Synthesis of Transition Metal Carbides">
+      <label>${escapeHTML(t('manuscriptTitleLabel'))}</label>
+      <input type="text" id="man-title" value="${isEdit ? escapeHTML(man.title) : ''}" placeholder="${escapeHTML(t('paperTitlePlaceholder'))}">
     </div>
 
     <div class="grid-cols-2">
       <div class="form-group">
-        <label>Writing Status</label>
+        <label>${escapeHTML(t('writingStatus'))}</label>
         <select id="man-status">
-          <option value="idea" ${man && man.status === 'idea' ? 'selected' : ''}>Idea</option>
-          <option value="outline" ${man && man.status === 'outline' ? 'selected' : ''}>Outline</option>
-          <option value="figure_preparation" ${man && man.status === 'figure_preparation' ? 'selected' : ''}>Figures Prep</option>
-          <option value="drafting" ${man && man.status === 'drafting' ? 'selected' : ''}>Drafting</option>
-          <option value="internal_review" ${man && man.status === 'internal_review' ? 'selected' : ''}>Internal Review</option>
-          <option value="submitted" ${man && man.status === 'submitted' ? 'selected' : ''}>Submitted</option>
-          <option value="under_review" ${man && man.status === 'under_review' ? 'selected' : ''}>Under Review</option>
-          <option value="revision" ${man && man.status === 'revision' ? 'selected' : ''}>Revision</option>
-          <option value="accepted" ${man && man.status === 'accepted' ? 'selected' : ''}>Accepted</option>
-          <option value="published" ${man && man.status === 'published' ? 'selected' : ''}>Published</option>
+          <option value="idea" ${man && man.status === 'idea' ? 'selected' : ''}>${escapeHTML(t('statusIdea'))}</option>
+          <option value="outline" ${man && man.status === 'outline' ? 'selected' : ''}>${escapeHTML(t('statusOutline'))}</option>
+          <option value="figure_preparation" ${man && man.status === 'figure_preparation' ? 'selected' : ''}>${escapeHTML(t('statusFiguresPrep'))}</option>
+          <option value="drafting" ${man && man.status === 'drafting' ? 'selected' : ''}>${escapeHTML(t('statusDrafting'))}</option>
+          <option value="internal_review" ${man && man.status === 'internal_review' ? 'selected' : ''}>${escapeHTML(t('statusInternalReview'))}</option>
+          <option value="submitted" ${man && man.status === 'submitted' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('submitted'))}</option>
+          <option value="under_review" ${man && man.status === 'under_review' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('under_review'))}</option>
+          <option value="revision" ${man && man.status === 'revision' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('revision'))}</option>
+          <option value="accepted" ${man && man.status === 'accepted' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('accepted'))}</option>
+          <option value="published" ${man && man.status === 'published' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('published'))}</option>
         </select>
       </div>
       <div class="form-group">
-        <label>Target Journal</label>
-        <input type="text" id="man-journal" value="${isEdit ? man.targetJournals?.[0] || '' : ''}" placeholder="e.g. Nature Materials">
+        <label>${escapeHTML(t('targetJournalInput'))}</label>
+        <input type="text" id="man-journal" value="${escapeHTML(isEdit ? man.targetJournals?.[0] || '' : '')}" placeholder="${escapeHTML(t('targetJournalPlaceholder'))}">
       </div>
     </div>
 
     <div class="form-group">
-      <label>Abstract Draft</label>
-      <textarea id="man-abstract" placeholder="Outline manuscript abstract draft...">${isEdit ? man.abstract || '' : ''}</textarea>
+      <label>${escapeHTML(t('abstractDraft'))}</label>
+      <textarea id="man-abstract" placeholder="${escapeHTML(t('abstractPlaceholder'))}">${escapeHTML(isEdit ? man.abstract || '' : '')}</textarea>
     </div>
 
-    <button class="btn-primary w-full" id="btn-submit-man">${isEdit ? 'Save Changes' : 'Create Manuscript'}</button>
+    <button class="btn-primary w-full" id="btn-submit-man">${escapeHTML(isEdit ? t('saveChanges') : t('createManuscript'))}</button>
   `);
 
   document.getElementById('btn-submit-man').addEventListener('click', async () => {
@@ -3747,14 +4234,354 @@ function openManuscriptModal(man = null) {
 }
 
 // --- VIEW 5: SUBMISSIONS & REBUTTAL MATRIX ---
+function focusSubmissionEditCenter() {
+  const detailPanel = document.getElementById('submission-detail-panel');
+  const editCenter = detailPanel?.querySelector('#submission-entry-editor-panel');
+  const titleInput = editCenter?.querySelector('#sub-edit-title');
+  if (!detailPanel || !editCenter) return;
+
+  const panelRect = detailPanel.getBoundingClientRect();
+  const editorRect = editCenter.getBoundingClientRect();
+  const targetTop = Math.max(detailPanel.scrollTop + editorRect.top - panelRect.top - 12, 0);
+  if (typeof detailPanel.scrollTo === 'function') {
+    detailPanel.scrollTo({ top: targetTop, behavior: 'smooth' });
+  } else {
+    detailPanel.scrollTop = targetTop;
+  }
+
+  editCenter.classList.remove('submission-edit-center-focused');
+  void editCenter.offsetWidth;
+  editCenter.classList.add('submission-edit-center-focused');
+  window.setTimeout(() => editCenter.classList.remove('submission-edit-center-focused'), 2400);
+
+  if (titleInput) {
+    window.requestAnimationFrame(() => {
+      try {
+        titleInput.focus({ preventScroll: true });
+      } catch (error) {
+        titleInput.focus();
+      }
+      titleInput.select();
+    });
+  }
+}
+
+function openSubmissionForEditing(sub, options = {}) {
+  selectedSubmissionId = sub.id;
+  renderSubmissions();
+  renderSubmissionDetails(sub);
+  if (options.focusEditCenter) {
+    requestAnimationFrame(focusSubmissionEditCenter);
+  }
+}
+
+function getDefaultSubmissionChecklistKeys() {
+  return [
+    { key: 'cover_letter_ready', label: 'Cover Letter drafted' },
+    { key: 'title_page_ready', label: 'Title page formatted' },
+    { key: 'data_availability_statement', label: 'Data Availability statement' },
+    { key: 'author_contribution', label: 'CRedIT Author statements' },
+    { key: 'figure_resolution_checked', label: 'High-res figures checked' },
+    { key: 'conflict_of_interest', label: 'Conflict of Interest statement' }
+  ];
+}
+
+function getSubmissionChecklistKeys(sub) {
+  return Array.isArray(sub?.complianceChecklistKeys) && sub.complianceChecklistKeys.length > 0
+    ? sub.complianceChecklistKeys
+    : getDefaultSubmissionChecklistKeys();
+}
+
+function getSubmissionReviewMatrixRows(sub) {
+  if (Array.isArray(sub?.reviewMatrix)) return sub.reviewMatrix;
+  if (Array.isArray(sub?.rebuttalMatrix)) return sub.rebuttalMatrix;
+  return [];
+}
+
+function collectSubmissionChecklistFromEditor() {
+  const compliance = {};
+  document.querySelectorAll('#sub-edit-compliance-checklist-container [data-checklist-key]').forEach(input => {
+    compliance[input.dataset.checklistKey] = input.checked;
+  });
+  return compliance;
+}
+
+function collectSubmissionChecklistKeysFromEditor() {
+  return Array.from(document.querySelectorAll('#sub-edit-compliance-checklist-container [data-checklist-key]')).map(input => ({
+    key: input.dataset.checklistKey,
+    label: input.dataset.checklistLabel || input.dataset.checklistKey
+  }));
+}
+
+function collectSubmissionReviewMatrixFromEditor() {
+  return Array.from(document.querySelectorAll('#sub-edit-review-matrix-container .submission-edit-review-row')).map((row, index) => ({
+    id: row.dataset.reviewId || `rev_${Date.now()}_${index}`,
+    comment: row.querySelector('.sub-edit-review-comment')?.value || '',
+    response: row.querySelector('.sub-edit-review-response')?.value || '',
+    recordId: row.dataset.recordId || ''
+  }));
+}
+
+function createSubmissionReviewEditorRow(row = {}, index = 0) {
+  const safeId = String(row.id || `rev_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`);
+  const rowDiv = document.createElement('div');
+  rowDiv.className = 'submission-edit-review-row';
+  rowDiv.dataset.reviewId = safeId;
+  rowDiv.dataset.recordId = row.recordId || '';
+  rowDiv.innerHTML = `
+    <div class="submission-edit-review-field">
+      <div class="submission-edit-review-label">${escapeHTML(tf('reviewerCommentLabel', { count: index + 1 }))}</div>
+      <textarea class="sub-edit-review-comment" placeholder="${escapeHTML(t('reviewerCommentPlaceholder'))}">${escapeHTML(row.comment || '')}</textarea>
+      <div class="submission-edit-review-actions">
+        <button type="button" class="btn-secondary btn-ai-draft-review">
+          <svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v4"/><path d="M12 18v4"/><path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 16.24l2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="M4.93 19.07l2.83-2.83"/><path d="M16.24 7.76l2.83-2.83"/></svg>
+          <span>${escapeHTML(t('aiDraft'))}</span>
+        </button>
+        <button type="button" class="btn-danger btn-icon btn-delete-review-row" title="${escapeHTML(t('removeComment'))}">
+          <svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="submission-edit-review-field">
+      <div class="submission-edit-review-label-row">
+        <div class="submission-edit-review-label">${escapeHTML(t('authorResponseLabel'))}</div>
+        <button type="button" class="btn-secondary btn-copy-review-response">
+          <svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <span>${escapeHTML(t('copy'))}</span>
+        </button>
+      </div>
+      <textarea class="sub-edit-review-response" placeholder="${escapeHTML(t('authorResponsePlaceholder'))}">${escapeHTML(row.response || '')}</textarea>
+    </div>
+  `;
+  return rowDiv;
+}
+
+function reindexSubmissionReviewEditorRows(container) {
+  container.querySelectorAll('.submission-edit-review-row').forEach((row, index) => {
+    const label = row.querySelector('.submission-edit-review-label');
+    if (label) label.textContent = tf('reviewerCommentLabel', { count: index + 1 });
+  });
+}
+
+function renderSubmissionChecklistEditor(sub, checklistKeys) {
+  const checklistBox = document.getElementById('sub-edit-compliance-checklist-container');
+  if (!checklistBox) return;
+  const compliance = sub.complianceChecklist && typeof sub.complianceChecklist === 'object' && !Array.isArray(sub.complianceChecklist)
+    ? sub.complianceChecklist
+    : {};
+  checklistBox.innerHTML = '';
+  checklistKeys.forEach(chk => {
+    const label = document.createElement('label');
+    label.className = 'submission-edit-check-item';
+
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = compliance[chk.key] === true;
+    input.dataset.checklistKey = chk.key;
+    input.dataset.checklistLabel = chk.label;
+
+    label.appendChild(input);
+    label.appendChild(document.createTextNode(chk.label));
+    checklistBox.appendChild(label);
+  });
+}
+
+function renderSubmissionReviewMatrixEditor(sub, manAbstract) {
+  const reviewBox = document.getElementById('sub-edit-review-matrix-container');
+  const addButton = document.getElementById('btn-add-review-comment');
+  if (!reviewBox) return;
+  const rows = getSubmissionReviewMatrixRows(sub);
+  reviewBox.innerHTML = '';
+  if (rows.length === 0) {
+    reviewBox.innerHTML = `<p class="empty-state">${escapeHTML(t('emptyReviewEditor'))}</p>`;
+  } else {
+    rows.forEach((row, index) => {
+      reviewBox.appendChild(createSubmissionReviewEditorRow(row, index));
+    });
+  }
+
+  if (addButton) {
+    addButton.addEventListener('click', () => {
+      const empty = reviewBox.querySelector('.empty-state');
+      if (empty) reviewBox.innerHTML = '';
+      reviewBox.appendChild(createSubmissionReviewEditorRow({ comment: '', response: '', recordId: '' }, reviewBox.querySelectorAll('.submission-edit-review-row').length));
+    });
+  }
+
+  reviewBox.addEventListener('click', async event => {
+    const copyButton = event.target.closest('.btn-copy-review-response');
+    if (copyButton) {
+      const row = copyButton.closest('.submission-edit-review-row');
+      const responseText = row?.querySelector('.sub-edit-review-response')?.value.trim() || '';
+      if (!responseText) {
+        showGlobalToast(t('responsePending'), 'warning');
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(responseText);
+        showGlobalToast(t('copy'), 'success');
+      } catch (_) {
+        showGlobalToast('Copy failed', 'danger');
+      }
+      return;
+    }
+
+    const deleteButton = event.target.closest('.btn-delete-review-row');
+    if (deleteButton) {
+      const row = deleteButton.closest('.submission-edit-review-row');
+      row?.remove();
+      reindexSubmissionReviewEditorRows(reviewBox);
+      if (reviewBox.querySelectorAll('.submission-edit-review-row').length === 0) {
+        reviewBox.innerHTML = `<p class="empty-state">${escapeHTML(t('emptyReviewEditor'))}</p>`;
+      }
+      return;
+    }
+
+    const aiButton = event.target.closest('.btn-ai-draft-review');
+    if (aiButton) {
+      const row = aiButton.closest('.submission-edit-review-row');
+      const commentInput = row?.querySelector('.sub-edit-review-comment');
+      const responseInput = row?.querySelector('.sub-edit-review-response');
+      const commentText = commentInput?.value.trim() || '';
+      if (!commentText) {
+        alert(t('emptyReviewEditor'));
+        return;
+      }
+      aiButton.disabled = true;
+      aiButton.querySelector('span').textContent = t('generating');
+      try {
+        const matchedRecordText = db.researchRecords.map(r => `${r.title}: ${r.summary || ''}`).join('\n');
+        const aiDraft = await window.aiCopilot.generateReviewResponse(commentText, matchedRecordText, manAbstract);
+        if (responseInput) responseInput.value = aiDraft;
+        showGlobalToast(t('submissionEditsSaved'), 'success');
+      } catch (e) {
+        alert(`AI error: ${e.message}. Setup your API credentials in settings.`);
+      } finally {
+        aiButton.disabled = false;
+        aiButton.querySelector('span').textContent = t('aiDraft');
+      }
+    }
+  });
+}
+
+function renderSubmissionReviewPreview(sub, checklistKeys) {
+  const previewBox = document.getElementById('submission-review-preview');
+  if (!previewBox) return;
+  const compliance = sub.complianceChecklist && typeof sub.complianceChecklist === 'object' && !Array.isArray(sub.complianceChecklist)
+    ? sub.complianceChecklist
+    : {};
+  const completedChecks = checklistKeys.filter(chk => compliance[chk.key] === true).length;
+  const reviewRows = getSubmissionReviewMatrixRows(sub);
+  const reviewPreview = reviewRows.length
+    ? reviewRows.map((row, index) => `
+        <div class="submission-review-preview-row">
+          <strong>${escapeHTML(tf('reviewerCommentLabel', { count: index + 1 }))}</strong>
+          <p>${escapeHTML(row.comment || t('noCommentText'))}</p>
+          <span>${escapeHTML(row.response ? t('responseSaved') : t('responsePending'))}</span>
+        </div>
+      `).join('')
+    : `<p class="empty-state">${escapeHTML(t('emptyReviewPreview'))}</p>`;
+  previewBox.innerHTML = `
+    <div class="workflow-context-grid submission-review-preview-grid">
+      <div class="workflow-context-item"><span>${escapeHTML(t('checklistLabel'))}</span><strong>${completedChecks}/${checklistKeys.length}</strong></div>
+      <div class="workflow-context-item"><span>${escapeHTML(t('workflowReviewerCommentsLabel'))}</span><strong>${reviewRows.length}</strong></div>
+      <div class="workflow-context-item"><span>${escapeHTML(t('responsesLabel'))}</span><strong>${reviewRows.filter(row => row.response).length}/${reviewRows.length}</strong></div>
+    </div>
+    <div class="submission-review-preview-list">${reviewPreview}</div>
+  `;
+}
+
+function getSubmissionEditValues(prefix) {
+  return {
+    title: document.getElementById(`${prefix}-title`).value,
+    journal: document.getElementById(`${prefix}-journal`).value,
+    journalUrl: document.getElementById(`${prefix}-journal-url`).value,
+    status: document.getElementById(`${prefix}-status`).value,
+    submissionDate: document.getElementById(`${prefix}-submission-date`).value,
+    firstDecisionDate: document.getElementById(`${prefix}-r1-date`).value,
+    revisionDueDate: document.getElementById(`${prefix}-revision-due`).value,
+    decisionDate: document.getElementById(`${prefix}-decision-date`).value,
+    doi: document.getElementById(`${prefix}-doi`).value,
+    articleUrl: document.getElementById(`${prefix}-article-url`).value,
+    complianceChecklist: collectSubmissionChecklistFromEditor(),
+    complianceChecklistKeys: collectSubmissionChecklistKeysFromEditor(),
+    reviewMatrix: collectSubmissionReviewMatrixFromEditor()
+  };
+}
+
+function applySubmissionEditSync(sub, man, syncPlan) {
+  if (man) {
+    Object.assign(man, syncPlan.manuscriptPatch);
+    man.updatedAt = new Date().toISOString();
+  } else {
+    sub.title = syncPlan.detachedSubmissionTitle;
+  }
+
+  Object.assign(sub, syncPlan.submissionPatch);
+
+  if (syncPlan.shouldMarkRejected) {
+    markSubmissionRejected(sub, syncPlan.rejectionDate || todayString());
+  } else {
+    sub.status = syncPlan.submissionPatch.status;
+  }
+
+  if (syncPlan.submissionPatch.status === 'accepted') {
+    sub.acceptedAt = sub.decisionDate || sub.acceptedAt || new Date().toISOString();
+  } else if (syncPlan.submissionPatch.status === 'published') {
+    sub.publishedAt = sub.decisionDate || sub.publishedAt || new Date().toISOString();
+    sub.acceptedAt = sub.acceptedAt || sub.publishedAt;
+  }
+
+  if (syncPlan.publicationPatch) {
+    const doi = normalizeDoi(syncPlan.publicationPatch.doi);
+    sub.doi = doi || null;
+    sub.articleUrl = syncPlan.publicationPatch.articleUrl || (doi ? `https://doi.org/${doi}` : null);
+  } else if (syncPlan.shouldClearPublication) {
+    clearPublicationLinkFields(sub);
+    clearPublicationTimelineCompletion(sub);
+  }
+
+  sub.updatedAt = new Date().toISOString();
+  normalizeSubmissionTimeline(sub);
+  syncManuscriptStatusFromSubmission(sub);
+}
+
+async function saveSubmissionEditFromValues(sub, prefix) {
+  const man = db.manuscripts.find(m => m.id === sub.manuscriptId);
+  const editValues = getSubmissionEditValues(prefix);
+  const syncPlan = window.RFUI.buildSubmissionEditSyncPlan(editValues);
+  if (!syncPlan.ok) {
+    alert(syncPlan.error);
+    return false;
+  }
+
+  applySubmissionEditSync(sub, man, syncPlan);
+  sub.complianceChecklist = editValues.complianceChecklist;
+  sub.complianceChecklistKeys = editValues.complianceChecklistKeys;
+  sub.reviewMatrix = editValues.reviewMatrix;
+  await window.storage.saveAll(db);
+  renderDashboard();
+  renderKanban();
+  renderSubmissions();
+  renderSubmissionDetails(sub);
+  showGlobalToast(t('submissionEditsSaved'), 'success');
+  return true;
+}
+
 function renderSubmissions() {
   const container = document.getElementById('submissions-list-container');
   container.innerHTML = '';
 
   if (db.submissions.length === 0) {
-    container.innerHTML = '<p class="empty-state">No submissions tracked yet.</p>';
+    container.innerHTML = `<p class="empty-state">${escapeHTML(t('noSubmissionsTracked'))}</p>`;
+    selectedSubmissionId = null;
   } else {
     const sortedSubmissions = sortDashboardSubmissions(db.submissions);
+    if (!sortedSubmissions.some(sub => sub.id === selectedSubmissionId)) {
+      selectedSubmissionId = sortedSubmissions[0].id;
+    }
+    const selectedSubmission = sortedSubmissions.find(sub => sub.id === selectedSubmissionId) || sortedSubmissions[0];
+
     sortedSubmissions.forEach((sub, index) => {
       const displayIndex = sortedSubmissions.length - index;
       const card = document.createElement('div');
@@ -3762,31 +4589,49 @@ function renderSubmissions() {
       
       // Find linked manuscript
       const man = db.manuscripts.find(m => m.id === sub.manuscriptId);
-      const manTitle = man ? man.title : 'Unknown Manuscript';
+      const manTitle = man ? man.title : (sub.title || t('untitledManuscript'));
       const journalName = getSubmissionJournalName(sub);
-      const statusText = String(sub.status || 'submitted').replace('_', ' ');
+      const statusText = getSubmissionStatusLabel(sub.status || 'submitted');
       const transferText = sub.previousJournal
-        ? `<p class="text-muted" style="font-size:11px;">Transferred from: ${escapeHTML(sub.previousJournal)}</p>`
+        ? `<span class="submission-card-meta">${escapeHTML(t('transferToJournal'))}: ${escapeHTML(sub.previousJournal)}</span>`
         : '';
 
       card.innerHTML = `
         <div class="submission-card-heading">
-          <span class="submission-index">${displayIndex}</span>
-          <h4>${escapeHTML(journalName)}</h4>
+          <div class="submission-card-title-group">
+            <span class="submission-index">${displayIndex}</span>
+            <div class="submission-card-copy">
+              <h4>${escapeHTML(journalName)}</h4>
+              <p class="submission-card-title">${escapeHTML(manTitle)}</p>
+            </div>
+          </div>
+          <button class="btn-secondary btn-icon submission-card-edit btn-edit-submission" data-sub-id="${escapeHTML(sub.id)}" title="${escapeHTML(t('editFields'))}">
+            <svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+          </button>
         </div>
-        <p>Paper: ${escapeHTML(manTitle)}</p>
-        ${transferText}
-        <span class="badge badge-${getSubmissionBadgeClass(sub)}">${escapeHTML(statusText)}</span>
+        <div class="submission-card-footer">
+          <span class="${window.RFUI.getSubmissionStatusBadgeClass(sub.status)}">${escapeHTML(statusText)}</span>
+          ${transferText}
+        </div>
       `;
 
       card.addEventListener('click', () => {
-        selectedSubmissionId = sub.id;
-        renderSubmissions();
-        renderSubmissionDetails(sub);
+        openSubmissionForEditing(sub);
+      });
+
+      const editButton = card.querySelector('.btn-edit-submission');
+      editButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        openSubmissionForEditing(sub, { focusEditCenter: true });
       });
 
       container.appendChild(card);
     });
+
+    const detailPanel = document.getElementById('submission-detail-panel');
+    if (detailPanel?.dataset.currentSubmissionId !== selectedSubmission.id) {
+      renderSubmissionDetails(selectedSubmission);
+    }
   }
 
   // Render journal portals section
@@ -3811,7 +4656,7 @@ function renderJournalPortals() {
   const portals = db.settings.journalPortals;
 
   if (portals.length === 0) {
-    portalList.innerHTML = '<p class="empty-state" style="padding: 12px; font-size: 11px;">No journal portals saved.</p>';
+    portalList.innerHTML = `<p class="empty-state" style="padding: 12px; font-size: 11px;">${escapeHTML(t('portalEmpty'))}</p>`;
     return;
   }
 
@@ -3843,7 +4688,7 @@ function renderJournalPortals() {
         </div>
       </div>
       <div class="portal-actions">
-        <button class="btn-delete-portal" title="Delete Portal" data-id="${portal.id}">
+        <button class="btn-delete-portal" title="${escapeHTML(t('portalDeleteTitle'))}" data-id="${portal.id}">
           ✕
         </button>
       </div>
@@ -3854,11 +4699,11 @@ function renderJournalPortals() {
     deleteBtn.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
-      if (confirm(`Are you sure you want to delete the portal for ${portal.name}?`)) {
+      if (confirm(tf('portalDeleteConfirm', { name: portal.name }))) {
         db.settings.journalPortals = db.settings.journalPortals.filter(p => p.id !== portal.id);
         await window.storage.saveAll(db);
         renderJournalPortals();
-        showGlobalToast(`Portal "${portal.name}" deleted`, 'success');
+        showGlobalToast(tf('portalDeletedToast', { name: portal.name }), 'success');
       }
     });
 
@@ -3872,29 +4717,29 @@ function setupJournalPortalListeners() {
     addPortalBtn.addEventListener('click', () => {
       openModal(`
         <div class="modal-header">
-          <h2>Add Journal Submission Portal</h2>
+          <h2>${escapeHTML(t('addPortalTitle'))}</h2>
           <button class="btn-secondary btn-icon" id="btn-close-modal">✕</button>
         </div>
         
         <div class="form-group">
-          <label>Journal / Publisher Name</label>
-          <input type="text" id="portal-name" placeholder="e.g. ACS, Wiley, Nature, APL">
+          <label>${escapeHTML(t('portalNameLabel'))}</label>
+          <input type="text" id="portal-name" placeholder="${escapeHTML(t('portalNamePlaceholder'))}">
         </div>
 
         <div class="form-group">
-          <label>Portal Login URL</label>
+          <label>${escapeHTML(t('portalUrlLabel'))}</label>
           <input type="url" id="portal-url" placeholder="https://...">
         </div>
 
         <div class="form-group">
-          <label>Brand Theme Color</label>
+          <label>${escapeHTML(t('portalColorLabel'))}</label>
           <div style="display: flex; gap: 12px; align-items: center;">
             <input type="color" id="portal-color" value="#8b5cf6" style="width: 48px; height: 36px; border: none; border-radius: 6px; cursor: pointer; padding: 0; background: transparent;">
-            <span style="font-size: 12px; color: hsl(var(--text-muted));">Pick custom color for brand avatar badge</span>
+            <span style="font-size: 12px; color: hsl(var(--text-muted));">${escapeHTML(t('portalColorHelp'))}</span>
           </div>
         </div>
 
-        <button class="btn-primary w-full" id="btn-save-portal" style="margin-top:12px;">Add Portal</button>
+        <button class="btn-primary w-full" id="btn-save-portal" style="margin-top:12px;">${escapeHTML(t('addPortalButton'))}</button>
       `);
 
       const saveBtn = document.getElementById('btn-save-portal');
@@ -3905,14 +4750,14 @@ function setupJournalPortalListeners() {
           const color = document.getElementById('portal-color').value;
 
           if (!name || !url) {
-            alert('Please fill out all fields.');
+            alert(t('fillAllFields'));
             return;
           }
 
           try {
             new URL(url);
           } catch (err) {
-            alert('Please enter a valid URL (e.g. https://example.com)');
+            alert(t('validUrlRequired'));
             return;
           }
 
@@ -3932,7 +4777,7 @@ function setupJournalPortalListeners() {
 
           closeModal();
           renderJournalPortals();
-          showGlobalToast(`Journal portal "${name}" added!`, 'success');
+          showGlobalToast(tf('portalAddedToast', { name }), 'success');
         });
       }
     });
@@ -3943,6 +4788,13 @@ function renderSubmissionDetails(sub) {
   normalizeSubmissionTimeline(sub);
   const detailPanel = document.getElementById('submission-detail-panel');
   const man = db.manuscripts.find(m => m.id === sub.manuscriptId);
+  const project = db.projects.find(p => p.id === (sub.projectId || man?.projectId));
+  const relationship = window.RFUI.buildSubmissionRelationshipSummary({
+    submission: sub,
+    manuscript: man,
+    project,
+    records: db.researchRecords || []
+  });
   const manuscriptTitle = man ? man.title : (sub.title || t('untitledManuscript'));
   const manAbstract = man ? man.abstract || '' : '';
   const journalName = getSubmissionJournalName(sub);
@@ -3954,9 +4806,15 @@ function renderSubmissionDetails(sub) {
   const timelineFirstDecisionDate = normalizeDateString(sub.firstDecisionDate || timelineAnalysis.r1Date);
   const timelineRevisionDueDate = normalizeDateString(sub.revisionDueDate);
   const timelineDecisionDate = normalizeDateString(sub.decisionDate || timelineAnalysis.acceptDate || timelineAnalysis.onlineDate);
-
-  // Get active checklist schema
-  const compliance = sub.complianceChecklist || {};
+  const statusText = getSubmissionStatusLabel(sub.status || 'submitted');
+  const statusBadgeClass = window.RFUI.getSubmissionStatusBadgeClass(sub.status || 'submitted');
+  const relationshipSummaryLine = tf('relationshipSummaryLine', {
+    manuscript: relationship.manuscriptTitle,
+    project: relationship.projectTitle,
+    records: relationship.recordCount,
+    timeline: relationship.timelineNodeCount,
+    comments: relationship.reviewerCommentCount
+  });
 
   // Cycle time duration calculations
   const cycle = getSubmissionCycleTime(sub);
@@ -3964,52 +4822,112 @@ function renderSubmissionDetails(sub) {
   
   if (cycle.isCompleted) {
     cycleTimeHtml = `
-      <div style="display:flex; align-items:center; gap:10px; margin-top:12px; padding: 12px 16px; background: hsl(var(--accent-emerald) / 0.08); border: 1px solid hsl(var(--accent-emerald) / 0.2); border-radius: 10px;">
-        <span style="font-size: 18px; filter: drop-shadow(0 2px 4px rgba(16,185,129,0.25));">🎉</span>
-        <div style="display:flex; flex-direction:column; gap:2px; text-align:left;">
-          <span style="font-size: 12px; font-weight:700; color:hsl(var(--accent-emerald));">Cycle Time Completed (Total Duration)</span>
-          <span style="font-size: 11px; color:hsl(var(--text-muted)); line-height:1.4;">Manuscript submitted on <strong>${cycle.startDateStr}</strong> and accepted/published on <strong>${cycle.endDateStr}</strong>. Total submission duration: <strong style="color:hsl(var(--accent-emerald)); font-size:12px;">${cycle.days} days</strong>.</span>
+      <div class="submission-cycle-card submission-cycle-card-complete">
+        <span class="submission-cycle-icon" aria-hidden="true">
+          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
+        </span>
+        <div class="submission-cycle-copy">
+          <span class="submission-cycle-label">${escapeHTML(t('cycleTimeCompleted'))}</span>
+          <span>${tf('cycleTimeCompletedText', { start: `<strong>${escapeHTML(cycle.startDateStr)}</strong>`, end: `<strong>${escapeHTML(cycle.endDateStr)}</strong>`, days: `<strong>${cycle.days}</strong>` })}</span>
         </div>
       </div>
     `;
   } else {
     cycleTimeHtml = `
-      <div style="display:flex; align-items:center; gap:10px; margin-top:12px; padding: 12px 16px; background: hsl(var(--accent-cyan) / 0.08); border: 1px solid hsl(var(--accent-cyan) / 0.2); border-radius: 10px;">
-        <span style="font-size: 18px; filter: drop-shadow(0 2px 4px rgba(6,182,212,0.25));">🕒</span>
-        <div style="display:flex; flex-direction:column; gap:2px; text-align:left;">
-          <span style="font-size: 12px; font-weight:700; color:hsl(var(--accent-cyan));">Submission Cycle Tracking</span>
-          <span style="font-size: 11px; color:hsl(var(--text-muted)); line-height:1.4;">Manuscript submitted on <strong>${cycle.startDateStr}</strong>. Cumulative cycle time elapsed to current status: <strong style="color:hsl(var(--accent-cyan)); font-size:12px;">${cycle.days} days in review</strong>.</span>
+      <div class="submission-cycle-card submission-cycle-card-active">
+        <span class="submission-cycle-icon" aria-hidden="true">
+          <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+        </span>
+        <div class="submission-cycle-copy">
+          <span class="submission-cycle-label">${escapeHTML(t('submissionCycleTracking'))}</span>
+          <span>${tf('submissionCycleText', { start: `<strong>${escapeHTML(cycle.startDateStr)}</strong>`, days: `<strong>${cycle.days}</strong>` })}</span>
         </div>
       </div>
     `;
   }
 
   detailPanel.innerHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-      <h2>Journal Submission: ${escapeHTML(journalName)}</h2>
-      <button class="btn-danger btn-icon" id="btn-delete-sub">🗑️</button>
+    <div class="submission-detail-hero">
+      <div class="submission-detail-heading">
+        <span class="submission-detail-kicker">${escapeHTML(t('submissionDetailKicker'))}</span>
+        <h2>${escapeHTML(journalName)}</h2>
+      </div>
+      <button class="btn-danger btn-icon submission-delete-button" id="btn-delete-sub" title="${escapeHTML(t('deleteSubmissionTitle'))}">
+        <svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+      </button>
     </div>
 
     <!-- Timeline indicators -->
-    <div class="flex-row" style="margin-top: 6px;">
-      <span class="badge badge-info">Current Stage: ${escapeHTML(String(sub.status || 'submitted').replace('_', ' '))}</span>
-      <span class="recent-item-date">Tracked since: ${sub.createdAt ? new Date(sub.createdAt).toLocaleDateString() : t('noDate')}</span>
+    <div class="submission-detail-meta">
+      <span class="${statusBadgeClass}">${escapeHTML(t('currentStageLabel'))}: ${escapeHTML(statusText)}</span>
+      <span class="recent-item-date">${escapeHTML(t('trackedSinceLabel'))}: ${sub.createdAt ? new Date(sub.createdAt).toLocaleDateString() : t('noDate')}</span>
     </div>
 
-    <div class="glass-card submission-edit-center" style="margin-top: 12px;">
+    <div class="glass-card workflow-context-card" data-submission-workflow-context="true">
+      <div class="workflow-context-head">
+        <div class="submission-work-title">
+          <span class="submission-work-icon" aria-hidden="true">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M5 8h14"/><path d="M5 16h14"/><circle cx="12" cy="8" r="2"/><circle cx="12" cy="16" r="2"/></svg>
+          </span>
+          <div>
+            <h3>${escapeHTML(t('workflowContextTitle'))}</h3>
+            <p>${escapeHTML(relationshipSummaryLine)}</p>
+          </div>
+        </div>
+        ${relationship.isOrphanSubmission ? `<span class="badge badge-warning">${escapeHTML(t('workflowNeedsLinking'))}</span>` : `<span class="badge badge-success">${escapeHTML(t('workflowLinkedFlow'))}</span>`}
+      </div>
+      <div class="workflow-context-grid">
+        <div class="workflow-context-item">
+          <span>${escapeHTML(t('workflowProjectLabel'))}</span>
+          <strong>${escapeHTML(relationship.projectTitle)}</strong>
+        </div>
+        <div class="workflow-context-item">
+          <span>${escapeHTML(t('workflowManuscriptLabel'))}</span>
+          <strong>${escapeHTML(relationship.manuscriptTitle)}</strong>
+        </div>
+        <div class="workflow-context-item">
+          <span>${escapeHTML(t('workflowRecordsLabel'))}</span>
+          <strong>${relationship.recordCount}</strong>
+        </div>
+        <div class="workflow-context-item">
+          <span>${escapeHTML(t('workflowTimelineLabel'))}</span>
+          <strong>${relationship.completedTimelineNodeCount}/${relationship.timelineNodeCount}</strong>
+        </div>
+        <div class="workflow-context-item">
+          <span>${escapeHTML(t('workflowReviewerCommentsLabel'))}</span>
+          <strong>${relationship.reviewerCommentCount}</strong>
+        </div>
+      </div>
+      <div class="workflow-edit-summary" data-editor-summary="true">
+        <div class="workflow-edit-summary-copy">
+          <span class="workflow-edit-summary-kicker">${escapeHTML(t('editableSummary'))}</span>
+          <strong>${escapeHTML(manuscriptTitle)}</strong>
+          <p>${escapeHTML(journalName)} / ${escapeHTML(statusText)} / ${escapeHTML(t('milestoneSubmission'))} ${escapeHTML(timelineSubmissionDate || t('noDate'))}</p>
+        </div>
+        <div class="workflow-edit-summary-actions">
+          <span class="badge badge-info" data-editor-mount-badge>${escapeHTML(tf('editorMounted', { version: RF_OPTIONS_RENDER_VERSION }))}</span>
+          <button type="button" class="btn-secondary workflow-edit-summary-button" id="btn-focus-edit-center" aria-controls="submission-entry-editor-panel">
+            <svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            <span>${escapeHTML(t('editFields'))}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="glass-card submission-edit-center submission-entry-editor-card" id="submission-entry-editor-panel" data-side-entry-editor="true">
       <div class="submission-edit-center-head">
         <div class="submission-edit-title-row">
           <span class="submission-edit-emblem" aria-hidden="true">
             <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/><line x1="9" y1="18" x2="13" y2="18"/></svg>
           </span>
           <div>
-            <h3>Submission Edit Center</h3>
-            <p>Title, journal, status, dates, DOI.</p>
+            <h3>${escapeHTML(t('submissionEntryEditorTitle'))}</h3>
+            <p>${escapeHTML(t('submissionEntryEditorHelp'))}</p>
           </div>
         </div>
         <div class="submission-edit-badges">
-          <span class="badge badge-purple">${man ? 'Linked manuscript' : 'Detached submission'}</span>
-          <span class="badge badge-info">${escapeHTML(String(sub.status || 'submitted').replace('_', ' '))}</span>
+          <span class="badge badge-purple">${escapeHTML(man ? t('linkedManuscriptBadge') : t('detachedSubmissionBadge'))}</span>
+          <span class="${statusBadgeClass}">${escapeHTML(statusText)}</span>
           ${articleUrl ? `<a class="doi-link" href="${escapeHTML(articleUrl)}" target="_blank" rel="noopener noreferrer">${t('articlePage')}</a>` : ''}
         </div>
       </div>
@@ -4019,30 +4937,30 @@ function renderSubmissionDetails(sub) {
           <span class="submission-edit-section-icon" aria-hidden="true">
             <svg class="svg-icon" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
           </span>
-          <span>Manuscript</span>
+          <span>${escapeHTML(t('manuscriptSection'))}</span>
         </div>
         <div class="submission-edit-grid submission-edit-grid-identity">
           <div class="form-group submission-edit-title-field">
-            <label>Manuscript Title</label>
-            <input type="text" id="sub-edit-title" value="${escapeHTML(manuscriptTitle)}" placeholder="Paper title">
+            <label>${escapeHTML(t('manuscriptTitleLabel'))}</label>
+            <input type="text" id="sub-edit-title" value="${escapeHTML(manuscriptTitle)}" placeholder="${escapeHTML(t('paperTitlePlaceholder'))}">
           </div>
           <div class="form-group">
             <label>${t('targetJournalInput')}</label>
-            <input type="text" id="sub-edit-journal" value="${escapeHTML(journalName)}" placeholder="Target journal">
+            <input type="text" id="sub-edit-journal" value="${escapeHTML(journalName)}" placeholder="${escapeHTML(t('targetJournalInput'))}">
           </div>
           <div class="form-group">
-            <label>Submission Portal URL</label>
+            <label>${escapeHTML(t('submissionPortalUrl'))}</label>
             <input type="url" id="sub-edit-journal-url" value="${escapeHTML(submissionJournalUrl)}" placeholder="https://...">
           </div>
           <div class="form-group">
             <label>${t('status')}</label>
             <select id="sub-edit-status">
-              <option value="submitted" ${sub.status === 'submitted' ? 'selected' : ''}>Submitted</option>
-              <option value="under_review" ${sub.status === 'under_review' ? 'selected' : ''}>Under Review</option>
-              <option value="revision" ${sub.status === 'revision' ? 'selected' : ''}>Revision</option>
-              <option value="accepted" ${sub.status === 'accepted' ? 'selected' : ''}>Accepted</option>
-              <option value="published" ${sub.status === 'published' ? 'selected' : ''}>Published</option>
-              <option value="rejected" ${sub.status === 'rejected' ? 'selected' : ''}>Rejected</option>
+              <option value="submitted" ${sub.status === 'submitted' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('submitted'))}</option>
+              <option value="under_review" ${sub.status === 'under_review' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('under_review'))}</option>
+              <option value="revision" ${sub.status === 'revision' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('revision'))}</option>
+              <option value="accepted" ${sub.status === 'accepted' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('accepted'))}</option>
+              <option value="published" ${sub.status === 'published' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('published'))}</option>
+              <option value="rejected" ${sub.status === 'rejected' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('rejected'))}</option>
             </select>
           </div>
         </div>
@@ -4053,7 +4971,7 @@ function renderSubmissionDetails(sub) {
           <span class="submission-edit-section-icon" aria-hidden="true">
             <svg class="svg-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           </span>
-          <span>Review Timing</span>
+          <span>${escapeHTML(t('reviewTimingSection'))}</span>
         </div>
         <div class="submission-edit-grid submission-edit-grid-dates">
           <div class="form-group">
@@ -4080,7 +4998,7 @@ function renderSubmissionDetails(sub) {
           <span class="submission-edit-section-icon" aria-hidden="true">
             <svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.5 4.43"/><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07l1.33-1.33"/></svg>
           </span>
-          <span>Publication</span>
+          <span>${escapeHTML(t('publicationSection'))}</span>
         </div>
         <div class="submission-edit-grid submission-edit-grid-publication">
           <div class="form-group">
@@ -4094,61 +5012,143 @@ function renderSubmissionDetails(sub) {
         </div>
       </div>
 
+      <div class="submission-edit-section submission-edit-checklist-section">
+        <div class="submission-edit-section-head submission-edit-section-head-row">
+          <div class="submission-edit-section-title">
+            <span class="submission-edit-section-icon" aria-hidden="true">
+              <svg class="svg-icon" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            </span>
+            <span>${escapeHTML(t('submissionChecklistSection'))}</span>
+          </div>
+          <button class="btn-secondary submission-work-button" id="btn-import-guidelines">
+            <svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            <span>${escapeHTML(t('parseGuidelines'))}</span>
+          </button>
+        </div>
+        <div class="submission-checklist-grid submission-edit-checklist-grid" id="sub-edit-compliance-checklist-container"></div>
+      </div>
+
+      <div class="submission-edit-section submission-edit-review-section">
+        <div class="submission-edit-section-head submission-edit-section-head-row">
+          <div class="submission-edit-section-title">
+            <span class="submission-edit-section-icon" aria-hidden="true">
+              <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8"/><path d="M8 13h5"/></svg>
+            </span>
+            <span>${escapeHTML(t('peerReviewMatrixSection'))}</span>
+          </div>
+          <button class="btn-primary submission-work-button" id="btn-add-review-comment">
+            <svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>${escapeHTML(t('addComment'))}</span>
+          </button>
+        </div>
+        <div class="submission-edit-review-help">${escapeHTML(t('reviewEditorHelp'))}</div>
+        <div class="submission-edit-review-container" id="sub-edit-review-matrix-container"></div>
+      </div>
+
       <div class="submission-edit-savebar">
-        <p>${t('timelineDateSource')}: ${escapeHTML(timelineAnalysis.submitDateSource)}. Publication links are kept for Accepted or Published submissions.</p>
+        <p>${escapeHTML(t('timelineDateSource'))}: ${escapeHTML(timelineAnalysis.submitDateSource)}. ${escapeHTML(t('publicationLinksKept'))}</p>
         <div class="form-group submission-edit-actions">
           <button class="btn-primary w-full submission-edit-save" id="btn-save-sub-edit-center">
             <svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-            <span>Save All Changes</span>
+            <span>${escapeHTML(t('saveAllChanges'))}</span>
           </button>
         </div>
       </div>
     </div>
 
-    <div class="glass-card" style="margin-top: 12px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+    <div class="glass-card submission-action-card" style="margin-top: 12px;">
+      <div class="submission-action-copy">
+        <span class="submission-action-icon" aria-hidden="true">
+          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M4 12h14"/><path d="m12 6 6 6-6 6"/><path d="M4 5v14"/></svg>
+        </span>
         <div>
           <h3>${t('transferToJournal')}</h3>
-          <p class="text-muted" style="font-size:11px; line-height:1.5; margin-top:4px;">When a journal rejects the manuscript, close this submission and create the next target journal record in one step.</p>
-        </div>
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <button class="btn-secondary" id="btn-mark-sub-rejected">${t('markRejected')}</button>
-          <button class="btn-primary" id="btn-transfer-submission">${t('transferToJournal')}</button>
+          <p>${escapeHTML(t('transferRoundHelp'))}</p>
         </div>
       </div>
+      <div class="submission-action-buttons">
+        <button class="btn-secondary" id="btn-mark-sub-rejected">
+          <svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><line x1="8" y1="8" x2="16" y2="16"/><line x1="16" y1="8" x2="8" y2="16"/></svg>
+          <span>${t('markRejected')}</span>
+        </button>
+        <button class="btn-primary" id="btn-transfer-submission">
+          <svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h11v11"/><path d="M18 7 6 19"/></svg>
+          <span>${t('transferToJournal')}</span>
+        </button>
+        </div>
     </div>
     
     <!-- Cycle Time Stats Panel -->
     ${cycleTimeHtml}
 
-    <!-- Compliance Checklist Section -->
-    <div class="glass-card" style="margin-top: 16px;">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h3>📋 Submission Compliance Checklist</h3>
-        <button class="btn-secondary" style="padding:4px 10px; font-size:11px;" id="btn-import-guidelines">📖 Parse Guidelines</button>
-      </div>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;" id="compliance-checklist-container">
-        <!-- Rendered dynamically -->
-      </div>
-    </div>
-
-    <!-- Rebuttal Response Matrix Section -->
-    <div class="glass-card" style="margin-top: 16px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
-        <h3>🤖 Peer Review Response Rebuttal Matrix</h3>
-        <div style="display:flex; gap:6px;">
-          <button class="btn-secondary" style="padding:4px 10px; font-size:11px;" id="btn-export-rebuttal-table">📤 Export LaTeX/MD Table</button>
-          <button class="btn-primary" style="padding:4px 10px; font-size:11px;" id="btn-add-review-comment">+ Add Comment</button>
+    <!-- Saved review preview and exports -->
+    <div class="glass-card submission-work-card submission-readonly-review-card" style="margin-top: 16px;">
+      <div class="submission-work-head">
+        <div class="submission-work-title">
+          <span class="submission-work-icon" aria-hidden="true">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8"/><path d="M8 13h5"/></svg>
+          </span>
+          <div>
+            <h3>${escapeHTML(t('savedReviewPreviewTitle'))}</h3>
+            <p>${escapeHTML(t('savedReviewPreviewHelp'))}</p>
+          </div>
+        </div>
+        <div class="submission-work-actions">
+          <button class="btn-secondary submission-work-button" id="btn-export-rebuttal-table">
+            <svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>${escapeHTML(t('exportTable'))}</span>
+          </button>
         </div>
       </div>
-      <div class="rebuttal-matrix-container" id="rebuttal-matrix-container">
-        <!-- JS Populated -->
-      </div>
+      <div class="submission-review-preview" id="submission-review-preview"></div>
     </div>
   `;
 
+  const workflowContextCard = detailPanel.querySelector('[data-submission-workflow-context="true"]');
+  const editCenter = detailPanel.querySelector('.submission-edit-center');
+  if (workflowContextCard && editCenter && workflowContextCard.nextElementSibling !== editCenter) {
+    workflowContextCard.insertAdjacentElement('afterend', editCenter);
+  }
+  if (workflowContextCard && !detailPanel.querySelector('.submission-edit-center')) {
+    workflowContextCard.insertAdjacentHTML('afterend', `
+      <div class="glass-card submission-edit-center submission-edit-center-error">
+        <div class="submission-edit-center-head">
+          <div class="submission-edit-title-row">
+            <span class="submission-edit-emblem" aria-hidden="true">
+              <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </span>
+            <div>
+              <h3>${escapeHTML(t('editorRenderFailedTitle'))}</h3>
+              <p>${escapeHTML(t('editorRenderFailedHelp'))}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    `);
+  }
+  const editorMounted = Boolean(detailPanel.querySelector('#sub-edit-title') && detailPanel.querySelector('#btn-save-sub-edit-center'));
+  detailPanel.dataset.rfRenderVersion = RF_OPTIONS_RENDER_VERSION;
+  detailPanel.dataset.rfEditorMounted = editorMounted ? 'true' : 'false';
+  const editorMountBadge = detailPanel.querySelector('[data-editor-mount-badge]');
+  if (editorMountBadge) {
+    editorMountBadge.textContent = editorMounted
+      ? tf('editorMounted', { version: RF_OPTIONS_RENDER_VERSION })
+      : tf('editorMissing', { version: RF_OPTIONS_RENDER_VERSION });
+    editorMountBadge.className = editorMounted ? 'badge badge-info' : 'badge badge-warning';
+  }
+  detailPanel.dataset.currentSubmissionId = sub.id;
+  detailPanel.scrollTop = 0;
+
+  const focusEditButton = document.getElementById('btn-focus-edit-center');
+  if (focusEditButton) {
+    focusEditButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      focusSubmissionEditCenter();
+    });
+  }
+
   document.getElementById('btn-mark-sub-rejected').addEventListener('click', async () => {
-    if (!confirm('Mark this submission as rejected?')) return;
+    if (!confirm(t('confirmMarkRejected'))) return;
     markSubmissionRejected(sub, todayString());
     await window.storage.saveAll(db);
     renderDashboard();
@@ -4164,7 +5164,7 @@ function renderSubmissionDetails(sub) {
 
   // Delete submission
   document.getElementById('btn-delete-sub').addEventListener('click', async () => {
-    if (confirm('Delete tracking for this submission?')) {
+    if (confirm(t('confirmDeleteSubmission'))) {
       db.submissions = db.submissions.filter(s => s.id !== sub.id);
       syncManuscriptStatusesFromSubmissions(db);
       selectedSubmissionId = null;
@@ -4175,258 +5175,48 @@ function renderSubmissionDetails(sub) {
       document.getElementById('submission-detail-panel').innerHTML = `
         <div class="empty-state">
           <svg class="svg-icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          <h3>Select a submission to manage its checklist and rebuttal response matrix.</h3>
+          <h3>${escapeHTML(t('submissionEmptyDetail'))}</h3>
         </div>
       `;
     }
   });
 
-  document.getElementById('btn-save-sub-edit-center').addEventListener('click', async () => {
-    const syncPlan = window.RFUI.buildSubmissionEditSyncPlan({
-      title: document.getElementById('sub-edit-title').value,
-      journal: document.getElementById('sub-edit-journal').value,
-      journalUrl: document.getElementById('sub-edit-journal-url').value,
-      status: document.getElementById('sub-edit-status').value,
-      submissionDate: document.getElementById('sub-edit-submission-date').value,
-      firstDecisionDate: document.getElementById('sub-edit-r1-date').value,
-      revisionDueDate: document.getElementById('sub-edit-revision-due').value,
-      decisionDate: document.getElementById('sub-edit-decision-date').value,
-      doi: document.getElementById('sub-edit-doi').value,
-      articleUrl: document.getElementById('sub-edit-article-url').value
-    });
-    if (!syncPlan.ok) {
-      alert(syncPlan.error);
-      return;
-    }
-
-    if (man) {
-      Object.assign(man, syncPlan.manuscriptPatch);
-      man.updatedAt = new Date().toISOString();
-    } else {
-      sub.title = syncPlan.detachedSubmissionTitle;
-    }
-
-    Object.assign(sub, syncPlan.submissionPatch);
-
-    if (syncPlan.shouldMarkRejected) {
-      markSubmissionRejected(sub, syncPlan.rejectionDate || todayString());
-    } else {
-      sub.status = syncPlan.submissionPatch.status;
-    }
-
-    if (syncPlan.submissionPatch.status === 'accepted') {
-      sub.acceptedAt = sub.decisionDate || sub.acceptedAt || new Date().toISOString();
-    } else if (syncPlan.submissionPatch.status === 'published') {
-      sub.publishedAt = sub.decisionDate || sub.publishedAt || new Date().toISOString();
-      sub.acceptedAt = sub.acceptedAt || sub.publishedAt;
-    }
-
-    if (syncPlan.publicationPatch) {
-      const doi = normalizeDoi(syncPlan.publicationPatch.doi);
-      sub.doi = doi || null;
-      sub.articleUrl = syncPlan.publicationPatch.articleUrl || (doi ? `https://doi.org/${doi}` : null);
-    } else if (syncPlan.shouldClearPublication) {
-      clearPublicationLinkFields(sub);
-      clearPublicationTimelineCompletion(sub);
-    }
-
-    sub.updatedAt = new Date().toISOString();
-    normalizeSubmissionTimeline(sub);
-    syncManuscriptStatusFromSubmission(sub);
-    await window.storage.saveAll(db);
-    renderDashboard();
-    renderKanban();
-    renderSubmissions();
-    renderSubmissionDetails(sub);
-    showGlobalToast('Submission edits saved.', 'success');
-  });
-
-  // Render compliance checkboxes
-  const checklistBox = document.getElementById('compliance-checklist-container');
-  const checklistKeys = sub.complianceChecklistKeys || [
-    { key: 'cover_letter_ready', label: 'Cover Letter drafted' },
-    { key: 'title_page_ready', label: 'Title page formatted' },
-    { key: 'data_availability_statement', label: 'Data Availability statement' },
-    { key: 'author_contribution', label: 'CRedIT Author statements' },
-    { key: 'figure_resolution_checked', label: 'High-res figures checked' },
-    { key: 'conflict_of_interest', label: 'Conflict of Interest statement' }
-  ];
-
-  checklistKeys.forEach(chk => {
-    const isChecked = compliance[chk.key] === true;
-    const label = document.createElement('label');
-    label.style.display = 'flex';
-    label.style.alignItems = 'center';
-    label.style.gap = '8px';
-    label.style.cursor = 'pointer';
-    label.style.fontSize = '12px';
-    label.style.textTransform = 'none';
-    label.style.color = 'hsl(var(--text-primary))';
-
-    const input = document.createElement('input');
-    input.type = 'checkbox';
-    input.checked = isChecked;
-    input.style.accentColor = 'hsl(var(--accent-purple))';
-    
-    input.addEventListener('change', async () => {
-      compliance[chk.key] = input.checked;
-      sub.complianceChecklist = compliance;
-      await window.storage.saveAll(db);
-    });
-
-    label.appendChild(input);
-    label.appendChild(document.createTextNode(chk.label));
-    checklistBox.appendChild(label);
-  });
-
-  // Render Rebuttal Response Comments rows
-  const rebuttalBox = document.getElementById('rebuttal-matrix-container');
-  
-  // We'll search for reviewer comments associated with this submission in database
-  // If not created yet, we support creating mock review responses
-  if (!sub.reviewMatrix || sub.reviewMatrix.length === 0) {
-    sub.reviewMatrix = [
-      { id: 'rev_1', comment: 'The author needs to elaborate on the temperature dependency measurement and verify if 1.65K is calibrated.', response: '', recordId: '' }
-    ];
-  }
-
-  function renderRebuttalRows() {
-    rebuttalBox.innerHTML = '';
-    
-    if (sub.reviewMatrix.length === 0) {
-      rebuttalBox.innerHTML = '<p class="empty-state">No reviewer comments recorded. Click + Add Reviewer Comment.</p>';
-      return;
-    }
-
-    sub.reviewMatrix.forEach((matrixRow, idx) => {
-      const rowDiv = document.createElement('div');
-      rowDiv.className = 'rebuttal-matrix-row';
-
-      rowDiv.innerHTML = `
-        <!-- Left Side: Reviewer Comment -->
-        <div style="display:flex; flex-direction:column; gap:6px;">
-          <div class="rebuttal-col-label">Reviewer Comment #${idx + 1}</div>
-          <textarea class="reviewer-cmt-text" placeholder="Paste reviewer comment..." style="min-height:80px;">${matrixRow.comment}</textarea>
-          <div style="display:flex; gap:6px; margin-top:4px;">
-            <button class="btn-secondary btn-ai-draft" style="font-size:10px; padding:2px 6px;" id="btn-ai-draft-${matrixRow.id}">🤖 AI Draft Response</button>
-            <button class="btn-danger btn-icon" style="width:24px; height:24px; font-size:10px;" id="btn-del-matrix-${matrixRow.id}">✕</button>
-          </div>
-        </div>
-
-        <!-- Right Side: Author Rebuttal Response -->
-        <div style="display:flex; flex-direction:column; gap:6px;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div class="rebuttal-col-label" style="margin-bottom:0;">Author Response Rebuttal</div>
-            <button class="btn-secondary" style="font-size:10px; padding:2px 6px; height:20px; display:inline-flex; align-items:center;" id="btn-copy-resp-${matrixRow.id}">📋 Copy Draft</button>
-          </div>
-          <textarea class="author-resp-text" placeholder="Draft your professional response..." style="min-height:114px;" id="text-response-${matrixRow.id}">${matrixRow.response}</textarea>
-        </div>
-      `;
-
-      rebuttalBox.appendChild(rowDiv);
-
-      // Save on input change
-      const cmtArea = rowDiv.querySelector('.reviewer-cmt-text');
-      const respArea = rowDiv.querySelector('.author-resp-text');
-      
-      cmtArea.addEventListener('input', () => {
-        matrixRow.comment = cmtArea.value;
-        window.storage.saveAll(db);
-      });
-
-      respArea.addEventListener('input', () => {
-        matrixRow.response = respArea.value;
-        window.storage.saveAll(db);
-      });
-
-      // Copy draft rebuttal response trigger
-      document.getElementById(`btn-copy-resp-${matrixRow.id}`).addEventListener('click', () => {
-        const txt = respArea.value.trim();
-        if (!txt) {
-          showGlobalToast('Response draft is empty', 'warning');
-          return;
-        }
-        navigator.clipboard.writeText(txt).then(() => {
-          showGlobalToast('Response copied to clipboard!', 'success');
-        }).catch(() => {
-          showGlobalToast('Copy failed', 'danger');
-        });
-      });
-
-      // AI Draft Response Trigger
-      document.getElementById(`btn-ai-draft-${matrixRow.id}`).addEventListener('click', async () => {
-        const cmtText = cmtArea.value.trim();
-        if (!cmtText) {
-          alert('Reviewer comment cannot be empty for AI generation.');
-          return;
-        }
-
-        const draftBtn = document.getElementById(`btn-ai-draft-${matrixRow.id}`);
-        draftBtn.disabled = true;
-        draftBtn.textContent = 'Generating...';
-
-        try {
-          // Fetch any experimental record summary context for matching
-          const matchedRecordText = db.researchRecords.map(r => `${r.title}: ${r.summary || ''}`).join('\n');
-          const aiDraft = await window.aiCopilot.generateReviewResponse(cmtText, matchedRecordText, manAbstract);
-          
-          respArea.value = aiDraft;
-          matrixRow.response = aiDraft;
-          await window.storage.saveAll(db);
-          showGlobalToast('Response draft generated successfully!', 'success');
-        } catch (e) {
-          alert(`AI error: ${e.message}. Setup your API credentials in settings.`);
-        } finally {
-          draftBtn.disabled = false;
-          draftBtn.textContent = '🤖 AI Draft Response';
-        }
-      });
-
-      // Delete Row
-      document.getElementById(`btn-del-matrix-${matrixRow.id}`).addEventListener('click', async () => {
-        sub.reviewMatrix = sub.reviewMatrix.filter(row => row.id !== matrixRow.id);
-        await window.storage.saveAll(db);
-        renderRebuttalRows();
-      });
+  const saveEditButton = document.getElementById('btn-save-sub-edit-center');
+  if (saveEditButton) {
+    saveEditButton.addEventListener('click', async () => {
+      await saveSubmissionEditFromValues(sub, 'sub-edit');
     });
   }
 
-  // Bind add review comment
-  document.getElementById('btn-add-review-comment').addEventListener('click', async () => {
-    sub.reviewMatrix.push({
-      id: 'rev_' + Math.random().toString(36).substring(2, 9),
-      comment: '',
-      response: '',
-      recordId: ''
-    });
-    await window.storage.saveAll(db);
-    renderRebuttalRows();
-  });
+  const checklistKeys = getSubmissionChecklistKeys(sub);
+  renderSubmissionChecklistEditor(sub, checklistKeys);
+  renderSubmissionReviewMatrixEditor(sub, manAbstract);
+  renderSubmissionReviewPreview(sub, checklistKeys);
 
   // Action: AI Guidelines Compliance Parser
   document.getElementById('btn-import-guidelines').addEventListener('click', () => {
     openModal(`
       <div class="modal-header">
-        <h2>AI Journal Compliance Guidelines Parser</h2>
+        <h2>${escapeHTML(t('guidelinesParserTitle'))}</h2>
         <button class="btn-secondary btn-icon" id="btn-close-modal">✕</button>
       </div>
       <div class="form-group">
-        <label>Journal Guideline / Author Instructions Text</label>
-        <textarea id="guidelines-text" placeholder="Copy and paste guideline text copied from the journal's website (word limits, formatting requirements, file lists)..." style="min-height:180px;"></textarea>
+        <label>${escapeHTML(t('guidelinesTextLabel'))}</label>
+        <textarea id="guidelines-text" placeholder="${escapeHTML(t('guidelinesPlaceholder'))}" style="min-height:180px;"></textarea>
       </div>
-      <button class="btn-primary w-full" id="btn-submit-guidelines">🤖 Extract Custom Checklist</button>
+      <button class="btn-primary w-full" id="btn-submit-guidelines">🤖 ${escapeHTML(t('extractCustomChecklist'))}</button>
     `);
 
     document.getElementById('btn-submit-guidelines').addEventListener('click', async () => {
       const text = document.getElementById('guidelines-text').value.trim();
       if (!text) {
-        alert('Please paste some guideline text.');
+        alert(t('pasteGuidelinesRequired'));
         return;
       }
 
       const submitBtn = document.getElementById('btn-submit-guidelines');
       submitBtn.disabled = true;
-      submitBtn.innerHTML = '<span class="loader"></span> Extracting guidelines...';
+      submitBtn.innerHTML = `<span class="loader"></span> ${escapeHTML(t('extractingGuidelines'))}`;
 
       try {
         const systemPrompt = `You are a professional editorial scientific assistant. Analyze the journal guidelines provided and extract 5-7 most important specific, actionable compliance checklist items. Output ONLY in valid JSON. Response format:
@@ -4445,21 +5235,26 @@ function renderSubmissionDetails(sub) {
           await window.storage.saveAll(db);
           closeModal();
           renderSubmissionDetails(sub);
-          showGlobalToast('Custom checklist compiled successfully!', 'success');
+          showGlobalToast(t('checklistCompiled'), 'success');
         } else {
-          throw new Error('Invalid JSON format returned.');
+          throw new Error(t('invalidJsonFormat'));
         }
       } catch (e) {
-        alert(`Guidelines parsing error: ${e.message}. Set your AI API keys in settings.`);
+        alert(tf('guidelinesParsingError', { message: e.message }));
       } finally {
         submitBtn.disabled = false;
-        submitBtn.textContent = '🤖 Extract Custom Checklist';
+        submitBtn.textContent = `🤖 ${t('extractCustomChecklist')}`;
       }
     });
   });
 
   // Action: Export LaTeX & Markdown Rebuttal Table
   document.getElementById('btn-export-rebuttal-table').addEventListener('click', () => {
+    const savedReviewRows = getSubmissionReviewMatrixRows(sub);
+    if (savedReviewRows.length === 0) {
+      showGlobalToast(t('noReviewerCommentsExport'), 'warning');
+      return;
+    }
     // Generate LaTeX Code
     let latexCode = `\\documentclass{article}\n` +
                     `\\usepackage{booktabs} % For formal lines\n` +
@@ -4482,9 +5277,9 @@ function renderSubmissionDetails(sub) {
                     `\\bottomrule\n` +
                     `\\end{lastfoot}\n`;
 
-    sub.reviewMatrix.forEach((matrixRow, idx) => {
-      const escapedCmt = escapeLaTeX(matrixRow.comment || 'No comment text.');
-      const escapedResp = escapeLaTeX(matrixRow.response || 'Rebuttal response draft in progress.');
+    savedReviewRows.forEach((matrixRow, idx) => {
+      const escapedCmt = escapeLatex(matrixRow.comment || '');
+      const escapedResp = escapeLatex(matrixRow.response || '');
       
       latexCode += `\\rowcolor{commentgray}\n` +
                    `{\\bf Reviewer Comment \\#${idx + 1}:} ${escapedCmt} &\n` +
@@ -4494,78 +5289,18 @@ function renderSubmissionDetails(sub) {
     latexCode += `\\end{longtable}\n\n` +
                  `\\end{document}`;
 
-    // Generate Markdown Code
-    let mdCode = `| Reviewer Comment | Author Response Rebuttal |\n` +
-                 `| --- | --- |\n`;
-    sub.reviewMatrix.forEach((matrixRow, idx) => {
-      const cleanCmt = (matrixRow.comment || '').replace(/\n/g, '<br>');
-      const cleanResp = (matrixRow.response || '').replace(/\n/g, '<br>');
-      mdCode += `| **Comment #${idx + 1}:** ${cleanCmt} | **Response:** ${cleanResp} |\n`;
-    });
-
-    openModal(`
-      <div class="modal-header">
-        <h2>Export Rebuttal Response Table</h2>
-        <button class="btn-secondary btn-icon" id="btn-close-modal">✕</button>
-      </div>
-      
-      <div style="display:flex; flex-direction:column; gap:16px;">
-        <!-- LaTeX Card -->
-        <div class="glass-card" style="padding:12px; display:flex; flex-direction:column; gap:8px;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <label style="margin-bottom:0;">📄 LaTeX longtable & booktabs Source Code</label>
-            <button class="btn-secondary" style="font-size:10px; padding:2px 8px;" id="btn-copy-latex">📋 Copy LaTeX</button>
-          </div>
-          <pre id="code-latex" style="font-size:10px; background:var(--input-bg); padding:10px; border-radius:6px; overflow:auto; max-height:160px; color:hsl(var(--accent-purple)); border:1px solid var(--glass-border); line-height:1.4; font-family:monospace; user-select:all;">${escapeHTML(latexCode)}</pre>
-        </div>
-
-        <!-- MD Card -->
-        <div class="glass-card" style="padding:12px; display:flex; flex-direction:column; gap:8px;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <label style="margin-bottom:0;">📝 Markdown Table Source Code</label>
-            <button class="btn-secondary" style="font-size:10px; padding:2px 8px;" id="btn-copy-md">📋 Copy Markdown</button>
-          </div>
-          <pre id="code-md" style="font-size:10px; background:var(--input-bg); padding:10px; border-radius:6px; overflow:auto; max-height:120px; color:hsl(var(--accent-cyan)); border:1px solid var(--glass-border); line-height:1.4; font-family:monospace; user-select:all;">${escapeHTML(mdCode)}</pre>
-        </div>
-      </div>
-    `);
-
-    // Bind copy triggers inside modal
-    document.getElementById('btn-copy-latex').addEventListener('click', () => {
-      navigator.clipboard.writeText(latexCode).then(() => {
-        showGlobalToast('LaTeX table code copied!', 'success');
-      });
-    });
-
-    document.getElementById('btn-copy-md').addEventListener('click', () => {
-      navigator.clipboard.writeText(mdCode).then(() => {
-        showGlobalToast('Markdown table copied!', 'success');
-      });
-    });
+    // Trigger download
+    const blob = new Blob([latexCode], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `rebuttal_matrix_${sub.id}.tex`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showGlobalToast(t('latexDownloaded'), 'success');
   });
-
-  // LaTeX Escaper Utility
-  function escapeLaTeX(str) {
-    if (!str) return '';
-    return str
-      .replace(/\\/g, '\\textbackslash{}')
-      .replace(/([&%#_{}])/g, '\\$1')
-      .replace(/\^/g, '\\textasciicircum{}')
-      .replace(/~/g, '\\textasciitilde{}')
-      .replace(/\n/g, '\\\\ ')
-      .replace(/\$/g, '\\$');
-  }
-
-  // HTML Escaper
-  function escapeHTML(str) {
-    if (!str) return '';
-    return str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-  }
-
-  renderRebuttalRows();
 }
 
 function openTransferSubmissionModal(sourceSub) {
@@ -4578,8 +5313,8 @@ function openTransferSubmissionModal(sourceSub) {
     </div>
 
     <div class="glass-card" style="margin-bottom:12px;">
-      <p style="font-size:12px; margin:0;">Current journal: <strong>${escapeHTML(sourceJournal)}</strong></p>
-      <p class="text-muted" style="font-size:11px; margin-top:4px;">This will mark the current submission as rejected and create a new active submission for the next journal.</p>
+      <p style="font-size:12px; margin:0;">${escapeHTML(t('currentJournalLabel'))}: <strong>${escapeHTML(sourceJournal)}</strong></p>
+      <p class="text-muted" style="font-size:11px; margin-top:4px;">${escapeHTML(t('transferModalHelp'))}</p>
     </div>
 
     <div class="grid-cols-2" style="gap:10px;">
@@ -4595,17 +5330,17 @@ function openTransferSubmissionModal(sourceSub) {
 
     <div class="form-group">
       <label>${t('newTargetJournal')}</label>
-      <input type="text" id="transfer-target-journal" placeholder="e.g. Advanced Functional Materials">
+      <input type="text" id="transfer-target-journal" placeholder="${escapeHTML(t('targetJournalPlaceholder'))}">
     </div>
 
     <div class="form-group">
-      <label>Submission Portal URL</label>
+      <label>${escapeHTML(t('submissionPortalUrl'))}</label>
       <input type="url" id="transfer-journal-url" placeholder="https://...">
     </div>
 
     <div class="form-group">
       <label>${t('rejectionNote')}</label>
-      <textarea id="transfer-rejection-note" rows="3" placeholder="Optional editor decision, scope mismatch, reviewer summary, or next-action note..."></textarea>
+      <textarea id="transfer-rejection-note" rows="3" placeholder="${escapeHTML(t('rejectionNotePlaceholder'))}"></textarea>
     </div>
 
     <button class="btn-primary w-full" id="btn-create-transfer-sub">${t('transferButton')}</button>
@@ -4627,7 +5362,7 @@ function openTransferSubmissionModal(sourceSub) {
       try {
         new URL(journalUrl);
       } catch (e) {
-        alert('Please enter a valid portal URL, or leave it blank.');
+        alert(t('validPortalUrlOrBlank'));
         return;
       }
     }
@@ -4653,11 +5388,11 @@ document.getElementById('btn-add-submission').addEventListener('click', () => {
   let manOpts = db.manuscripts.map(m => `
     <option value="${escapeHTML(m.id)}">${escapeHTML(m.title || t('untitledManuscript'))}</option>
   `).join('');
-  manOpts += '<option value="__new__">+ Create new manuscript...</option>';
+  manOpts += `<option value="__new__">${escapeHTML(t('createNewManuscriptOption'))}</option>`;
   const defaultManuscriptMode = db.manuscripts.length === 0 ? '__new__' : (db.manuscripts[0]?.id || '__new__');
   manOpts = manOpts.replace(`value="${escapeHTML(defaultManuscriptMode)}"`, `value="${escapeHTML(defaultManuscriptMode)}" selected`);
   const projectOpts = db.projects.map(p => `
-    <option value="${escapeHTML(p.id)}">${escapeHTML(p.title || 'Untitled Project')}</option>
+    <option value="${escapeHTML(p.id)}">${escapeHTML(p.title || t('untitledProject'))}</option>
   `).join('');
 
   openModal(`
@@ -4674,19 +5409,19 @@ document.getElementById('btn-add-submission').addEventListener('click', () => {
     <div class="quick-new-manuscript-panel" id="sub-new-manuscript-panel" ${defaultManuscriptMode === '__new__' ? '' : 'hidden'}>
       <div class="grid-cols-2" style="gap:10px;">
         <div class="form-group">
-          <label>New Manuscript Title</label>
-          <input type="text" id="sub-new-man-title" placeholder="Paper title">
+          <label>${escapeHTML(t('newManuscriptTitleLabel'))}</label>
+          <input type="text" id="sub-new-man-title" placeholder="${escapeHTML(t('paperTitlePlaceholder'))}">
         </div>
         <div class="form-group">
-          <label>Linked Project</label>
-          <select id="sub-new-man-project">${projectOpts || '<option value="">No project yet</option>'}</select>
+          <label>${escapeHTML(t('linkedProjectLabel'))}</label>
+          <select id="sub-new-man-project">${projectOpts || `<option value="">${escapeHTML(t('noProjectYet'))}</option>`}</select>
         </div>
       </div>
     </div>
 
     <div class="form-group">
       <label>${t('targetJournalInput')}</label>
-      <input type="text" id="sub-journal" placeholder="e.g. IEEE Transactions on Smart Grids">
+      <input type="text" id="sub-journal" placeholder="${escapeHTML(t('targetJournalPlaceholder'))}">
     </div>
 
     <div class="form-group">
@@ -4962,7 +5697,7 @@ function loadSettings() {
   const profile = db.settings?.profile || DEFAULT_DB.settings.profile;
 
   const languageSelect = document.getElementById('ui-language');
-  if (languageSelect) languageSelect.value = profile.language || currentLanguage || 'en';
+  if (languageSelect) languageSelect.value = currentLanguage || profile.language || 'en';
 
   // Cloud routing
   document.getElementById('route-db').value = syncProviders.metadata.provider || 'local';
@@ -4993,7 +5728,7 @@ function setupSettingsListeners() {
       currentLanguage = languageSelect.value;
       document.documentElement.lang = currentLanguage === 'zh' ? 'zh-CN' : 'en';
       applyLanguage();
-      renderDashboard();
+      refreshActiveViewForLanguage();
     });
   }
 
@@ -5007,7 +5742,7 @@ function setupSettingsListeners() {
       document.documentElement.lang = currentLanguage === 'zh' ? 'zh-CN' : 'en';
       await window.storage.saveAll(db);
       applyLanguage();
-      renderDashboard();
+      refreshActiveViewForLanguage();
       showGlobalToast(t('languageSaved'), 'success');
     });
   }
