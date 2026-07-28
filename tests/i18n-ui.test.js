@@ -4,19 +4,12 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
 const read = (relativePath) => fs.readFileSync(path.join(root, relativePath), 'utf8');
-const popupJs = read('scripts/popup.js');
-const sidepanelHtml = read('pages/sidepanel.html');
-const sidepanelJs = read('scripts/sidepanel.js');
-const sidepanelCss = read('styles/sidepanel.css');
+const optionsJs = read('scripts/options.js');
 
-assert(popupJs.includes('POPUP_I18N'), 'popup keeps its existing localized quick-capture strings');
-assert(sidepanelHtml.includes('Capture · organize · retrieve'), 'side panel should communicate the focused research loop');
-assert(sidepanelHtml.includes('tab-workspace'), 'side panel should expose the project workspace');
-assert(!sidepanelHtml.includes('Copilot'), 'generic AI copilot should not remain in the active side panel');
-assert(!/AI assistant|AI 助手|关联证据|evidence/i.test(sidepanelHtml), 'side panel should not expose AI or Evidence Locker controls');
-assert(!/assistant|copilot|evidence/i.test(sidepanelJs), 'side panel controller should not retain AI or Evidence Locker behavior');
-assert(!/ai-quick|chat-bubble|chat-input|evidence/i.test(sidepanelCss), 'side panel styles should not retain AI or Evidence Locker modules');
-assert(sidepanelJs.includes('scrapeCurrentTab'), 'side panel should retain current-paper capture');
-assert(sidepanelJs.includes('researchflow_scratchpad'), 'side panel should retain local working notes');
+assert(optionsJs.includes("dashboardNav: 'Dashboard Overview'"), 'main workspace should retain English localization');
+assert(optionsJs.includes("dashboardNav: '仪表盘总览'"), 'main workspace should retain Chinese localization');
+assert(optionsJs.includes("manuscriptsNav: '手稿看板'"), 'manuscript workspace should retain Chinese localization');
+assert(optionsJs.includes("submissionsNav: '投稿与审稿'"), 'submission workspace should retain Chinese localization');
+assert(!/Evidence Locker|证据库|AI Copilot|AI 助手/.test(optionsJs), 'removed modules should not remain in localization');
 
-console.log('focused sidepanel UI tests passed');
+console.log('main workspace localization tests passed');

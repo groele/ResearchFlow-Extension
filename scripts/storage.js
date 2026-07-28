@@ -1,11 +1,12 @@
 /**
  * ResearchFlow core - local-first storage and optional private synchronization.
- * Active collections are projects, research records and tasks. Retired
- * Evidence Locker data is removed while normalizing old databases.
+ * Active collections support projects, research records, manuscripts,
+ * submissions and tasks. Retired Evidence Locker and AI settings are removed
+ * while normalizing old databases.
  */
 
 const DEFAULT_DB = {
-  schemaVersion: 4,
+  schemaVersion: 5,
   lastUpdated: 0,
   updatedAt: null,
   revision: 0,
@@ -13,6 +14,8 @@ const DEFAULT_DB = {
   researchAreas: [],
   projects: [],
   researchRecords: [],
+  manuscripts: [],
+  submissions: [],
   tasks: [],
   settings: {
     syncProviders: {
@@ -25,7 +28,13 @@ const DEFAULT_DB = {
       affiliation: '',
       orcid: '',
       language: 'en'
-    }
+    },
+    journalPortals: [
+      { id: 'acs', name: 'ACS', url: 'https://publish.acs.org/app/login?code=1000', color: '#002C6C', isDefault: true },
+      { id: 'wiley', name: 'Wiley', url: 'https://submission.wiley.com/submission/dashboard', color: '#00A4E4', isDefault: true },
+      { id: 'apl', name: 'APL', url: 'https://apl.peerx-press.org/cgi-bin/main.plex', color: '#D22630', isDefault: true },
+      { id: 'nature', name: 'Nature', url: 'https://mts-ncomms.nature.com/cgi-bin/main.plex', color: '#B59E50', isDefault: true }
+    ]
   }
 };
 
@@ -120,6 +129,8 @@ class StorageEngine {
       'researchAreas',
       'projects',
       'researchRecords',
+      'manuscripts',
+      'submissions',
       'tasks'
     ].forEach((key) => {
       if (!Array.isArray(normalized[key])) normalized[key] = [];
@@ -127,6 +138,8 @@ class StorageEngine {
 
     normalized.schemaVersion = Math.max(Number(normalized.schemaVersion) || 0, DEFAULT_DB.schemaVersion);
     normalized.settings = this.deepMerge(DEFAULT_DB.settings, normalized.settings || {});
+    delete normalized.settings.ai;
+    delete normalized.settings.syncProviders.files;
     normalized.deviceId = normalized.deviceId || await this.getDeviceId();
     this.normalizeEntityMetadata(normalized);
 
@@ -149,6 +162,8 @@ class StorageEngine {
       'researchAreas',
       'projects',
       'researchRecords',
+      'manuscripts',
+      'submissions',
       'tasks'
     ].forEach((collectionName) => {
       database[collectionName].forEach((entity) => {
@@ -354,6 +369,8 @@ class StorageEngine {
       'researchAreas',
       'projects',
       'researchRecords',
+      'manuscripts',
+      'submissions',
       'tasks'
     ].forEach((collectionName) => {
       merged[collectionName] = this.mergeEntityArray(local[collectionName], remote[collectionName]);

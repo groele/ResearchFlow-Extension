@@ -3,11 +3,11 @@
  *
  * 所见即所得核心架构:
  *   ① Tab级内存缓存 (tabCache): 页面加载完成 → 预注入脚本 → 立即扫描 → 缓存结果
- *   ② GET_CACHED_SCRAPE: Sidepanel 优先查缓存，命中则 0ms 响应
+ *   ② GET_CACHED_SCRAPE: Capture clients can query the warmed metadata cache
  *   ③ CACHE_SCRAPE_RESULT: content.js 主动推送结果
  *   ④ Unpaywall 异步兜底 (不阻塞主流程)
  *
- * 性能目标: 点击 "Capture" → <30ms 显示结果 (缓存命中路径)
+ * The toolbar action itself always opens the full options workspace.
  */
 
 importScripts('storage.js');
@@ -69,8 +69,7 @@ chrome.runtime.onInstalled.addListener(() => {
 
 });
 
-// The toolbar icon opens the full ResearchFlow workspace. The side panel
-// remains available as an optional capture surface, but is never icon-driven.
+// The toolbar icon is the sole UI entrypoint and opens the full workspace.
 chrome.action.onClicked.addListener(() => {
   chrome.runtime.openOptionsPage();
 });
@@ -187,7 +186,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
-  // 3b. Sidepanel 查询缓存（命中则 0ms 响应）
+  // 3b. Metadata cache query
   if (request.action === 'GET_CACHED_SCRAPE') {
     const cached = cacheGet(request.tabId, request.url);
     if (cached) {
@@ -206,7 +205,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
-  // 3d. Unpaywall 开放获取 PDF 查询（由 sidepanel 发起，结果异步推送）
+  // 3d. Unpaywall open-access PDF lookup
   if (request.action === 'FETCH_PDF_VIA_UNPAYWALL') {
     const { doi } = request;
     if (!doi) {

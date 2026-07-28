@@ -8,31 +8,25 @@ const optionsHtml = read('pages/options.html');
 const optionsJs = read('scripts/options.js');
 const manifest = JSON.parse(read('manifest.json'));
 
-['view-dashboard', 'view-settings'].forEach((id) => {
-  assert(optionsHtml.includes(`id="${id}"`), `core workspace should include ${id}`);
+['view-dashboard', 'view-manuscripts', 'view-submissions', 'view-settings'].forEach((id) => {
+  assert(optionsHtml.includes(`id="${id}"`), `main workspace should include ${id}`);
 });
 
 ['view-projects', 'view-library', 'metric-projects', 'metric-records', 'metric-evidence', 'recent-records'].forEach((removedSection) => {
   assert(!optionsHtml.includes(removedSection), `options page should not expose removed ${removedSection}`);
 });
 
-['view-manuscripts', 'view-submissions', 'view-evidence', 'ai.js'].forEach((legacyModule) => {
-  assert(!optionsHtml.includes(legacyModule), `options page should not expose legacy ${legacyModule}`);
+['view-evidence', 'ai.js', 'settings-ai-card', 'route-files'].forEach((removedModule) => {
+  assert(!optionsHtml.includes(removedModule), `options page should not expose removed ${removedModule}`);
 });
 
-[
-  'scripts/core/research-core.js',
-  'scripts/modules/dashboard.js',
-  'scripts/modules/settings.js'
-].forEach((modulePath) => {
-  assert(fs.existsSync(path.join(root, modulePath)), `expected active module: ${modulePath}`);
-  assert(optionsHtml.includes(`../${modulePath}`), `options page should load ${modulePath}`);
+['renderDashboard', 'renderKanban', 'renderSubmissions', 'renderJournalPortals', 'loadSettings'].forEach((functionName) => {
+  assert(optionsJs.includes(`function ${functionName}`), `main workspace should retain ${functionName}`);
 });
-
-assert(optionsJs.includes('global.RFModules.dashboard.render'), 'entrypoint should compose dashboard module');
-assert(optionsJs.includes('global.RFModules.settings.bind'), 'entrypoint should bind settings module');
-assert(!optionsJs.includes('global.RFModules.projects'), 'entrypoint should not compose the removed projects module');
-assert(!optionsJs.includes('global.RFModules.library'), 'entrypoint should not compose the removed library module');
+['function normalizeText', 'function getSubmissionStatusLabel'].forEach((definition) => {
+  assert(optionsJs.includes(definition), `restored workspace should define ${definition}`);
+});
+assert(!/renderEvidence|aiCopilot|btn-ai-draft|btn-import-guidelines/i.test(optionsJs), 'removed Evidence and AI behavior should stay absent');
 assert(!manifest.host_permissions.some((origin) => origin.includes('openai.com') || origin.includes('deepseek.com')), 'active core must not request AI provider access');
 
-console.log('core options architecture tests passed');
+console.log('restored main workspace tests passed');

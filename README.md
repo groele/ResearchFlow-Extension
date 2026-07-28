@@ -1,29 +1,29 @@
 # ResearchFlow
 
-ResearchFlow is a Chrome extension for a focused research loop: capture a paper or observation, attach it to a project, and keep the next action clear.
+ResearchFlow is a Chrome extension for managing manuscript pipelines, journal submissions, peer-review responses, and private synchronization.
 
 ## What is in the core
 
-- Capture metadata from academic pages with a side panel, popup, or selection context menu.
-- Organize literature, experiments, analyses, and notes under explicit research projects.
-- Store captured literature and notes in a local-first database.
-- Keep project-scoped working notes and next actions.
+- Monitor manuscript pipelines and key-event timelines from the dashboard.
+- Manage manuscripts through a kanban workflow.
+- Track submissions, journal portals, compliance checklists, and reviewer-response matrices.
+- Store the research workflow in a local-first database.
 - Export JSON and optionally synchronize your private database through WebDAV or GitHub.
 
-The main workspace consists of **Overview** and **Settings**. Project association, record capture, working notes, and next actions remain available through the popup and side panel; the former project-tree and record-library dashboard sections have been removed. See [ARCHITECTURE.md](ARCHITECTURE.md) for boundaries, data compatibility, and migration notes.
+The main workspace consists of **Dashboard**, **Manuscripts**, **Submissions & Review**, and **Settings**. Clicking the toolbar icon opens this workspace directly. Popup and side-panel surfaces have been removed.
 
 ## Deliberately out of scope
 
-ResearchFlow no longer loads project-tree and record-library dashboard sections, manuscript kanban, submission timelines, reviewer-response authoring, journal portals, or a generic AI copilot. These increased permissions and maintenance burden and obscured the focused capture workflow.
+ResearchFlow no longer includes the Domain & Project Tree, Research Records dashboard, Evidence Locker, or generic AI assistant.
 
-The active app continues to normalize and use projects, research records, and tasks. When an older database is loaded, its retired `evidence` field is removed and is no longer synchronized or exported.
+The active app normalizes projects, research records, manuscripts, submissions, and tasks. Schema version 5 removes retired Evidence Locker fields, AI credentials, and evidence-file routing from older databases.
 
 ## Install for development
 
 1. Open `chrome://extensions` in Chrome.
 2. Enable **Developer mode**.
 3. Select **Load unpacked** and choose this repository directory.
-4. Pin ResearchFlow. Clicking its toolbar icon opens the full ResearchFlow workspace directly; the side panel remains an optional capture surface.
+4. Pin ResearchFlow and click its toolbar icon to open the full workspace.
 
 Chrome 116 or newer is required. The extension has no build step or third-party runtime dependency.
 
@@ -36,4 +36,4 @@ Get-ChildItem scripts -Recurse -Filter *.js | ForEach-Object { node --check $_.F
 
 ## Privacy
 
-Research data is stored locally by default. WebDAV and GitHub synchronization are opt-in and use only the settings you supply. Academic-page capture uses the minimum metadata needed to create a research record; the Unpaywall fallback is only contacted when you explicitly request an open-access PDF lookup.
+Research data is stored locally by default. WebDAV and GitHub synchronization are opt-in and use only the settings you supply.

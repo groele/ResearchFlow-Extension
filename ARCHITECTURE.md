@@ -1,33 +1,32 @@
 # ResearchFlow core architecture
 
-ResearchFlow is now a focused capture, working-notes, and next-actions companion rather than a general academic operating system.
+ResearchFlow is a focused manuscript and submission workflow manager.
 
 ## Active research loop
 
-`Capture current page → research record → optional project context → notes/tasks → export`
+`Manuscript → submission → review/revision → acceptance/publication`
 
-The main workspace has two views:
+The main workspace has four views:
 
-- **Overview**: open-task count.
-- **Settings**: local-first preferences, sync provider selection and JSON export.
+- **Dashboard**: manuscript pipelines, event timing and alerts.
+- **Manuscripts**: kanban workflow.
+- **Submissions & Review**: submission tracking, checklists and reviewer responses.
+- **Settings**: metadata synchronization and JSON backup/import.
 
-Clicking the toolbar icon opens the full workspace directly. The side panel remains an optional capture and project-scoped working area. Project and record collections remain part of the compatible data contract because capture surfaces still write to them, but their dedicated dashboard sections are no longer active.
+Clicking the toolbar icon opens the full workspace directly. No popup or side panel is registered.
 
 ## Module boundaries
 
 | Path | Responsibility |
 | --- | --- |
-| `scripts/core/research-core.js` | Compatible data contract, validation, capture mutations and dashboard statistics. |
-| `scripts/modules/dashboard.js` | Overview rendering. |
-| `scripts/modules/settings.js` | Preferences and portable JSON export. |
-| `scripts/options.js` | Lifecycle composition, navigation, modal and toast plumbing only. |
+| `scripts/options.js` | Dashboard, manuscript kanban, submissions, peer review, portals, settings, import/export and navigation. |
 | `scripts/storage.js` | Local-first persistence and optional WebDAV/GitHub synchronization. |
-| `scripts/content.js`, `scripts/background.js` | Academic-page extraction, cache warming, context capture and Unpaywall fallback. |
+| `scripts/background.js` | Toolbar entrypoint, storage service and background metadata support. |
 
 ## Removed from the active experience
 
-Evidence Locker, project-tree and record-library dashboard sections, manuscript kanban, submission timelines, reviewer-response authoring, journal portals, generic AI copilot screens, and related API permissions no longer load in the extension. Evidence Locker storage is also retired: loading an older database drops its `evidence` field.
+Evidence Locker, project-tree and record-library dashboard sections, generic AI assistant, popup, side panel, and related permissions no longer load in the extension.
 
 ## Compatibility and migration
 
-Existing `projects`, `researchRecords`, and `tasks` continue without migration. Database schema version 4 removes historical `evidence` values during normalization, so they are not retained, synchronized, or exported.
+Existing `projects`, `researchRecords`, `manuscripts`, `submissions`, and `tasks` remain normalized. Database schema version 5 removes historical Evidence Locker fields, AI credentials, and evidence file-routing settings.

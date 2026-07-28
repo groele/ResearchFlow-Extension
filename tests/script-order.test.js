@@ -34,7 +34,5 @@ function assertUtilityLoadedBefore(pagePath, scriptPath) {
 }
 
 assertUtilityLoadedBefore('pages/options.html', 'scripts/options.js');
-assertUtilityLoadedBefore('pages/popup.html', 'scripts/popup.js');
-assertUtilityLoadedBefore('pages/sidepanel.html', 'scripts/sidepanel.js');
 
 console.log('script-order tests passed');
