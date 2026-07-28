@@ -100,8 +100,7 @@ assert.deepEqual(RFUI.buildProjectDeleteImpactSummary({
     tasks: [{ projectId: 'proj_1' }, { projectId: 'proj_1' }, { projectId: 'other' }],
     researchRecords: [{ projectId: 'proj_1' }],
     manuscripts: [{ id: 'man_1', projectId: 'proj_1' }, { id: 'man_2', projectId: 'proj_1' }],
-    submissions: [{ manuscriptId: 'man_1' }, { projectId: 'proj_1' }, { projectId: 'other' }],
-    evidence: [{ projectId: 'proj_1' }]
+    submissions: [{ manuscriptId: 'man_1' }, { projectId: 'proj_1' }, { projectId: 'other' }]
   }
 }), {
   projectTitle: 'ReS2 sliding project',
@@ -109,9 +108,8 @@ assert.deepEqual(RFUI.buildProjectDeleteImpactSummary({
   recordCount: 1,
   manuscriptCount: 2,
   submissionCount: 2,
-  evidenceCount: 1,
-  totalLinkedItems: 8,
-  confirmationMessage: 'Delete "ReS2 sliding project"? This affects 2 tasks, 1 research record, 2 manuscripts, 2 submissions, and 1 evidence link.'
+  totalLinkedItems: 7,
+  confirmationMessage: 'Delete "ReS2 sliding project"? This affects 2 tasks, 1 research record, 2 manuscripts, and 2 submissions.'
 });
 
 assert.equal(RFUI.toDateInputValue('2026-06-23T08:30:00.000Z'), '2026-06-23');

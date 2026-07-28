@@ -12,7 +12,7 @@ const manifest = JSON.parse(read('manifest.json'));
   assert(optionsHtml.includes(`id="${id}"`), `core workspace should include ${id}`);
 });
 
-['view-projects', 'view-library', 'metric-projects', 'metric-records', 'recent-records'].forEach((removedSection) => {
+['view-projects', 'view-library', 'metric-projects', 'metric-records', 'metric-evidence', 'recent-records'].forEach((removedSection) => {
   assert(!optionsHtml.includes(removedSection), `options page should not expose removed ${removedSection}`);
 });
 

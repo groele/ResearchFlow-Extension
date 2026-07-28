@@ -67,9 +67,12 @@ chrome.runtime.onInstalled.addListener(() => {
     });
   });
 
-  if (chrome.sidePanel?.setPanelBehavior) {
-    chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
-  }
+});
+
+// The toolbar icon opens the full ResearchFlow workspace. The side panel
+// remains available as an optional capture surface, but is never icon-driven.
+chrome.action.onClicked.addListener(() => {
+  chrome.runtime.openOptionsPage();
 });
 
 // ─── 2. Tab 预注入与缓存热身 ─────────────────────────────────────────────────

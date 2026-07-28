@@ -1,17 +1,17 @@
 # ResearchFlow core architecture
 
-ResearchFlow is now a focused capture and working-notes companion rather than a general academic operating system.
+ResearchFlow is now a focused capture, working-notes, and next-actions companion rather than a general academic operating system.
 
 ## Active research loop
 
-`Capture current page → research record → optional project context → notes/tasks/evidence → export`
+`Capture current page → research record → optional project context → notes/tasks → export`
 
 The main workspace has two views:
 
-- **Overview**: open-task and evidence counts.
+- **Overview**: open-task count.
 - **Settings**: local-first preferences, sync provider selection and JSON export.
 
-The side panel contains capture and the project-scoped working area. The popup remains the fastest path for a short note. Project and record collections remain part of the compatible data contract because these capture surfaces still write to them, but their dedicated dashboard sections are no longer active.
+Clicking the toolbar icon opens the full workspace directly. The side panel remains an optional capture and project-scoped working area. Project and record collections remain part of the compatible data contract because capture surfaces still write to them, but their dedicated dashboard sections are no longer active.
 
 ## Module boundaries
 
@@ -26,8 +26,8 @@ The side panel contains capture and the project-scoped working area. The popup r
 
 ## Removed from the active experience
 
-Project-tree and record-library dashboard sections, manuscript kanban, submission timelines, reviewer-response authoring, journal portals, generic AI copilot screens, and related API permissions no longer load in the extension. Existing stored JSON fields are intentionally retained when a previous database is opened, so this UI simplification does not erase historical data; they are simply outside the active dashboard contract.
+Evidence Locker, project-tree and record-library dashboard sections, manuscript kanban, submission timelines, reviewer-response authoring, journal portals, generic AI copilot screens, and related API permissions no longer load in the extension. Evidence Locker storage is also retired: loading an older database drops its `evidence` field.
 
 ## Compatibility and migration
 
-Existing `projects`, `researchRecords`, `tasks`, and `evidence` continue without migration. Opening an older database normalizes those collections in place. Export JSON before performing a separate archival cleanup of legacy manuscript or submission fields.
+Existing `projects`, `researchRecords`, and `tasks` continue without migration. Database schema version 4 removes historical `evidence` values during normalization, so they are not retained, synchronized, or exported.

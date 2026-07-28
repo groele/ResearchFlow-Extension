@@ -1,6 +1,6 @@
 # ResearchFlow
 
-ResearchFlow is a Chrome extension for a focused research loop: capture a paper or observation, attach it to a project, and retrieve the evidence and notes later.
+ResearchFlow is a Chrome extension for a focused research loop: capture a paper or observation, attach it to a project, and keep the next action clear.
 
 ## What is in the core
 
@@ -16,14 +16,14 @@ The main workspace consists of **Overview** and **Settings**. Project associatio
 
 ResearchFlow no longer loads project-tree and record-library dashboard sections, manuscript kanban, submission timelines, reviewer-response authoring, journal portals, or a generic AI copilot. These increased permissions and maintenance burden and obscured the focused capture workflow.
 
-Opening a previous database does not erase its historical fields. The active app continues to normalize and use projects, research records, tasks, and evidence; export a JSON backup before separately cleaning any retired fields.
+The active app continues to normalize and use projects, research records, and tasks. When an older database is loaded, its retired `evidence` field is removed and is no longer synchronized or exported.
 
 ## Install for development
 
 1. Open `chrome://extensions` in Chrome.
 2. Enable **Developer mode**.
 3. Select **Load unpacked** and choose this repository directory.
-4. Pin ResearchFlow and open the side panel on an academic article.
+4. Pin ResearchFlow. Clicking its toolbar icon opens the full ResearchFlow workspace directly; the side panel remains an optional capture surface.
 
 Chrome 116 or newer is required. The extension has no build step or third-party runtime dependency.
 

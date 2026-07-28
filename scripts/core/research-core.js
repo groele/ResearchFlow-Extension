@@ -2,14 +2,13 @@
  * ResearchFlow core domain
  *
  * The extension deliberately models only the research loop that it owns:
- * project -> captured record -> note/task/evidence.  Legacy publication and
- * submission data is left untouched in stored exports for backward
- * compatibility, but it is not part of the active application contract.
+ * project -> captured record -> note/task. Retired Evidence Locker data is
+ * removed when an older database enters the active application.
  */
 (function attachResearchCore(global) {
   'use strict';
 
-  const CORE_COLLECTIONS = ['researchAreas', 'projects', 'researchRecords', 'tasks', 'evidence'];
+  const CORE_COLLECTIONS = ['researchAreas', 'projects', 'researchRecords', 'tasks'];
 
   function asArray(value) {
     return Array.isArray(value) ? value : [];
@@ -21,6 +20,9 @@
 
   function normalizeDatabase(database) {
     const db = database && typeof database === 'object' ? database : {};
+    delete db.evidence;
+    delete db.projectEvidenceLinks;
+    delete db.recordEvidenceLinks;
     CORE_COLLECTIONS.forEach((key) => { db[key] = asArray(db[key]); });
     db.settings = db.settings && typeof db.settings === 'object' ? db.settings : {};
     db.settings.profile = db.settings.profile && typeof db.settings.profile === 'object'
@@ -49,7 +51,6 @@
       projectCount: activeProjects.length,
       recordCount: records.length,
       taskCount: normalized.tasks.filter((task) => !task.completed).length,
-      evidenceCount: normalized.evidence.length,
       recentRecords: [...records].sort((a, b) => String(b.updatedAt || b.createdAt || '').localeCompare(String(a.updatedAt || a.createdAt || ''))).slice(0, 6)
     };
   }
@@ -98,9 +99,6 @@
     });
     db.tasks.forEach((task) => {
       if (task.projectId === projectId) task.projectId = null;
-    });
-    db.evidence.forEach((item) => {
-      if (item.projectId === projectId) item.projectId = null;
     });
   }
 

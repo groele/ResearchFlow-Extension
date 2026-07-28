@@ -117,7 +117,6 @@
     const records = Array.isArray(db.researchRecords) ? db.researchRecords : [];
     const manuscripts = Array.isArray(db.manuscripts) ? db.manuscripts : [];
     const submissions = Array.isArray(db.submissions) ? db.submissions : [];
-    const evidence = Array.isArray(db.evidence) ? db.evidence : [];
     const linkedManuscripts = manuscripts.filter(man => man && man.projectId === projectId);
     const linkedManuscriptIds = new Set(linkedManuscripts.map(man => man.id));
     const linkedSubmissions = submissions.filter(sub => {
@@ -126,10 +125,9 @@
     });
     const taskCount = tasks.filter(task => task && task.projectId === projectId).length;
     const recordCount = records.filter(record => record && record.projectId === projectId).length;
-    const evidenceCount = evidence.filter(item => item && item.projectId === projectId).length;
     const manuscriptCount = linkedManuscripts.length;
     const submissionCount = linkedSubmissions.length;
-    const totalLinkedItems = taskCount + recordCount + manuscriptCount + submissionCount + evidenceCount;
+    const totalLinkedItems = taskCount + recordCount + manuscriptCount + submissionCount;
     const projectTitle = project.title || 'Untitled Project';
 
     return {
@@ -138,9 +136,8 @@
       recordCount,
       manuscriptCount,
       submissionCount,
-      evidenceCount,
       totalLinkedItems,
-      confirmationMessage: `Delete "${projectTitle}"? This affects ${pluralize(taskCount, 'task')}, ${pluralize(recordCount, 'research record')}, ${pluralize(manuscriptCount, 'manuscript')}, ${pluralize(submissionCount, 'submission')}, and ${pluralize(evidenceCount, 'evidence link')}.`
+      confirmationMessage: `Delete "${projectTitle}"? This affects ${pluralize(taskCount, 'task')}, ${pluralize(recordCount, 'research record')}, ${pluralize(manuscriptCount, 'manuscript')}, and ${pluralize(submissionCount, 'submission')}.`
     };
   }
 

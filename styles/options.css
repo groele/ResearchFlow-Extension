@@ -3406,8 +3406,9 @@ select option {
   margin-bottom: 22px;
 }
 
-.core-metrics-compact {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.core-metrics-single {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 520px;
 }
 
 .core-section {

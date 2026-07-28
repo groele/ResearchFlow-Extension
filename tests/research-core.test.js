@@ -7,12 +7,17 @@ const db = RFCore.normalizeDatabase({
   projects: null,
   researchRecords: 'invalid',
   tasks: [{ id: 'done', completed: true }, { id: 'open', completed: false }],
-  evidence: [{ id: 'evidence_1' }],
+  evidence: [{ id: 'legacy-evidence' }],
+  projectEvidenceLinks: [{ id: 'legacy-project-link' }],
+  recordEvidenceLinks: [{ id: 'legacy-record-link' }],
   settings: null
 });
 
 assert.deepEqual(db.projects, []);
 assert.deepEqual(db.researchRecords, []);
+assert.equal('evidence' in db, false);
+assert.equal('projectEvidenceLinks' in db, false);
+assert.equal('recordEvidenceLinks' in db, false);
 assert.equal(db.settings.profile.language, 'en');
 
 RFCore.upsertProject(db, {
@@ -33,11 +38,8 @@ assert.equal(db.researchRecords.length, 1);
 assert.deepEqual(db.researchRecords[0].tags, ['optics', 'reproducibility']);
 
 assert.deepEqual(
-  {
-    taskCount: RFCore.getDashboardStats(db).taskCount,
-    evidenceCount: RFCore.getDashboardStats(db).evidenceCount
-  },
-  { taskCount: 1, evidenceCount: 1 }
+  { taskCount: RFCore.getDashboardStats(db).taskCount },
+  { taskCount: 1 }
 );
 
 RFCore.deleteProject(db, db.projects[0].id);

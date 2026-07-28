@@ -1,11 +1,11 @@
 /**
  * ResearchFlow core - local-first storage and optional private synchronization.
- * Active collections are projects, research records, tasks and evidence. Older
- * exported fields are preserved but no longer form part of the active contract.
+ * Active collections are projects, research records and tasks. Retired
+ * Evidence Locker data is removed while normalizing old databases.
  */
 
 const DEFAULT_DB = {
-  schemaVersion: 3,
+  schemaVersion: 4,
   lastUpdated: 0,
   updatedAt: null,
   revision: 0,
@@ -14,11 +14,9 @@ const DEFAULT_DB = {
   projects: [],
   researchRecords: [],
   tasks: [],
-  evidence: [],
   settings: {
     syncProviders: {
-      metadata: { provider: 'local', config: {} }, // Provider for JSON database sync
-      files: { provider: 'local', config: {} }      // Provider for PDF/Binary uploads
+      metadata: { provider: 'local', config: {} } // Provider for JSON database sync
     },
     profile: {
       displayName: '',
@@ -114,13 +112,15 @@ class StorageEngine {
     const now = Date.now();
     const source = data && typeof data === 'object' ? data : {};
     const normalized = this.deepMerge(DEFAULT_DB, source);
+    delete normalized.evidence;
+    delete normalized.projectEvidenceLinks;
+    delete normalized.recordEvidenceLinks;
 
     [
       'researchAreas',
       'projects',
       'researchRecords',
-      'tasks',
-      'evidence'
+      'tasks'
     ].forEach((key) => {
       if (!Array.isArray(normalized[key])) normalized[key] = [];
     });
@@ -149,8 +149,7 @@ class StorageEngine {
       'researchAreas',
       'projects',
       'researchRecords',
-      'tasks',
-      'evidence'
+      'tasks'
     ].forEach((collectionName) => {
       database[collectionName].forEach((entity) => {
         if (!entity || typeof entity !== 'object') return;
@@ -355,8 +354,7 @@ class StorageEngine {
       'researchAreas',
       'projects',
       'researchRecords',
-      'tasks',
-      'evidence'
+      'tasks'
     ].forEach((collectionName) => {
       merged[collectionName] = this.mergeEntityArray(local[collectionName], remote[collectionName]);
     });
@@ -408,53 +406,6 @@ class StorageEngine {
     return JSON.stringify(clean(a)) !== JSON.stringify(clean(b));
   }
 
-  /**
-   * Upload binary/evidence file to configured file storage provider
-   */
-  async uploadFile(fileData, filename, fileType) {
-    const db = await this.loadAll();
-    const fileProvider = db.settings?.syncProviders?.files || { provider: 'local' };
-
-    if (fileProvider.provider === 'local') {
-      // Local stores as object URL or in indexDB
-      // We will generate a local chrome storage/cache link
-      const fileId = 'file_' + Math.random().toString(36).substring(2, 9);
-      const fileRecord = {
-        id: fileId,
-        filename,
-        url: 'chrome-extension://' + chrome.runtime.id + '/mock-local-file/' + fileId,
-        size: fileData.byteLength || fileData.length || 0,
-        uploadedAt: Date.now()
-      };
-      
-      // Save content locally to indexDB or storage if small
-      // For local fallback, store base64 string
-      return { success: true, file: fileRecord };
-    }
-
-    try {
-      let fileUrl = '';
-      if (fileProvider.provider === 'webdav') {
-        fileUrl = await this.uploadToWebDAV(fileProvider.config, fileData, filename, fileType);
-      } else if (fileProvider.provider === 'github') {
-        fileUrl = await this.uploadToGitHub(fileProvider.config, fileData, filename, fileType);
-      }
-
-      const fileRecord = {
-        id: 'file_' + Math.random().toString(36).substring(2, 9),
-        filename,
-        url: fileUrl,
-        size: fileData.byteLength || fileData.length || 0,
-        uploadedAt: Date.now()
-      };
-
-      return { success: true, file: fileRecord };
-    } catch (e) {
-      console.error('File Upload Error:', e);
-      return { success: false, error: e.message };
-    }
-  }
-
   // --- WebDAV Methods ---
   async fetchFromWebDAV(config) {
     const { url, username, password } = config;
@@ -487,32 +438,6 @@ class StorageEngine {
       body: JSON.stringify(db, null, 2)
     });
     if (!response.ok) throw new Error(`WebDAV write failed: ${response.statusText}`);
-  }
-
-  async uploadToWebDAV(config, fileData, filename, fileType) {
-    const { url, username, password } = config;
-    await this.ensureHostPermissionForUrl(url, { request: false });
-    const cleanUrl = url.endsWith('/') ? url.slice(0, -1) : url;
-    
-    // Ensure an 'evidence' folder exists
-    const folderUrl = `${cleanUrl}/evidence`;
-    const headers = new Headers();
-    headers.set('Authorization', 'Basic ' + btoa(username + ':' + password));
-
-    // Try making evidence directory (fails if already exists, which is fine)
-    await fetch(folderUrl, { method: 'MKCOL', headers }).catch(() => {});
-
-    // PUT file contents
-    const fileUrl = `${folderUrl}/${encodeURIComponent(filename)}`;
-    headers.set('Content-Type', fileType || 'application/octet-stream');
-    const response = await fetch(fileUrl, {
-      method: 'PUT',
-      headers,
-      body: fileData
-    });
-
-    if (!response.ok) throw new Error(`WebDAV file upload failed: ${response.statusText}`);
-    return fileUrl;
   }
 
   async ensureHostPermissionForUrl(url, options = {}) {
@@ -615,46 +540,6 @@ class StorageEngine {
     }
   }
 
-  async uploadToGitHub(config, fileData, filename, fileType) {
-    const { token, repo, branch = 'main' } = config;
-    const uniqueName = Date.now() + '_' + filename;
-    const fileUrl = `https://api.github.com/repos/${repo}/contents/evidence/${encodeURIComponent(uniqueName)}`;
-
-    // Convert ArrayBuffer or Uint8Array to base64
-    let base64Content = '';
-    if (typeof fileData === 'string') {
-      base64Content = fileData.split(',')[1] || fileData;
-    } else {
-      const bytes = new Uint8Array(fileData);
-      let binary = '';
-      for (let i = 0; i < bytes.byteLength; i++) {
-        binary += String.fromCharCode(bytes[i]);
-      }
-      base64Content = btoa(binary);
-    }
-
-    const response = await fetch(fileUrl, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `token ${token}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/vnd.github.v3+json'
-      },
-      body: JSON.stringify({
-        message: `upload: evidence ${filename}`,
-        content: base64Content,
-        branch
-      })
-    });
-
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(`GitHub file upload failed: ${err.message || response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data.content.html_url; // Return raw HTML link or download link
-  }
 }
 
 // Instantiate storage globally on pages importing this script
