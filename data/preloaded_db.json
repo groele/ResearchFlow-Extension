@@ -1462,7 +1462,6 @@
       "updatedAt": "2026-05-15T13:51:21.712Z"
     }
   ],
-  "evidence": [],
   "honorOpportunities": [],
   "honorApplications": [],
   "researchAreas": [
@@ -1528,7 +1527,5 @@
     }
   ],
   "milestones": [],
-  "researchNotes": [],
-  "projectEvidenceLinks": [],
-  "recordEvidenceLinks": []
+  "researchNotes": []
 }

@@ -17,7 +17,7 @@
 也就是说：默认只给核心 API 权限；网页读取权限在用户点击“捕获当前页面”时按需请求。
 
 2. 数据模型没有集中约束，已经出现潜在运行时错误
-这是当前最实际的 bug 风险。DEFAULT_DB 里定义了 projects、researchRecords、manuscripts、submissions、evidence、settings 等字段，但没有定义 tasks 和 researchAreas。storage
+这是当前最实际的 bug 风险。早期 DEFAULT_DB 里定义了 projects、researchRecords、manuscripts、submissions、settings 等字段，但没有定义 tasks 和 researchAreas。storage
 但是：
 popup.js 新建项目时直接访问：
 JavaScriptareaId: db.researchAreas[0]?.id || 'area_default'
@@ -26,7 +26,7 @@ sidepanel.js 里也直接使用：
 JavaScriptdb.tasks.push(newTask)db.tasks.filter(...)
 如果 tasks 不存在，也会直接崩溃。sidepanel
 这说明当前架构缺少一个统一 schema 层。建议马上增加：
-JavaScriptconst DB_SCHEMA_VERSION = 2;function ensureDbShape(db) {  return {    schemaVersion: DB_SCHEMA_VERSION,    researchAreas: [],    projects: [],    researchRecords: [],    manuscripts: [],    submissions: [],    tasks: [],    evidence: [],    achievements: [],    settings: DEFAULT_DB.settings,    ...db,    settings: deepMerge(DEFAULT_DB.settings, db.settings || {})  };}
+JavaScriptconst DB_SCHEMA_VERSION = 2;function ensureDbShape(db) {  return {    schemaVersion: DB_SCHEMA_VERSION,    researchAreas: [],    projects: [],    researchRecords: [],    manuscripts: [],    submissions: [],    tasks: [],    achievements: [],    settings: DEFAULT_DB.settings,    ...db,    settings: deepMerge(DEFAULT_DB.settings, db.settings || {})  };}
 所有 loadAll()、导入 JSON、云端同步拉取之后，都必须先跑 ensureDbShape() 和 migrations。
 
 3. 同步机制太简化，存在数据覆盖风险
