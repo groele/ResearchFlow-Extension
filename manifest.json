@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ResearchFlow Companion",
-  "version": "3.1.0",
+  "version": "4.0.0",
   "description": "A focused, local-first research companion for capturing literature, keeping working notes, tracking next actions, and exporting your data.",
   "icons": {
     "16": "assets/icons/icon-16.png",
