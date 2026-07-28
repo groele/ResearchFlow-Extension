@@ -1,11 +1,11 @@
 /**
- * ResearchFlow OS - Multi-Cloud Storage Sync Engine
- * Handles local-first persistence via chrome.storage.local and background
- * synchronization/binary uploads to WebDAV, GitHub, and other cloud providers.
+ * ResearchFlow core - local-first storage and optional private synchronization.
+ * Active collections are projects, research records, tasks and evidence. Older
+ * exported fields are preserved but no longer form part of the active contract.
  */
 
 const DEFAULT_DB = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   lastUpdated: 0,
   updatedAt: null,
   revision: 0,
@@ -13,24 +13,12 @@ const DEFAULT_DB = {
   researchAreas: [],
   projects: [],
   researchRecords: [],
-  manuscripts: [],
-  submissions: [],
   tasks: [],
-  achievements: [],
   evidence: [],
-  honorOpportunities: [],
-  honorApplications: [],
-  schemaTemplates: [],
   settings: {
     syncProviders: {
       metadata: { provider: 'local', config: {} }, // Provider for JSON database sync
       files: { provider: 'local', config: {} }      // Provider for PDF/Binary uploads
-    },
-    ai: {
-      provider: 'openai',
-      apiKey: '',
-      endpoint: 'https://api.openai.com/v1',
-      model: 'gpt-4o'
     },
     profile: {
       displayName: '',
@@ -39,16 +27,7 @@ const DEFAULT_DB = {
       affiliation: '',
       orcid: '',
       language: 'en'
-    },
-    journalPortals: [
-      { id: 'acs', name: 'ACS', url: 'https://publish.acs.org/app/login?code=1000', color: '#002C6C', isDefault: true },
-      { id: 'wiley', name: 'Wiley', url: 'https://submission.wiley.com/submission/dashboard', color: '#00A4E4', isDefault: true },
-      { id: 'apl', name: 'APL', url: 'https://apl.peerx-press.org/cgi-bin/main.plex', color: '#D22630', isDefault: true },
-      { id: 'nature', name: 'Nature', url: 'https://mts-ncomms.nature.com/cgi-bin/main.plex', color: '#B59E50', isDefault: true }
-    ],
-    zoteroSource: 'local',
-    zoteroUid: '',
-    zoteroKey: ''
+    }
   }
 };
 
@@ -140,14 +119,8 @@ class StorageEngine {
       'researchAreas',
       'projects',
       'researchRecords',
-      'manuscripts',
-      'submissions',
       'tasks',
-      'achievements',
-      'evidence',
-      'honorOpportunities',
-      'honorApplications',
-      'schemaTemplates'
+      'evidence'
     ].forEach((key) => {
       if (!Array.isArray(normalized[key])) normalized[key] = [];
     });
@@ -176,14 +149,8 @@ class StorageEngine {
       'researchAreas',
       'projects',
       'researchRecords',
-      'manuscripts',
-      'submissions',
       'tasks',
-      'achievements',
-      'evidence',
-      'honorOpportunities',
-      'honorApplications',
-      'schemaTemplates'
+      'evidence'
     ].forEach((collectionName) => {
       database[collectionName].forEach((entity) => {
         if (!entity || typeof entity !== 'object') return;
@@ -388,14 +355,8 @@ class StorageEngine {
       'researchAreas',
       'projects',
       'researchRecords',
-      'manuscripts',
-      'submissions',
       'tasks',
-      'achievements',
-      'evidence',
-      'honorOpportunities',
-      'honorApplications',
-      'schemaTemplates'
+      'evidence'
     ].forEach((collectionName) => {
       merged[collectionName] = this.mergeEntityArray(local[collectionName], remote[collectionName]);
     });
