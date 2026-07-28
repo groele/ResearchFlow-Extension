@@ -7,6 +7,8 @@ ResearchFlow 是一个面向 Chrome 的科研工作流扩展，用于管理手�
 - 在仪表盘查看手稿流水线和关键事件时间线。
 - 通过看板管理手稿状态。
 - 跟踪投稿、期刊入口、合规清单和审稿回复矩阵。
+- 在投稿记录器中维护第一作者，并直接显示在仪表盘投稿流水线条目中。
+- 自动识别支持的期刊投稿网站，一键捕获稿件与流程字段并给出置信度；经人工逐项核对确认后，再创建相互关联的项目、稿件和投稿记录。
 - 将科研工作流保存在本地优先数据库中。
 - 导出 JSON；可选地通过 WebDAV 或 GitHub 同步自己的私有数据库。
 
@@ -26,6 +28,8 @@ ResearchFlow 不再包含“领域与项目树”、“研究记录”主面板�
 4. 固定 ResearchFlow 图标并点击它，直接打开完整主程序。
 
 需要 Chrome 116 或更高版本。扩展不需要构建步骤或第三方运行时依赖。
+
+投稿网站识别目前覆盖 ScholarOne Manuscripts、Editorial Manager、eJournalPress、ACS Paragon Plus、Wiley Submission、Springer Nature Submissions、AIP Peer X-Press、MDPI SuSy、Frontiers Review、APS Authors 和 Science Journals Submission。识别器会综合域名、页面标题、元数据、表单字段标签和流程状态判断，可捕获稿件题目、期刊、稿件编号、投稿状态、日期、第一作者、作者列表、摘要和关键词；密码、邮箱与上传文件不会被采集。“自动识别投稿网站”和“自动捕获投稿信息”可在“多云设置”中分别控制。
 
 ## 验证
 

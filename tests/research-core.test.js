@@ -20,13 +20,14 @@ assert.equal('projectEvidenceLinks' in db, false);
 assert.equal('recordEvidenceLinks' in db, false);
 assert.equal(db.settings.profile.language, 'en');
 
-RFCore.upsertProject(db, {
+const createdProject = RFCore.upsertProject(db, {
   title: '  Focused project  ',
   discipline: 'Physics',
   status: 'active'
 });
 assert.equal(db.projects.length, 1);
 assert.equal(db.projects[0].title, 'Focused project');
+assert.equal(createdProject, db.projects[0], 'project creation should return the saved project for linked workflows');
 
 RFCore.upsertRecord(db, {
   title: '  Captured result  ',

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ResearchFlow Companion",
-  "version": "4.0.0",
+  "version": "4.1.0",
   "description": "A focused, local-first research companion for capturing literature, keeping working notes, tracking next actions, and exporting your data.",
   "icons": {
     "16": "assets/icons/icon-16.png",
@@ -19,7 +19,18 @@
   ],
   "host_permissions": [
     "https://api.github.com/*",
-    "https://api.unpaywall.org/*"
+    "https://api.unpaywall.org/*",
+    "https://*.manuscriptcentral.com/*",
+    "https://*.editorialmanager.com/*",
+    "https://*.ejournalpress.com/*",
+    "https://publish.acs.org/*",
+    "https://submission.wiley.com/*",
+    "https://*.nature.com/*",
+    "https://*.peerx-press.org/*",
+    "https://susy.mdpi.com/*",
+    "https://review.frontiersin.org/*",
+    "https://authors.aps.org/*",
+    "https://submission.science.org/*"
   ],
   "optional_host_permissions": [
     "https://graph.microsoft.com/*",
@@ -30,6 +41,28 @@
   "background": {
     "service_worker": "scripts/background.js"
   },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.manuscriptcentral.com/*",
+        "https://*.editorialmanager.com/*",
+        "https://*.ejournalpress.com/*",
+        "https://publish.acs.org/*",
+        "https://submission.wiley.com/*",
+        "https://*.nature.com/*",
+        "https://*.peerx-press.org/*",
+        "https://susy.mdpi.com/*",
+        "https://review.frontiersin.org/*",
+        "https://authors.aps.org/*",
+        "https://submission.science.org/*"
+      ],
+      "js": [
+        "scripts/journal-portals.js",
+        "scripts/content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
   "action": {
     "default_title": "Open ResearchFlow",
     "default_icon": {

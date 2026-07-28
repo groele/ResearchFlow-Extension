@@ -10,7 +10,7 @@
  * The toolbar action itself always opens the full options workspace.
  */
 
-importScripts('storage.js');
+importScripts('storage.js', 'journal-portals.js');
 
 // ─── Tab级内存缓存 ────────────────────────────────────────────────────────────
 // key: `${tabId}:${url}`, value: { metadata, timestamp }
@@ -74,6 +74,33 @@ chrome.action.onClicked.addListener(() => {
   chrome.runtime.openOptionsPage();
 });
 
+async function openSubmissionCapturePage() {
+  const workspaceUrl = chrome.runtime.getURL('pages/options.html');
+  const captureUrl = `${workspaceUrl}?mode=submission-capture`;
+  const tabs = await chrome.tabs.query({});
+  const existingWorkspace = tabs.find(tab => (
+    tab.id &&
+    typeof tab.url === 'string' &&
+    tab.url.startsWith(workspaceUrl)
+  ));
+
+  if (existingWorkspace) {
+    await chrome.tabs.update(existingWorkspace.id, {
+      url: captureUrl,
+      active: true
+    });
+    if (existingWorkspace.windowId) {
+      await chrome.windows.update(existingWorkspace.windowId, { focused: true }).catch(() => {});
+    }
+    return;
+  }
+
+  await chrome.tabs.create({
+    url: captureUrl,
+    active: true
+  });
+}
+
 // ─── 2. Tab 预注入与缓存热身 ─────────────────────────────────────────────────
 
 /**
@@ -85,6 +112,7 @@ function isAcademicUrl(url) {
   if (url.startsWith('chrome://') || url.startsWith('chrome-extension://')) return false;
   if (url.startsWith('about:') || url.startsWith('data:') || url.startsWith('file://')) return false;
   if (url === 'https://newtab' || url.startsWith('edge://')) return false;
+  if (self.RFJournalPortals?.isSubmissionPortalUrl(url)) return true;
 
   // 已知学术域名 → 最高优先级
   const ACADEMIC_PATTERNS = [
@@ -125,9 +153,12 @@ async function preInjectAndCache(tabId, url) {
   }
 
   try {
+    const files = self.RFJournalPortals?.isSubmissionPortalUrl(url)
+      ? ['scripts/journal-portals.js', 'scripts/content.js']
+      : ['scripts/content.js'];
     await chrome.scripting.executeScript({
       target: { tabId },
-      files: ['scripts/content.js']
+      files
     });
     // 注入成功，标记该 tab
     injectedTabs.add(tabId);
@@ -229,6 +260,64 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         console.warn('[ResearchFlow] Unpaywall error:', err.message);
         sendResponse({ success: false, reason: err.message });
       });
+    return true;
+  }
+
+  // 3e. Open the full workspace with a detected submission portal prefilled.
+  if (request.action === 'OPEN_SUBMISSION_CAPTURE') {
+    const supplied = request.capture || request.draft || {};
+    const detected = self.RFJournalPortals?.buildSubmissionCapture({
+      url: supplied.portalUrl || supplied.journalUrl || sender.tab?.url || '',
+      title: supplied.pageTitle || sender.tab?.title || '',
+      signals: {
+        journalName: supplied.journalName || supplied.targetJournal,
+        manuscriptTitle: supplied.manuscriptTitle,
+        manuscriptId: supplied.manuscriptId,
+        status: supplied.workflowStage || supplied.status,
+        submissionDate: supplied.submissionDate,
+        revisionDueDate: supplied.revisionDueDate,
+        firstAuthor: supplied.firstAuthor,
+        authors: supplied.authors,
+        abstract: supplied.abstract,
+        keywords: supplied.keywords
+      }
+    });
+
+    if (!detected) {
+      sendResponse({ success: false, error: 'Unsupported submission portal.' });
+      return true;
+    }
+
+    const now = Date.now();
+    const safeText = (value, maxLength) => String(value || '').trim().slice(0, maxLength);
+    const pendingDraft = {
+      targetJournal: safeText(detected.journalName, 160),
+      journalUrl: detected.portalUrl,
+      platformId: detected.platformId,
+      platformName: detected.platformName,
+      sourceOrigin: detected.origin,
+      manuscriptTitle: safeText(detected.manuscriptTitle, 500),
+      manuscriptId: safeText(detected.manuscriptId, 120),
+      workflowStage: safeText(detected.workflowStage, 40),
+      submissionDate: detected.submissionDate || new Date(now).toISOString().slice(0, 10),
+      revisionDueDate: detected.revisionDueDate || '',
+      firstAuthor: safeText(detected.firstAuthor, 160),
+      authors: safeText(detected.authors, 600),
+      abstract: safeText(detected.abstract, 4000),
+      keywords: safeText(detected.keywords, 500),
+      confidenceScore: Number(detected.confidenceScore) || 0,
+      confidenceLevel: safeText(detected.confidenceLevel, 20),
+      detectedFieldCount: Number(detected.detectedFieldCount) || 0,
+      evidence: Array.isArray(detected.evidence) ? detected.evidence.slice(0, 12) : [],
+      createdAt: now,
+      expiresAt: now + (30 * 60 * 1000)
+    };
+
+    chrome.storage.local
+      .set({ researchflow_pending_submission_draft: pendingDraft })
+      .then(() => openSubmissionCapturePage())
+      .then(() => sendResponse({ success: true }))
+      .catch(error => sendResponse({ success: false, error: error.message }));
     return true;
   }
 

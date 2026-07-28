@@ -7,6 +7,8 @@ ResearchFlow is a Chrome extension for managing manuscript pipelines, journal su
 - Monitor manuscript pipelines and key-event timelines from the dashboard.
 - Manage manuscripts through a kanban workflow.
 - Track submissions, journal portals, compliance checklists, and reviewer-response matrices.
+- Store the first author in the submission editor and show it directly on dashboard pipeline cards.
+- Detect supported journal submission portals, capture manuscript/workflow fields with a confidence score, and open a human-review form that creates a linked project, manuscript, and submission only after confirmation.
 - Store the research workflow in a local-first database.
 - Export JSON and optionally synchronize your private database through WebDAV or GitHub.
 
@@ -26,6 +28,8 @@ The active app normalizes projects, research records, manuscripts, submissions, 
 4. Pin ResearchFlow and click its toolbar icon to open the full workspace.
 
 Chrome 116 or newer is required. The extension has no build step or third-party runtime dependency.
+
+Submission recognition currently covers ScholarOne Manuscripts, Editorial Manager, eJournalPress, ACS Paragon Plus, Wiley Submission, Springer Nature Submissions, AIP Peer X-Press, MDPI SuSy, Frontiers Review, APS Authors, and Science Journals Submission. Automatic recognition and ignored websites can be managed under **Settings**.
 
 ## Verify
 
