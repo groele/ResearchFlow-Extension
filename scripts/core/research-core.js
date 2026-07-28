@@ -68,8 +68,13 @@
       status: values.status === 'completed' ? 'completed' : 'active',
       updatedAt: stamp
     };
-    if (project) Object.assign(project, patch);
-    else db.projects.push({ id: createId('project'), createdAt: stamp, ...patch, tags: [] });
+    if (project) {
+      Object.assign(project, patch);
+      return project;
+    }
+    const created = { id: createId('project'), createdAt: stamp, ...patch, tags: [] };
+    db.projects.push(created);
+    return created;
   }
 
   function upsertRecord(db, values) {

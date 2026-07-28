@@ -17,7 +17,7 @@
         <div class="logo-orb" aria-hidden="true"></div>
         <div>
           <h2>ResearchFlow OS</h2>
-          <span class="version">v3.1.0 Companion</span>
+          <span class="version">v4.1.0 Companion</span>
         </div>
       </div>
 
@@ -232,6 +232,68 @@
             <button id="btn-save-language" class="btn-primary" style="margin-top: 16px;">Save Language</button>
           </div>
 
+          <!-- Submission portal recognition -->
+          <div class="glass-panel settings-card settings-assist-card" id="settings-submission-assist-card">
+            <div class="settings-assist-heading">
+              <div class="settings-assist-mark" aria-hidden="true">
+                <svg class="svg-icon" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <path d="M3 12a9 9 0 0 1 9-9"></path>
+                  <path d="M12 21a9 9 0 0 1-9-9"></path>
+                  <path d="M21 12a9 9 0 0 1-9 9"></path>
+                  <path d="M12 3a9 9 0 0 1 9 9"></path>
+                </svg>
+              </div>
+              <div class="settings-assist-title-copy">
+                <div class="settings-assist-title-line">
+                  <h3>Submission Portal Recognition</h3>
+                  <span class="settings-assist-status" id="submission-assist-state-label">Enabled</span>
+                </div>
+                <p class="text-muted" id="submission-assist-help">Show a quick-entry card when a supported journal submission system is detected.</p>
+              </div>
+            </div>
+
+            <div class="settings-assist-control">
+              <div class="settings-assist-control-copy">
+                <strong id="submission-assist-toggle-label">Automatic detection</strong>
+                <small id="submission-assist-toggle-help">Recognize supported portals without opening a popup or side panel.</small>
+              </div>
+              <label class="settings-switch" for="submission-assist-enabled">
+                <input type="checkbox" id="submission-assist-enabled" checked>
+                <span class="settings-switch-track" aria-hidden="true">
+                  <span class="settings-switch-thumb"></span>
+                </span>
+              </label>
+            </div>
+
+            <div class="settings-assist-control settings-assist-capture-control">
+              <div class="settings-assist-control-copy">
+                <strong id="submission-assist-capture-label">Automatic information capture</strong>
+                <small id="submission-assist-capture-help">Collect manuscript and workflow fields for human review.</small>
+              </div>
+              <label class="settings-switch" for="submission-assist-capture-enabled">
+                <input type="checkbox" id="submission-assist-capture-enabled" checked>
+                <span class="settings-switch-track" aria-hidden="true">
+                  <span class="settings-switch-thumb"></span>
+                </span>
+              </label>
+            </div>
+
+            <div class="settings-assist-footer">
+              <div class="settings-assist-scope">
+                <svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                  <path d="m9 12 2 2 4-4"></path>
+                </svg>
+                <div>
+                  <span id="submission-assist-ignored-count">No websites ignored.</span>
+                  <small id="submission-assist-scope-help">Recognition runs only on supported submission domains.</small>
+                </div>
+              </div>
+              <button id="btn-reset-submission-assist" class="btn-secondary">Reset ignored websites</button>
+            </div>
+          </div>
+
           <!-- Cloud Mappings Card -->
           <div class="glass-panel settings-card" id="settings-cloud-card">
             <h3>📂 Distributed Cloud Storage Routing</h3>
@@ -316,6 +378,7 @@
 
   <script src="../scripts/storage.js"></script>
   <script src="../scripts/ui-utils.js"></script>
+  <script src="../scripts/core/research-core.js"></script>
   <script src="../scripts/options.js"></script>
 </body>
 </html>
