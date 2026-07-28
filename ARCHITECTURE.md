@@ -29,4 +29,4 @@ Evidence Locker, project-tree and record-library dashboard sections, generic AI 
 
 ## Compatibility and migration
 
-Existing `projects`, `researchRecords`, `manuscripts`, `submissions`, and `tasks` remain normalized. Database schema version 5 removes historical Evidence Locker fields, AI credentials, and evidence file-routing settings.
+Existing `projects`, `researchRecords`, `manuscripts`, `submissions`, and `tasks` remain normalized. Database schema version 6 removes historical Evidence Locker fields, AI credentials, evidence file-routing settings, and synchronization secrets from the portable database. GitHub tokens and WebDAV credentials remain device-local and are excluded from cloud payloads and JSON exports.

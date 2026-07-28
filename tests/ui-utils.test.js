@@ -23,6 +23,50 @@ assert.equal(RFUI.getSubmissionStatusBadgeClass('under_review'), 'badge badge-in
 assert.equal(RFUI.getSubmissionStatusBadgeClass('submitted'), 'badge badge-purple');
 assert.equal(RFUI.getSubmissionStatusBadgeClass('unknown'), 'badge badge-info');
 
+assert.equal(
+  RFUI.getTimelineEventDate({ completeDate: '', planDate: '', dueDate: '2026-08-18' }, 'r1_comments'),
+  '',
+  'an R1 deadline must not be treated as a completed first-decision date'
+);
+assert.equal(
+  RFUI.getTimelineEventDate({ completeDate: '2026-08-02', dueDate: '2026-08-18' }, 'r1_comments'),
+  '2026-08-02'
+);
+assert.equal(
+  RFUI.getTimelineEventDate({ completeDate: '', planDate: '', dueDate: '2026-08-18' }, 'submit'),
+  '2026-08-18'
+);
+const capturedSubmissions = [{
+  id: 'sub_1',
+  manuscriptId: 'man_1',
+  externalManuscriptId: 'AFM-26-10482',
+  targetJournal: 'Advanced Functional Materials',
+  captureProvenance: { sourceOrigin: 'https://www.editorialmanager.com' }
+}];
+const capturedManuscripts = [{ id: 'man_1', title: 'Strain-Gated Exciton–Trion Nonlinearities' }];
+assert.equal(
+  RFUI.findCapturedSubmissionMatch({
+    submissions: capturedSubmissions,
+    manuscripts: capturedManuscripts,
+    capture: { externalManuscriptId: 'afm-26-10482' }
+  })?.id,
+  'sub_1',
+  'external manuscript identifiers should prevent duplicate capture'
+);
+assert.equal(
+  RFUI.findCapturedSubmissionMatch({
+    submissions: capturedSubmissions,
+    manuscripts: capturedManuscripts,
+    capture: {
+      manuscriptTitle: 'Strain-Gated Exciton–Trion Nonlinearities',
+      targetJournal: 'Advanced Functional Materials',
+      sourceOrigin: 'https://www.editorialmanager.com'
+    }
+  })?.id,
+  'sub_1',
+  'capture provenance should prevent duplicates when an external identifier is absent'
+);
+
 assert.equal(RFUI.getWorkflowStatusBadgeClass('submission', 'rejected'), 'badge badge-danger');
 assert.equal(RFUI.getWorkflowStatusBadgeClass('manuscript', 'published'), 'badge badge-success');
 assert.equal(RFUI.getWorkflowStatusBadgeClass('manuscript', 'drafting'), 'badge badge-warning');

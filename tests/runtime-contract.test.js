@@ -82,6 +82,7 @@ assert(contentJs.includes('Do not show on this site'), 'portal prompt should sup
 assert(contentJs.includes('collectSubmissionPageSignals'), 'portal capture should collect reviewable workflow fields');
 assert(contentJs.includes('Capture information'), 'portal prompt should expose one-click information capture');
 assert(contentJs.includes('captureDetailsEnabled'), 'content capture should respect the independent detail-capture switch');
+assert(contentJs.includes('width: min(344px, calc(100vw - 28px))'), 'portal capture prompt should remain a compact partial-screen card');
 
 const optionsJs = read('scripts/options.js');
 assert(optionsJs.includes('consumePendingSubmissionDraft'), 'main workspace should consume detected submission drafts');
@@ -98,5 +99,8 @@ assert(storageJs.includes('delete normalized.settings.ai'), 'old AI settings sho
 assert(storageJs.includes('delete normalized.settings.syncProviders.files'), 'old evidence file routing should be discarded');
 assert(storageJs.includes("'manuscripts'"), 'storage should normalize manuscripts');
 assert(storageJs.includes("'submissions'"), 'storage should normalize submissions');
+assert(storageJs.includes('shouldRunCloudSync(normalized)'), 'local saves should skip incomplete remote sync configurations');
+assert(storageJs.includes('getSyncConfigurationIssue(metaProvider)'), 'manual sync should report invalid provider configuration without attempting a request');
+assert(storageJs.includes("return 'Invalid WebDAV URL'"), 'WebDAV URL validation should fail before permission or network access');
 
 console.log('runtime contract tests passed');
