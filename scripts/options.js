@@ -10,8 +10,10 @@ let currentDashboardFilter = 'all'; // 'all', 'accepted', 'active'
 let currentLanguage = 'en';
 let isPipelineExpanded = false;
 let pendingSubmissionCapture = null;
+let submissionAutoSaveCleanup = null;
+let previousModalFocus = null;
 
-const RF_OPTIONS_RENDER_VERSION = '4.1.0';
+const RF_OPTIONS_RENDER_VERSION = '5.0.0';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 
@@ -89,6 +91,7 @@ const I18N = {
     revisionDueLabel: 'Revision Due Date',
     confirmCreateProject: 'Confirm & Create Project',
     captureCreatedToast: 'New project, manuscript, and submission created after review.',
+    captureExistingOpenedToast: 'This captured submission already exists. The existing record was opened.',
     confidenceHigh: 'High',
     confidenceMedium: 'Medium',
     confidenceLow: 'Needs review',
@@ -274,7 +277,7 @@ const I18N = {
     editableSummary: 'Editable Summary',
     editFields: 'Edit fields',
     submissionEntryEditorTitle: 'Submission Entry Editor',
-    submissionEntryEditorHelp: 'Edit the selected entry here: title, journal, status, dates, DOI and article URL.',
+    submissionEntryEditorHelp: 'Edit the selected entry here. Changes are saved automatically as you type.',
     linkedManuscriptBadge: 'Linked manuscript',
     detachedSubmissionBadge: 'Detached submission',
     manuscriptSection: 'Manuscript',
@@ -286,13 +289,17 @@ const I18N = {
     submissionChecklistSection: 'Submission Checklist',
     peerReviewMatrixSection: 'Peer Review Response Matrix',
     addComment: 'Add Comment',
-    reviewEditorHelp: 'Edit reviewer comments and author responses here, then use Save All Changes to persist the full submission state.',
-    saveAllChanges: 'Save All Changes',
+    reviewEditorHelp: 'Reviewer comments and author responses are saved automatically as you type.',
+    autoSavePending: 'Waiting to save',
+    autoSaveSaving: 'Saving changes…',
+    autoSaveSaved: 'All changes saved',
+    autoSaveInvalid: 'Check the highlighted field',
+    autoSaveFailed: 'Auto-save failed. Your text remains in this form.',
     transferRoundHelp: 'Close the current round and create the next target journal record in one step.',
     savedReviewPreviewTitle: 'Saved Review Preview',
-    savedReviewPreviewHelp: 'Read-only snapshot from the Submission Entry Editor. Edit above, then save.',
+    savedReviewPreviewHelp: 'Read-only snapshot kept in sync with the Submission Entry Editor.',
     exportTable: 'Export Table',
-    emptyReviewEditor: 'No reviewer comments recorded. Add one here and save all changes.',
+    emptyReviewEditor: 'No reviewer comments recorded. Add one here; it will save automatically.',
     emptyReviewPreview: 'No saved reviewer comments yet.',
     reviewerCommentLabel: 'Reviewer Comment #{count}',
     reviewerCommentPlaceholder: 'Paste reviewer comment...',
@@ -444,6 +451,7 @@ const I18N = {
     revisionDueLabel: '修回截止日期',
     confirmCreateProject: '确认并新建项目',
     captureCreatedToast: '已在人工核对后创建项目、稿件和投稿记录。',
+    captureExistingOpenedToast: '该投稿已录入，已打开现有记录以避免重复创建。',
     confidenceHigh: '高',
     confidenceMedium: '中',
     confidenceLow: '需重点核对',
@@ -629,7 +637,7 @@ const I18N = {
     editableSummary: '可编辑摘要',
     editFields: '编辑字段',
     submissionEntryEditorTitle: '投稿记录编辑器',
-    submissionEntryEditorHelp: '在此编辑选中的条目：题目、期刊、状态、日期、DOI 和文章 URL。',
+    submissionEntryEditorHelp: '在此编辑选中的条目，填写内容会自动保存。',
     linkedManuscriptBadge: '已关联手稿',
     detachedSubmissionBadge: '未关联手稿',
     manuscriptSection: '手稿',
@@ -641,13 +649,17 @@ const I18N = {
     submissionChecklistSection: '投稿清单',
     peerReviewMatrixSection: '同行评审回复矩阵',
     addComment: '添加审稿意见',
-    reviewEditorHelp: '在此编辑审稿意见和作者回复，然后使用“保存所有更改”持久化完整的投稿状态。',
-    saveAllChanges: '保存所有更改',
+    reviewEditorHelp: '审稿意见和作者回复会在填写时自动保存。',
+    autoSavePending: '等待保存',
+    autoSaveSaving: '正在保存更改…',
+    autoSaveSaved: '所有更改均已自动保存',
+    autoSaveInvalid: '请检查当前填写内容',
+    autoSaveFailed: '自动保存失败，当前填写内容仍保留在表单中。',
     transferRoundHelp: '一步关闭当前轮次并创建下一个目标期刊记录。',
     savedReviewPreviewTitle: '已保存审稿预览',
-    savedReviewPreviewHelp: '来自投稿记录编辑器的只读快照。在上方编辑后保存。',
+    savedReviewPreviewHelp: '与投稿记录编辑器自动同步的只读快照。',
     exportTable: '导出表格',
-    emptyReviewEditor: '暂未记录审稿意见。在此添加并保存所有更改。',
+    emptyReviewEditor: '暂未记录审稿意见；在此添加后将自动保存。',
     emptyReviewPreview: '暂无已保存的审稿意见。',
     reviewerCommentLabel: '审稿意见 #{count}',
     reviewerCommentPlaceholder: '粘贴审稿意见...',
@@ -849,7 +861,7 @@ function refreshActiveViewForLanguage() {
   if (activeViewId === 'view-dashboard') renderDashboard();
   if (activeViewId === 'view-manuscripts') renderKanban();
   if (activeViewId === 'view-submissions') renderSubmissions();
-  if (activeViewId === 'view-settings') loadSettings();
+  if (activeViewId === 'view-settings') loadSettings().catch(console.error);
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -871,7 +883,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (targetView === 'view-dashboard') renderDashboard();
       if (targetView === 'view-manuscripts') renderKanban();
       if (targetView === 'view-submissions') renderSubmissions();
-      if (targetView === 'view-settings') loadSettings();
+      if (targetView === 'view-settings') loadSettings().catch(console.error);
     });
   });
 
@@ -1755,9 +1767,7 @@ function analyzeSubmission(sub) {
 
   const getKeyEventDate = (key) => {
     const node = events.find(e => inferKey(e) === key);
-    const nodeDate = node
-      ? normalizeDateString((key === 'accept' || key === 'online') ? node.completeDate : (node.completeDate || node.planDate || node.dueDate))
-      : null;
+    const nodeDate = node ? normalizeDateString(window.RFUI.getTimelineEventDate(node, key)) : null;
     if (key === 'submit') return normalizeDateString(sub.submissionDate) || nodeDate;
     if (key === 'r1_comments') return normalizeDateString(sub.firstDecisionDate) || nodeDate;
     if (key === 'accept' || key === 'online') {
@@ -2369,8 +2379,7 @@ function renderDashboard() {
             <span>${t('expSubmitShort')} ${a.expToSubmit === null ? "—" : a.expToSubmit + t('dayUnitShort')}</span>
             <span>${t('timelineDateSource')}: ${escapeHTML(a.submitDateSource)}</span>
             <span class="pipeline-first-author ${firstAuthor ? '' : 'is-empty'}" title="${escapeHTML(t('firstAuthorLabel'))}: ${escapeHTML(firstAuthor || t('firstAuthorNotSet'))}">
-              <span class="pipeline-first-author-index" aria-hidden="true">1</span>
-              <span class="pipeline-first-author-label">${escapeHTML(t('firstAuthorLabel'))}</span>
+              <span class="pipeline-first-author-label">${escapeHTML(t('firstAuthorLabel'))}:</span>
               <strong>${escapeHTML(firstAuthor || t('firstAuthorNotSet'))}</strong>
             </span>
           </div>
@@ -3231,6 +3240,10 @@ function renderSubmissionReviewMatrixEditor(sub, manAbstract) {
       const empty = reviewBox.querySelector('.empty-state');
       if (empty) reviewBox.innerHTML = '';
       reviewBox.appendChild(createSubmissionReviewEditorRow({ comment: '', response: '', recordId: '' }, reviewBox.querySelectorAll('.submission-edit-review-row').length));
+      reviewBox.dispatchEvent(new CustomEvent('submission-autosave-request', {
+        bubbles: true,
+        detail: { immediate: true }
+      }));
     });
   }
 
@@ -3260,6 +3273,10 @@ function renderSubmissionReviewMatrixEditor(sub, manAbstract) {
       if (reviewBox.querySelectorAll('.submission-edit-review-row').length === 0) {
         reviewBox.innerHTML = `<p class="empty-state">${escapeHTML(t('emptyReviewEditor'))}</p>`;
       }
+      reviewBox.dispatchEvent(new CustomEvent('submission-autosave-request', {
+        bubbles: true,
+        detail: { immediate: true }
+      }));
       return;
     }
 
@@ -3349,12 +3366,13 @@ function applySubmissionEditSync(sub, man, syncPlan) {
   syncManuscriptStatusFromSubmission(sub);
 }
 
-async function saveSubmissionEditFromValues(sub, prefix) {
+async function saveSubmissionEditFromValues(sub, prefix, options = {}) {
   const man = db.manuscripts.find(m => m.id === sub.manuscriptId);
   const editValues = getSubmissionEditValues(prefix);
   const syncPlan = window.RFUI.buildSubmissionEditSyncPlan(editValues);
   if (!syncPlan.ok) {
-    alert(syncPlan.error);
+    if (options.alertOnError !== false) alert(syncPlan.error);
+    if (typeof options.onValidationError === 'function') options.onValidationError(syncPlan.error);
     return false;
   }
 
@@ -3369,9 +3387,116 @@ async function saveSubmissionEditFromValues(sub, prefix) {
   renderDashboard();
   renderKanban();
   renderSubmissions();
-  renderSubmissionDetails(sub);
-  showGlobalToast(t('submissionEditsSaved'), 'success');
+  if (options.renderDetails !== false) renderSubmissionDetails(sub);
+  if (options.notify !== false) showGlobalToast(t('submissionEditsSaved'), 'success');
   return true;
+}
+
+function setupSubmissionAutoSave(sub) {
+  submissionAutoSaveCleanup?.();
+  const editCenter = document.getElementById('submission-entry-editor-panel');
+  const status = editCenter?.querySelector('[data-submission-autosave-status]');
+  if (!editCenter || !status) return;
+
+  let debounceTimer = null;
+  let revision = 0;
+  let saveChain = Promise.resolve();
+  let lastSavedSnapshot = JSON.stringify(getSubmissionEditValues('sub-edit'));
+  const debounceMs = 650;
+
+  const setStatus = (state, message, detail = '') => {
+    if (!editCenter.isConnected) return;
+    status.dataset.state = state;
+    status.title = detail || '';
+    const label = status.querySelector('[data-submission-autosave-label]');
+    if (label) label.textContent = message;
+  };
+
+  const persist = () => {
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+      debounceTimer = null;
+    }
+    const requestedRevision = revision;
+    setStatus('saving', t('autoSaveSaving'));
+
+    saveChain = saveChain
+      .catch(() => {})
+      .then(async () => {
+        if (!editCenter.isConnected) return;
+        const currentSnapshot = JSON.stringify(getSubmissionEditValues('sub-edit'));
+        if (currentSnapshot === lastSavedSnapshot) {
+          if (requestedRevision === revision) setStatus('saved', t('autoSaveSaved'));
+          return;
+        }
+        let validationError = '';
+        const saved = await saveSubmissionEditFromValues(sub, 'sub-edit', {
+          alertOnError: false,
+          renderDetails: false,
+          notify: false,
+          onValidationError: error => {
+            validationError = error;
+          }
+        });
+        if (!editCenter.isConnected) return;
+        if (!saved) {
+          setStatus('invalid', t('autoSaveInvalid'), validationError);
+          return;
+        }
+        lastSavedSnapshot = currentSnapshot;
+        if (requestedRevision === revision) {
+          setStatus('saved', t('autoSaveSaved'));
+          renderSubmissionReviewPreview(sub, getSubmissionChecklistKeys(sub));
+        }
+      })
+      .catch(error => {
+        console.error('Submission auto-save failed:', error);
+        setStatus('error', t('autoSaveFailed'), String(error?.message || error || ''));
+      });
+  };
+
+  const requestSave = ({ immediate = false } = {}) => {
+    revision += 1;
+    if (debounceTimer) clearTimeout(debounceTimer);
+    setStatus('pending', t('autoSavePending'));
+    if (immediate) {
+      persist();
+    } else {
+      debounceTimer = window.setTimeout(persist, debounceMs);
+    }
+  };
+
+  editCenter.addEventListener('input', event => {
+    const control = event.target;
+    if (!(control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement)) return;
+    if (control.type === 'checkbox' || control.type === 'radio') return;
+    requestSave();
+  });
+
+  editCenter.addEventListener('change', event => {
+    const control = event.target;
+    if (!(control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement || control instanceof HTMLSelectElement)) return;
+    requestSave({ immediate: true });
+  });
+
+  editCenter.addEventListener('submission-autosave-request', event => {
+    requestSave({ immediate: event.detail?.immediate !== false });
+  });
+
+  const flushPendingSave = () => {
+    if (debounceTimer) persist();
+  };
+  const flushWhenHidden = () => {
+    if (document.visibilityState === 'hidden') flushPendingSave();
+  };
+  window.addEventListener('pagehide', flushPendingSave);
+  document.addEventListener('visibilitychange', flushWhenHidden);
+  submissionAutoSaveCleanup = () => {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    window.removeEventListener('pagehide', flushPendingSave);
+    document.removeEventListener('visibilitychange', flushWhenHidden);
+    submissionAutoSaveCleanup = null;
+  };
 }
 
 function renderSubmissions() {
@@ -3850,11 +3975,9 @@ function renderSubmissionDetails(sub) {
 
       <div class="submission-edit-savebar">
         <p>${escapeHTML(t('timelineDateSource'))}: ${escapeHTML(timelineAnalysis.submitDateSource)}. ${escapeHTML(t('publicationLinksKept'))}</p>
-        <div class="form-group submission-edit-actions">
-          <button class="btn-primary w-full submission-edit-save" id="btn-save-sub-edit-center">
-            <svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-            <span>${escapeHTML(t('saveAllChanges'))}</span>
-          </button>
+        <div class="submission-autosave-status" data-submission-autosave-status data-state="saved" role="status" aria-live="polite">
+          <span class="submission-autosave-dot" aria-hidden="true"></span>
+          <span data-submission-autosave-label>${escapeHTML(t('autoSaveSaved'))}</span>
         </div>
       </div>
     </div>
@@ -3929,7 +4052,7 @@ function renderSubmissionDetails(sub) {
       </div>
     `);
   }
-  const editorMounted = Boolean(detailPanel.querySelector('#sub-edit-title') && detailPanel.querySelector('#btn-save-sub-edit-center'));
+  const editorMounted = Boolean(detailPanel.querySelector('#sub-edit-title') && detailPanel.querySelector('[data-submission-autosave-status]'));
   detailPanel.dataset.rfRenderVersion = RF_OPTIONS_RENDER_VERSION;
   detailPanel.dataset.rfEditorMounted = editorMounted ? 'true' : 'false';
   const editorMountBadge = detailPanel.querySelector('[data-editor-mount-badge]');
@@ -3984,17 +4107,11 @@ function renderSubmissionDetails(sub) {
     }
   });
 
-  const saveEditButton = document.getElementById('btn-save-sub-edit-center');
-  if (saveEditButton) {
-    saveEditButton.addEventListener('click', async () => {
-      await saveSubmissionEditFromValues(sub, 'sub-edit');
-    });
-  }
-
   const checklistKeys = getSubmissionChecklistKeys(sub);
   renderSubmissionChecklistEditor(sub, checklistKeys);
   renderSubmissionReviewMatrixEditor(sub, manAbstract);
   renderSubmissionReviewPreview(sub, checklistKeys);
+  setupSubmissionAutoSave(sub);
 
   // Action: Export LaTeX & Markdown Rebuttal Table
   document.getElementById('btn-export-rebuttal-table').addEventListener('click', () => {
@@ -4141,6 +4258,14 @@ function captureConfidenceLabel(level) {
   if (level === 'high') return t('confidenceHigh');
   if (level === 'medium') return t('confidenceMedium');
   return t('confidenceLow');
+}
+
+function findExistingCapturedSubmission({ externalManuscriptId, manuscriptTitle, targetJournal, sourceOrigin }) {
+  return window.RFUI.findCapturedSubmissionMatch({
+    submissions: db.submissions,
+    manuscripts: db.manuscripts,
+    capture: { externalManuscriptId, manuscriptTitle, targetJournal, sourceOrigin }
+  });
 }
 
 function buildSubmissionCaptureReview(draft) {
@@ -4311,6 +4436,25 @@ document.getElementById('btn-add-submission').addEventListener('click', () => {
       }
     }
 
+    if (captureDraft) {
+      const existingSubmission = findExistingCapturedSubmission({
+        externalManuscriptId: document.getElementById('sub-capture-manuscript-id')?.value,
+        manuscriptTitle: createMode.title,
+        targetJournal: createMode.targetJournal,
+        sourceOrigin: captureDraft.sourceOrigin
+      });
+      if (existingSubmission) {
+        selectedSubmissionId = existingSubmission.id;
+        await chrome.storage.local.remove(PENDING_SUBMISSION_DRAFT_KEY);
+        closeModal();
+        renderDashboard();
+        renderKanban();
+        renderSubmissions();
+        showGlobalToast(t('captureExistingOpenedToast'), 'success');
+        return;
+      }
+    }
+
     let manuscriptId = createMode.manuscriptId;
     let capturedProject = null;
     if (captureDraft) {
@@ -4411,6 +4555,7 @@ document.getElementById('btn-add-submission').addEventListener('click', () => {
     syncManuscriptStatusFromSubmission(newSub);
     selectedSubmissionId = newSub.id;
     await window.storage.saveAll(db);
+    if (captureDraft) await chrome.storage.local.remove(PENDING_SUBMISSION_DRAFT_KEY);
     closeModal();
     renderDashboard();
     renderKanban();
@@ -4424,8 +4569,10 @@ async function consumePendingSubmissionDraft() {
   const draft = stored?.[PENDING_SUBMISSION_DRAFT_KEY];
   if (!draft) return;
 
-  await chrome.storage.local.remove(PENDING_SUBMISSION_DRAFT_KEY);
-  if (!draft.expiresAt || Number(draft.expiresAt) < Date.now()) return;
+  if (!draft.expiresAt || Number(draft.expiresAt) < Date.now()) {
+    await chrome.storage.local.remove(PENDING_SUBMISSION_DRAFT_KEY);
+    return;
+  }
 
   const submissionNav = document.querySelector('.nav-item[data-view="view-submissions"]');
   submissionNav?.click();
@@ -4507,9 +4654,10 @@ async function saveSubmissionAssistSettings(state) {
   return normalized;
 }
 
-function loadSettings() {
+async function loadSettings() {
   const syncProviders = db.settings?.syncProviders || DEFAULT_DB.settings.syncProviders;
   const profile = db.settings?.profile || DEFAULT_DB.settings.profile;
+  const credentials = await window.storage.loadSyncCredentials();
 
   const languageSelect = document.getElementById('ui-language');
   if (languageSelect) languageSelect.value = currentLanguage || profile.language || 'en';
@@ -4519,11 +4667,11 @@ function loadSettings() {
 
   // WebDAV
   document.getElementById('webdav-url').value = syncProviders.metadata.config?.url || '';
-  document.getElementById('webdav-username').value = syncProviders.metadata.config?.username || '';
-  document.getElementById('webdav-password').value = syncProviders.metadata.config?.password || '';
+  document.getElementById('webdav-username').value = credentials.webdav?.username || '';
+  document.getElementById('webdav-password').value = credentials.webdav?.password || '';
 
   // GitHub
-  document.getElementById('github-token').value = syncProviders.metadata.config?.token || '';
+  document.getElementById('github-token').value = credentials.github?.token || '';
   document.getElementById('github-repo').value = syncProviders.metadata.config?.repo || '';
   document.getElementById('github-branch').value = syncProviders.metadata.config?.branch || 'main';
 
@@ -4607,12 +4755,27 @@ function setupSettingsListeners() {
       repo: document.getElementById('github-repo').value.trim(),
       branch: document.getElementById('github-branch').value.trim() || 'main'
     };
+    const selectedConfig = routeDb === 'webdav'
+      ? webdavConfig
+      : (routeDb === 'github' ? githubConfig : {});
+    const configurationIssue = window.storage.getSyncConfigurationIssue({
+      provider: routeDb,
+      config: selectedConfig
+    });
+    if (configurationIssue) {
+      showGlobalToast(configurationIssue, 'error');
+      updateSyncStatus('error', 'Configuration Required');
+      return;
+    }
 
-    // Update settings structure complying with DEFAULT_DB
+    await window.storage.saveSyncCredentials(routeDb, selectedConfig);
+    const publicConfig = window.storage.getPublicSyncConfig(routeDb, selectedConfig);
+
+    // Credentials are device-local and never enter the synchronized database.
     db.settings.syncProviders = {
       metadata: {
         provider: routeDb,
-        config: routeDb === 'webdav' ? webdavConfig : githubConfig
+        config: publicConfig
       }
     };
 
@@ -4667,7 +4830,8 @@ function setupSettingsListeners() {
   // --- DATABASE BACKUP & IMPORT LISTENERS ---
   // Export Database
   document.getElementById('btn-export-db').addEventListener('click', () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
+    const safeDb = window.storage.sanitizeDatabaseForExternalUse(db);
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(safeDb, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute("href", dataStr);
     downloadAnchor.setAttribute("download", `researchflow-export-${new Date().toISOString().split('T')[0]}.json`);
@@ -4859,7 +5023,7 @@ function setupSettingsListeners() {
         showGlobalToast('Database JSON successfully imported and adapted!', 'success');
 
         // Refresh settings panel UI
-        loadSettings();
+        loadSettings().catch(console.error);
       } catch (err) {
         alert(`Failed to import JSON: ${err.message}`);
         console.error(err);
@@ -4874,17 +5038,33 @@ const modal = document.getElementById('modal-container');
 const modalContent = document.getElementById('modal-card-content');
 
 function openModal(htmlContent) {
+  previousModalFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   modalContent.innerHTML = htmlContent;
   modalContent.classList.toggle('stage-modal-wide', htmlContent.includes('stage-editor'));
+  const isCaptureReview = htmlContent.includes('submission-capture-review');
+  modalContent.setAttribute('aria-modal', String(!isCaptureReview));
+  const heading = modalContent.querySelector('h2');
+  if (heading) {
+    if (!heading.id) heading.id = `modal-title-${Date.now()}`;
+    modalContent.setAttribute('aria-labelledby', heading.id);
+  } else {
+    modalContent.removeAttribute('aria-labelledby');
+  }
   modal.classList.add('active');
+  modal.setAttribute('aria-hidden', 'false');
 
   // Auto-bind close trigger inside modal
   const closeBtn = document.getElementById('btn-close-modal');
   if (closeBtn) closeBtn.addEventListener('click', closeModal);
+  window.requestAnimationFrame(() => {
+    const initialFocus = modalContent.querySelector('input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled])');
+    (initialFocus || modalContent).focus();
+  });
 }
 
 function closeModal() {
   modal.classList.remove('active');
+  modal.setAttribute('aria-hidden', 'true');
   modalContent.classList.remove('submission-capture-card');
   document.body.classList.remove('submission-capture-mode');
   pendingSubmissionCapture = null;
@@ -4893,11 +5073,16 @@ function closeModal() {
     url.searchParams.delete('mode');
     window.history.replaceState({}, '', url);
   }
+  if (previousModalFocus?.isConnected) previousModalFocus.focus();
+  previousModalFocus = null;
 }
 
 function setupGlobalModalListeners() {
   modal.addEventListener('click', (e) => {
     if (e.target === modal) closeModal();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && modal.classList.contains('active')) closeModal();
   });
 }
 

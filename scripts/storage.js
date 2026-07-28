@@ -5,8 +5,11 @@
  * while normalizing old databases.
  */
 
+const SYNC_CREDENTIALS_KEY = 'researchflow_sync_credentials';
+const SYNC_SECRET_KEYS = new Set(['token', 'password', 'accesstoken', 'refreshtoken', 'clientsecret', 'authorization']);
+
 const DEFAULT_DB = {
-  schemaVersion: 5,
+  schemaVersion: 6,
   lastUpdated: 0,
   updatedAt: null,
   revision: 0,
@@ -44,6 +47,7 @@ class StorageEngine {
     this.syncing = false;
     this.deviceIdPromise = null;
     this.syncTimer = null;
+    this.syncCredentials = null;
   }
 
   /**
@@ -95,8 +99,12 @@ class StorageEngine {
     // Notify other pages (e.g. side panel or dashboard) of data changes
     chrome.runtime.sendMessage({ action: 'DATABASE_UPDATED', data: normalized }).catch(() => {});
 
-    // Trigger asynchronous background cloud database sync
-    this.scheduleBackgroundSync();
+    // Trigger asynchronous cloud sync only when the selected remote provider
+    // has a complete, valid configuration. Local persistence must never be
+    // coupled to a half-configured WebDAV or GitHub route.
+    if (await this.shouldRunCloudSync(normalized)) {
+      this.scheduleBackgroundSync();
+    }
   }
 
   scheduleBackgroundSync(delayMs = 1000) {
@@ -112,8 +120,9 @@ class StorageEngine {
   }
 
   async persistLocal(data) {
+    const safeData = this.sanitizeDatabaseForExternalUse(data);
     await new Promise((resolve) => {
-      chrome.storage.local.set({ researchflow_db: data }, resolve);
+      chrome.storage.local.set({ researchflow_db: safeData }, resolve);
     });
   }
 
@@ -140,6 +149,12 @@ class StorageEngine {
     normalized.settings = this.deepMerge(DEFAULT_DB.settings, normalized.settings || {});
     delete normalized.settings.ai;
     delete normalized.settings.syncProviders.files;
+    if (options.migrateCredentials === false) {
+      const metadata = normalized.settings?.syncProviders?.metadata;
+      if (metadata) metadata.config = this.getPublicSyncConfig(metadata.provider, metadata.config);
+    } else {
+      await this.migrateSyncCredentials(normalized);
+    }
     normalized.deviceId = normalized.deviceId || await this.getDeviceId();
     this.normalizeEntityMetadata(normalized);
 
@@ -154,6 +169,144 @@ class StorageEngine {
     }
 
     return normalized;
+  }
+
+  getSyncConfigurationIssue(metadataProvider) {
+    const provider = String(metadataProvider?.provider || 'local').trim().toLowerCase();
+    const config = metadataProvider?.config && typeof metadataProvider.config === 'object'
+      ? metadataProvider.config
+      : {};
+
+    if (provider === 'local') return null;
+
+    if (provider === 'webdav') {
+      const url = String(config.url || '').trim();
+      if (!url) return 'WebDAV URL is required.';
+      try {
+        const parsed = new URL(url);
+        if (!['http:', 'https:'].includes(parsed.protocol) || !parsed.hostname) {
+          return 'Invalid WebDAV URL';
+        }
+      } catch (_) {
+        return 'Invalid WebDAV URL';
+      }
+      if (!String(config.username || '').trim() || !String(config.password || '').trim()) {
+        return 'WebDAV username and app password are required.';
+      }
+      return null;
+    }
+
+    if (provider === 'github') {
+      if (!String(config.token || '').trim()) return 'GitHub token is required.';
+      if (!/^[^/\s]+\/[^/\s]+$/.test(String(config.repo || '').trim())) {
+        return 'GitHub repository must use the owner/repository format.';
+      }
+      return null;
+    }
+
+    return `Unsupported sync provider: ${provider}`;
+  }
+
+  async shouldRunCloudSync(database = this.cache) {
+    const metadataProvider = await this.getEffectiveMetadataProvider(database);
+    return metadataProvider.provider !== 'local' && !this.getSyncConfigurationIssue(metadataProvider);
+  }
+
+  getPublicSyncConfig(provider, config = {}) {
+    if (provider === 'webdav') {
+      return { url: String(config.url || '').trim() };
+    }
+    if (provider === 'github') {
+      return {
+        repo: String(config.repo || '').trim(),
+        branch: String(config.branch || 'main').trim() || 'main'
+      };
+    }
+    return {};
+  }
+
+  getCredentialPatch(provider, config = {}) {
+    if (provider === 'webdav') {
+      return {
+        username: String(config.username || '').trim(),
+        password: String(config.password || '')
+      };
+    }
+    if (provider === 'github') {
+      return { token: String(config.token || '').trim() };
+    }
+    return {};
+  }
+
+  async loadSyncCredentials() {
+    if (this.syncCredentials) return this.deepMerge({}, this.syncCredentials);
+    this.syncCredentials = await new Promise((resolve) => {
+      chrome.storage.local.get([SYNC_CREDENTIALS_KEY], (result) => {
+        const stored = result?.[SYNC_CREDENTIALS_KEY];
+        resolve(stored && typeof stored === 'object' ? stored : {});
+      });
+    });
+    return this.deepMerge({}, this.syncCredentials);
+  }
+
+  async saveSyncCredentials(provider, config = {}) {
+    const credentials = await this.loadSyncCredentials();
+    if (provider === 'webdav' || provider === 'github') {
+      credentials[provider] = this.getCredentialPatch(provider, config);
+    }
+    this.syncCredentials = credentials;
+    await new Promise((resolve) => {
+      chrome.storage.local.set({ [SYNC_CREDENTIALS_KEY]: credentials }, resolve);
+    });
+    return this.getCredentialPatch(provider, credentials[provider] || {});
+  }
+
+  async migrateSyncCredentials(database) {
+    const metadata = database?.settings?.syncProviders?.metadata;
+    if (!metadata || typeof metadata !== 'object') return;
+    const provider = String(metadata.provider || 'local').trim().toLowerCase();
+    const config = metadata.config && typeof metadata.config === 'object' ? metadata.config : {};
+    const credentialPatch = this.getCredentialPatch(provider, config);
+    if (Object.values(credentialPatch).some(Boolean)) {
+      await this.saveSyncCredentials(provider, credentialPatch);
+    } else {
+      await this.loadSyncCredentials();
+    }
+    metadata.config = this.getPublicSyncConfig(provider, config);
+  }
+
+  async getEffectiveMetadataProvider(database = this.cache) {
+    const metadata = database?.settings?.syncProviders?.metadata || { provider: 'local', config: {} };
+    const provider = String(metadata.provider || 'local').trim().toLowerCase();
+    const credentials = await this.loadSyncCredentials();
+    return {
+      provider,
+      config: {
+        ...this.getPublicSyncConfig(provider, metadata.config),
+        ...(credentials[provider] || {})
+      }
+    };
+  }
+
+  sanitizeDatabaseForExternalUse(database) {
+    const sanitized = JSON.parse(JSON.stringify(database || {}));
+    const metadata = sanitized?.settings?.syncProviders?.metadata;
+    if (metadata) {
+      metadata.config = this.getPublicSyncConfig(metadata.provider, metadata.config);
+    }
+    const scrub = (value) => {
+      if (!value || typeof value !== 'object') return;
+      Object.keys(value).forEach((key) => {
+        if (SYNC_SECRET_KEYS.has(key.toLowerCase())) {
+          delete value[key];
+          return;
+        }
+        scrub(value[key]);
+      });
+    };
+    scrub(sanitized);
+    delete sanitized._github_sha;
+    return sanitized;
   }
 
   normalizeEntityMetadata(database) {
@@ -245,7 +398,8 @@ class StorageEngine {
         // Clean URL trailing slash
         const cleanUrl = url.endsWith('/') ? url.slice(0, -1) : url;
         const headers = new Headers();
-        headers.set('Authorization', 'Basic ' + btoa(username + ':' + password));
+        const credentialBytes = new TextEncoder().encode(`${username}:${password}`);
+        headers.set('Authorization', 'Basic ' + btoa(String.fromCharCode(...credentialBytes)));
         
         // PROPFIND check
         const response = await fetch(cleanUrl, {
@@ -295,11 +449,21 @@ class StorageEngine {
     
     try {
       const db = await this.loadAll();
-      const metaProvider = db.settings?.syncProviders?.metadata || { provider: 'local' };
+      const metaProvider = await this.getEffectiveMetadataProvider(db);
       
       if (metaProvider.provider === 'local') {
         this.syncing = false;
         return { success: true, message: 'Local storage active, no sync required.' };
+      }
+
+      const configurationIssue = this.getSyncConfigurationIssue(metaProvider);
+      if (configurationIssue) {
+        this.syncing = false;
+        return {
+          success: false,
+          skipped: true,
+          error: configurationIssue
+        };
       }
 
       let cloudData = null;
@@ -353,16 +517,17 @@ class StorageEngine {
    * Saves database JSON to selected cloud
    */
   async saveToCloud(provider, config, db) {
+    const safeDb = this.sanitizeDatabaseForExternalUse(db);
     if (provider === 'webdav') {
-      await this.saveToWebDAV(config, db);
+      await this.saveToWebDAV(config, safeDb);
     } else if (provider === 'github') {
-      await this.saveToGitHub(config, db);
+      await this.saveToGitHub(config, safeDb);
     }
   }
 
   async mergeDatabases(localDb, remoteDb) {
     const local = await this.ensureDbShape(localDb, { stamp: false });
-    const remote = await this.ensureDbShape(remoteDb, { stamp: false });
+    const remote = await this.ensureDbShape(remoteDb, { stamp: false, migrateCredentials: false });
     const merged = this.deepMerge(local, remote);
 
     [
@@ -376,7 +541,8 @@ class StorageEngine {
       merged[collectionName] = this.mergeEntityArray(local[collectionName], remote[collectionName]);
     });
 
-    // Keep local secrets/routes authoritative on this device; merge data entities across devices.
+    // Keep local routing preferences authoritative on this device; credentials
+    // live outside the synchronized database.
     merged.settings = local.settings;
     merged._github_sha = remote._github_sha || local._github_sha;
     merged.lastUpdated = Math.max(Number(local.lastUpdated) || 0, Number(remote.lastUpdated) || 0);
@@ -431,7 +597,8 @@ class StorageEngine {
     const dbUrl = `${cleanUrl}/researchflow_db.json`;
     
     const headers = new Headers();
-    headers.set('Authorization', 'Basic ' + btoa(username + ':' + password));
+    const credentialBytes = new TextEncoder().encode(`${username}:${password}`);
+    headers.set('Authorization', 'Basic ' + btoa(String.fromCharCode(...credentialBytes)));
     
     const response = await fetch(dbUrl, { method: 'GET', headers });
     if (response.status === 404) return null;
@@ -446,13 +613,14 @@ class StorageEngine {
     const dbUrl = `${cleanUrl}/researchflow_db.json`;
     
     const headers = new Headers();
-    headers.set('Authorization', 'Basic ' + btoa(username + ':' + password));
+    const credentialBytes = new TextEncoder().encode(`${username}:${password}`);
+    headers.set('Authorization', 'Basic ' + btoa(String.fromCharCode(...credentialBytes)));
     headers.set('Content-Type', 'application/json');
 
     const response = await fetch(dbUrl, {
       method: 'PUT',
       headers,
-      body: JSON.stringify(db, null, 2)
+      body: JSON.stringify(this.sanitizeDatabaseForExternalUse(db), null, 2)
     });
     if (!response.ok) throw new Error(`WebDAV write failed: ${response.statusText}`);
   }
@@ -462,7 +630,9 @@ class StorageEngine {
     let originPattern = '';
     try {
       const parsed = new URL(url);
-      if (!['http:', 'https:'].includes(parsed.protocol)) return true;
+      if (!['http:', 'https:'].includes(parsed.protocol) || !parsed.hostname) {
+        throw new Error('Invalid WebDAV URL');
+      }
       originPattern = `${parsed.origin}/*`;
     } catch (e) {
       throw new Error('Invalid WebDAV URL');
@@ -528,8 +698,7 @@ class StorageEngine {
     }
 
     // Clean out temporary _github_sha property before pushing
-    const cleanDb = JSON.parse(JSON.stringify(db));
-    delete cleanDb._github_sha;
+    const cleanDb = this.sanitizeDatabaseForExternalUse(db);
 
     // Convert string to base64 safely (handling UTF-8)
     const base64Body = btoa(unescape(encodeURIComponent(JSON.stringify(cleanDb, null, 2))));

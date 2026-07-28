@@ -315,7 +315,7 @@ function renderSubmissionAssist(portal, captureDetailsEnabled = true) {
   const copy = getSubmissionAssistCopy(captureDetailsEnabled);
   const host = document.createElement('div');
   host.id = 'rf-submission-assist-host';
-  host.style.cssText = 'all:initial;position:fixed;right:24px;bottom:24px;z-index:2147483647;';
+  host.style.cssText = 'all:initial;position:fixed;right:18px;bottom:18px;z-index:2147483647;';
   const shadow = host.attachShadow({ mode: 'open' });
 
   shadow.innerHTML = `
@@ -324,7 +324,7 @@ function renderSubmissionAssist(portal, captureDetailsEnabled = true) {
       * { box-sizing: border-box; }
       .rf-slip {
         position: relative;
-        width: min(372px, calc(100vw - 32px));
+        width: min(344px, calc(100vw - 28px));
         overflow: hidden;
         color: #1f2a33;
         background:
@@ -346,7 +346,7 @@ function renderSubmissionAssist(portal, captureDetailsEnabled = true) {
         width: 5px;
         background: #d85b34;
       }
-      .rf-main { padding: 20px 20px 15px 24px; }
+      .rf-main { padding: 17px 17px 13px 21px; }
       .rf-topline { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
       .rf-eyebrow {
         display: inline-flex;
@@ -368,10 +368,10 @@ function renderSubmissionAssist(portal, captureDetailsEnabled = true) {
       }
       h2 {
         margin: 0;
-        max-width: 285px;
+        max-width: 260px;
         color: #17232d;
         font-family: Georgia, "Songti SC", serif;
-        font-size: 21px;
+        font-size: 19px;
         font-weight: 700;
         line-height: 1.22;
         letter-spacing: -.015em;
@@ -408,12 +408,12 @@ function renderSubmissionAssist(portal, captureDetailsEnabled = true) {
         text-overflow: ellipsis;
         white-space: nowrap;
       }
-      .rf-description { margin: 14px 0 0; color: #53606a; font-size: 13px; line-height: 1.55; }
+      .rf-description { margin: 11px 0 0; color: #53606a; font-size: 12px; line-height: 1.5; }
       .rf-confidence {
         display: flex;
         align-items: center;
         gap: 8px;
-        margin-top: 12px;
+        margin-top: 10px;
         color: #5f6c75;
         font-size: 11px;
       }
@@ -435,10 +435,10 @@ function renderSubmissionAssist(portal, captureDetailsEnabled = true) {
         color: #2f6f5e;
         font-weight: 700;
       }
-      .rf-actions { display: grid; grid-template-columns: 1fr auto; gap: 9px; margin-top: 17px; }
+      .rf-actions { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 14px; }
       button { font: inherit; }
       .rf-primary, .rf-secondary {
-        min-height: 40px;
+        min-height: 36px;
         border-radius: 10px;
         cursor: pointer;
         font-size: 13px;
@@ -461,7 +461,7 @@ function renderSubmissionAssist(portal, captureDetailsEnabled = true) {
       .rf-secondary:hover { background: #fff; border-color: rgba(31, 42, 51, .3); }
       .rf-never {
         display: block;
-        margin: 11px auto 0;
+        margin: 8px auto 0;
         padding: 2px 5px;
         color: #7a8389;
         background: transparent;
@@ -477,15 +477,15 @@ function renderSubmissionAssist(portal, captureDetailsEnabled = true) {
         to { transform: translateY(0) scale(1); opacity: 1; }
       }
       @media (max-width: 520px) {
-        .rf-slip { width: calc(100vw - 32px); }
-        h2 { font-size: 19px; }
+        .rf-slip { width: calc(100vw - 24px); }
+        h2 { font-size: 18px; }
       }
       @media (prefers-reduced-motion: reduce) {
         .rf-slip { animation: none; transform: none; opacity: 1; }
         .rf-primary:hover { transform: none; }
       }
     </style>
-    <aside class="rf-slip" role="dialog" aria-live="polite" aria-labelledby="rf-assist-title">
+    <aside class="rf-slip" role="dialog" aria-modal="false" aria-live="polite" aria-labelledby="rf-assist-title">
       <div class="rf-main">
         <div class="rf-topline">
           <div>
@@ -548,6 +548,12 @@ function renderSubmissionAssist(portal, captureDetailsEnabled = true) {
 
   closeButton.addEventListener('click', snooze);
   laterButton.addEventListener('click', snooze);
+  card.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      snooze();
+    }
+  });
   neverButton.addEventListener('click', async () => {
     await updateSubmissionAssistState(state => {
       if (!state.disabledOrigins.includes(portal.origin)) {

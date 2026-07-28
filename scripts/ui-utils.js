@@ -323,6 +323,32 @@
     };
   }
 
+  function getTimelineEventDate(node, key) {
+    if (!node || typeof node !== 'object') return '';
+    const completedOnly = key === 'r1_comments' || key === 'accept' || key === 'online';
+    return completedOnly
+      ? String(node.completeDate || '')
+      : String(node.completeDate || node.planDate || node.dueDate || '');
+  }
+
+  function findCapturedSubmissionMatch({ submissions = [], manuscripts = [], capture = {} } = {}) {
+    const normalize = value => String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    const externalId = normalize(capture.externalManuscriptId);
+    const title = normalize(capture.manuscriptTitle);
+    const journal = normalize(capture.targetJournal);
+    const origin = String(capture.sourceOrigin || '').trim().toLowerCase();
+
+    return submissions.find((submission) => {
+      if (externalId && normalize(submission.externalManuscriptId) === externalId) return true;
+      if (!origin || !title || !journal) return false;
+      const manuscript = manuscripts.find(item => item.id === submission.manuscriptId);
+      const submissionJournal = submission.targetJournal || submission.journal || '';
+      return String(submission.captureProvenance?.sourceOrigin || '').trim().toLowerCase() === origin
+        && normalize(manuscript?.title || submission.title) === title
+        && normalize(submissionJournal) === journal;
+    }) || null;
+  }
+
   function escapeHTML(value) {
     return String(value ?? '')
       .replace(/&/g, '&amp;')
@@ -350,6 +376,8 @@
     buildSubmissionEditCenterUpdate,
     buildSubmissionEditSyncPlan,
     buildSubmissionCreateMode,
+    getTimelineEventDate,
+    findCapturedSubmissionMatch,
     escapeHTML
   };
 
