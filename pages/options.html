@@ -17,7 +17,7 @@
         <div class="logo-orb" aria-hidden="true"></div>
         <div>
           <h2>ResearchFlow OS</h2>
-          <span class="version">v5.0.0 Companion</span>
+          <span class="version">v6.0.0 Companion</span>
         </div>
       </div>
 
@@ -173,17 +173,21 @@
             <h1>Submissions & Peer Review Matrix</h1>
             <p class="text-muted">Draft rebuttal response matrices and checklist compliance reports.</p>
           </div>
-          <div class="submission-header-actions">
-            <div class="journal-portals-dock" aria-label="Journal portals">
-              <span class="portal-dock-title">Journal Portals</span>
-              <div class="portal-grid-list portal-dock-list" id="journal-portals-list">
-                <!-- JS Populated -->
-              </div>
-              <button class="btn-secondary btn-portal-add" id="btn-add-portal" title="Add journal portal">+</button>
-            </div>
-            <button id="btn-add-submission" class="btn-primary">+ Track New Submission</button>
-          </div>
+          <button id="btn-add-submission" class="btn-primary submission-primary-action">+ Track New Submission</button>
         </header>
+
+        <div class="submission-tools-row" aria-label="Journal submission shortcuts">
+          <div class="submission-tools-copy">
+            <span class="portal-dock-title">Journal Portals</span>
+            <small id="portal-dock-help">Open a saved portal or add another submission system.</small>
+          </div>
+          <div class="journal-portals-dock" aria-label="Journal portals">
+            <div class="portal-grid-list portal-dock-list" id="journal-portals-list">
+              <!-- JS Populated -->
+            </div>
+            <button class="btn-secondary btn-portal-add" id="btn-add-portal" title="Add journal portal">+</button>
+          </div>
+        </div>
 
         <div class="submission-split-layout">
           <!-- Submissions grid pane -->
@@ -229,7 +233,7 @@
                 <option value="zh">中文</option>
               </select>
             </div>
-            <button id="btn-save-language" class="btn-primary" style="margin-top: 16px;">Save Language</button>
+            <p class="settings-inline-status" id="language-auto-save-status" role="status">Changes are saved automatically.</p>
           </div>
 
           <!-- Submission portal recognition -->
@@ -307,12 +311,13 @@
                 <option value="github">GitHub Private Repository</option>
               </select>
             </div>
+            <div class="sync-route-summary" id="sync-route-summary" role="status"></div>
 
             <button id="btn-save-settings" class="btn-primary" style="margin-top: 16px;">Save Storage Mapping</button>
           </div>
 
           <!-- WebDAV config -->
-          <div class="glass-panel settings-card" id="settings-webdav-card">
+          <div class="glass-panel settings-card sync-provider-card" id="settings-webdav-card" data-sync-provider="webdav">
             <h3>🌐 WebDAV Credentials</h3>
             <div class="form-group">
               <label for="webdav-url">WebDAV Server Base URL</label>
@@ -332,7 +337,7 @@
           </div>
 
           <!-- GitHub config -->
-          <div class="glass-panel settings-card" id="settings-github-card">
+          <div class="glass-panel settings-card sync-provider-card" id="settings-github-card" data-sync-provider="github">
             <h3>🐙 GitHub Private Repository Sync</h3>
             <div class="form-group">
               <label for="github-token">GitHub Personal Access Token (PAT)</label>
@@ -356,9 +361,10 @@
             <h3>💾 Database Backup & Import</h3>
             <p class="text-muted" style="font-size: 12px; margin-bottom: 16px;">Export your research database to JSON, or import/migrate existing ResearchFlow JSON backups.</p>
 
-            <div style="display: flex; gap: 12px; margin-top: 12px;">
+            <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px;">
               <button id="btn-export-db" class="btn-secondary" style="flex: 1; padding: 10px;">📤 Export Database</button>
               <button id="btn-trigger-import" class="btn-primary" style="flex: 1; padding: 10px;">📥 Import JSON</button>
+              <button id="btn-restore-import-backup" class="btn-secondary" style="flex: 1 0 100%; padding: 10px;">↩ Restore Pre-Import Backup</button>
               <input type="file" id="import-db-file" accept=".json" style="display: none;">
             </div>
           </div>

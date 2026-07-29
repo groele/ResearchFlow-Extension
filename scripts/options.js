@@ -13,9 +13,11 @@ let pendingSubmissionCapture = null;
 let submissionAutoSaveCleanup = null;
 let previousModalFocus = null;
 
-const RF_OPTIONS_RENDER_VERSION = '5.0.0';
+const RF_OPTIONS_RENDER_VERSION = '6.0.0';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
+const PRE_IMPORT_BACKUP_KEY = 'researchflow_pre_import_backup';
+const MAX_IMPORT_BYTES = 25 * 1024 * 1024;
 
 const I18N = {
   en: {
@@ -58,6 +60,7 @@ const I18N = {
     languageCardTitle: 'Language & Interface',
     languageLabel: 'Display Language',
     languageHelp: 'Switch the dashboard interface between English and Chinese.',
+    languageAutoSaved: 'Language changes are saved automatically.',
     submissionAssistTitle: 'Submission Portal Recognition',
     submissionAssistHelp: 'Show a quick-entry card when a supported journal submission system is detected.',
     submissionAssistToggle: 'Automatic detection',
@@ -103,8 +106,15 @@ const I18N = {
     saveMappings: 'Save Storage Mapping',
     exportDb: 'Export Database',
     importJson: 'Import JSON',
+    restoreImportBackup: 'Restore Pre-Import Backup',
     languageSaved: 'Language preference saved.',
     databaseExported: 'Database JSON exported!',
+    databaseImported: 'Database JSON imported successfully.',
+    importBackupRestored: 'The database state from before the last import was restored.',
+    noImportBackup: 'No pre-import backup is available on this device.',
+    restoreImportConfirm: 'Restore the database state saved immediately before the last import? Current unsaved changes will be replaced.',
+    importFileTooLarge: 'The selected backup is larger than 25 MB and was not opened.',
+    invalidBackup: 'This file is not a recognized ResearchFlow database backup.',
     noUrgentEvents: 'No urgent review or timeline events.',
     noRecentRecords: 'No research records captured yet.',
     noPipelines: 'No manuscript submission pipelines in progress.',
@@ -263,12 +273,19 @@ const I18N = {
     activeSubmissionsHelp: 'Select a row or its edit button; the right panel opens the editor under Workflow Context.',
     submissionEmptyDetail: 'Select a submission; the entry editor opens under Workflow Context.',
     journalPortalsTitle: 'Journal Portals',
+    journalPortalsHelp: 'Open a saved portal or add another submission system.',
     trackNewSubmissionButton: '+ Track New Submission',
     submissionDetailKicker: 'Journal Submission',
     currentStageLabel: 'Current Stage',
     trackedSinceLabel: 'Tracked since',
     workflowContextTitle: 'Workflow Context',
     workflowNeedsLinking: 'Needs linking',
+    linkManuscript: 'Link manuscript',
+    linkSubmissionTitle: 'Link Submission to Manuscript',
+    linkSubmissionHelp: 'Choose the manuscript that owns this submission record.',
+    linkSubmissionConfirm: 'Link Submission',
+    linkSubmissionSaved: 'Submission linked to the selected manuscript.',
+    noManuscriptsToLink: 'No manuscripts are available. Create a manuscript first.',
     workflowLinkedFlow: 'Linked flow',
     workflowManuscriptLabel: 'Manuscript',
     workflowTimelineLabel: 'Timeline',
@@ -276,6 +293,7 @@ const I18N = {
     relationshipSummaryLine: '{manuscript}: {timeline} timeline events, {comments} reviewer comments.',
     editableSummary: 'Editable Summary',
     editFields: 'Edit fields',
+    jumpToEditor: 'Jump to editor',
     submissionEntryEditorTitle: 'Submission Entry Editor',
     submissionEntryEditorHelp: 'Edit the selected entry here. Changes are saved automatically as you type.',
     linkedManuscriptBadge: 'Linked manuscript',
@@ -345,6 +363,9 @@ const I18N = {
     optionLocalCache: 'None (Local Cache Only)',
     optionWebDavDrive: 'WebDAV Drive (Jianguoyun, Nextcloud)',
     optionGithubRepo: 'GitHub Private Repository',
+    localSyncSummary: 'Local-only mode: data stays on this device and manual cloud sync is disabled.',
+    webdavSyncSummary: 'WebDAV mode: configure and test the WebDAV account shown below.',
+    githubSyncSummary: 'GitHub mode: configure and test the private repository shown below.',
     webdavUrlLabel: 'WebDAV Server Base URL',
     usernameEmailLabel: 'Username / Email',
     appPasswordLabel: 'App-Specific Password',
@@ -418,6 +439,7 @@ const I18N = {
     languageCardTitle: '语言与界面',
     languageLabel: '显示语言',
     languageHelp: '在中文和英文之间切换仪表盘界面。',
+    languageAutoSaved: '语言切换后会自动保存。',
     submissionAssistTitle: '投稿网站智能识别',
     submissionAssistHelp: '识别到支持的期刊投稿系统时，在网页内显示快捷录入卡片。',
     submissionAssistToggle: '自动识别投稿网站',
@@ -463,8 +485,15 @@ const I18N = {
     saveMappings: '保存存储映射',
     exportDb: '导出数据库',
     importJson: '导入 JSON',
+    restoreImportBackup: '恢复导入前备份',
     languageSaved: '语言偏好已保存。',
     databaseExported: '数据库 JSON 已导出！',
+    databaseImported: '数据库 JSON 已成功导入。',
+    importBackupRestored: '已恢复到上一次导入操作前的数据库状态。',
+    noImportBackup: '当前设备上没有可恢复的导入前备份。',
+    restoreImportConfirm: '确定恢复上一次导入前保存的数据库吗？当前未保存的更改将被替换。',
+    importFileTooLarge: '所选备份超过 25 MB，未执行读取。',
+    invalidBackup: '该文件不是可识别的 ResearchFlow 数据库备份。',
     noUrgentEvents: '暂无紧急审稿或时间线事件。',
     noRecentRecords: '暂无研究动态。',
     noPipelines: '暂无进行中的手稿投稿流水线。',
@@ -623,12 +652,19 @@ const I18N = {
     activeSubmissionsHelp: '选择条目或编辑按钮；右侧会在工作流上下文下方打开编辑区。',
     submissionEmptyDetail: '选择一个投稿；编辑区会在工作流上下文下方打开。',
     journalPortalsTitle: '期刊入口',
+    journalPortalsHelp: '打开已保存入口，或添加新的投稿系统。',
     trackNewSubmissionButton: '+ 跟踪新投稿',
     submissionDetailKicker: '期刊投稿',
     currentStageLabel: '当前阶段',
     trackedSinceLabel: '跟踪始于',
     workflowContextTitle: '工作流上下文',
     workflowNeedsLinking: '需要关联',
+    linkManuscript: '关联手稿',
+    linkSubmissionTitle: '将投稿关联到手稿',
+    linkSubmissionHelp: '请选择此投稿记录所属的手稿。',
+    linkSubmissionConfirm: '确认关联',
+    linkSubmissionSaved: '投稿已关联到所选手稿。',
+    noManuscriptsToLink: '暂无可关联手稿，请先新建手稿。',
     workflowLinkedFlow: '已关联流程',
     workflowManuscriptLabel: '手稿',
     workflowTimelineLabel: '时间线',
@@ -636,6 +672,7 @@ const I18N = {
     relationshipSummaryLine: '“{manuscript}”：{timeline} 个时间线事件，{comments} 条审稿意见。',
     editableSummary: '可编辑摘要',
     editFields: '编辑字段',
+    jumpToEditor: '前往编辑器',
     submissionEntryEditorTitle: '投稿记录编辑器',
     submissionEntryEditorHelp: '在此编辑选中的条目，填写内容会自动保存。',
     linkedManuscriptBadge: '已关联手稿',
@@ -698,7 +735,10 @@ const I18N = {
     statusInternalReview: '内部评审',
     abstractDraft: '摘要草稿',
     abstractPlaceholder: '撰写手稿摘要草稿...',
-    createManuscript: '创建手稿'
+    createManuscript: '创建手稿',
+    localSyncSummary: '仅本地模式：数据保存在当前设备，云端手动同步已停用。',
+    webdavSyncSummary: 'WebDAV 模式：请在下方配置并测试 WebDAV 账户。',
+    githubSyncSummary: 'GitHub 模式：请在下方配置并测试私有仓库。'
   }
 };
 
@@ -712,6 +752,43 @@ function tf(key, vars = {}) {
 
 function normalizeText(value) {
   return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function normalizeSubmissionStatus(value) {
+  const normalized = normalizeText(value).replace(/[\s-]+/g, '_');
+  const aliases = {
+    accept: 'accepted',
+    accepted: 'accepted',
+    online: 'published',
+    publication: 'published',
+    published: 'published',
+    underreview: 'under_review',
+    in_review: 'under_review',
+    review: 'under_review',
+    revise: 'revision',
+    revision_required: 'revision',
+    resubmit: 'revision',
+    reject: 'rejected',
+    rejected: 'rejected',
+    submit: 'submitted'
+  };
+  const canonical = aliases[normalized] || normalized;
+  return ['submitted', 'under_review', 'revision', 'accepted', 'published', 'rejected'].includes(canonical)
+    ? canonical
+    : 'submitted';
+}
+
+function normalizeSubmissionStatuses(database) {
+  let changed = false;
+  (database?.submissions || []).forEach((submission) => {
+    const canonical = normalizeSubmissionStatus(submission.status);
+    if (submission.status !== canonical) {
+      submission.status = canonical;
+      submission.updatedAt = new Date().toISOString();
+      changed = true;
+    }
+  });
+  return changed;
 }
 
 function normalizeDoi(value) {
@@ -813,6 +890,7 @@ function applyLanguage() {
   setText('#view-submissions .view-header h1', t('submissionsPageTitle'));
   setText('#view-submissions .view-header .text-muted', t('submissionsPageSubtitle'));
   setText('.portal-dock-title', t('journalPortalsTitle'));
+  setText('#portal-dock-help', t('journalPortalsHelp'));
   setTitle('#btn-add-portal', t('addPortalTitle'));
   setButtonText('#btn-add-submission', t('trackNewSubmissionButton'));
   setText('.submission-list-head h3', t('activeSubmissionsTitle'));
@@ -824,7 +902,7 @@ function applyLanguage() {
   setText('#settings-language-card h3', t('languageCardTitle'));
   setText('label[for="ui-language"]', t('languageLabel'));
   setText('#language-help', t('languageHelp'));
-  setButtonText('#btn-save-language', t('saveLanguage'));
+  setText('#language-auto-save-status', t('languageAutoSaved'));
   setText('#settings-submission-assist-card h3', t('submissionAssistTitle'));
   setText('#submission-assist-help', t('submissionAssistHelp'));
   setText('#submission-assist-toggle-label', t('submissionAssistToggle'));
@@ -854,6 +932,8 @@ function applyLanguage() {
   setText('#settings-backup-card .text-muted', t('backupHelp'));
   setButtonText('#btn-export-db', t('exportDb'));
   setButtonText('#btn-trigger-import', t('importJson'));
+  setButtonText('#btn-restore-import-backup', t('restoreImportBackup'));
+  updateSyncProviderVisibility();
 }
 
 function refreshActiveViewForLanguage() {
@@ -895,6 +975,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Dynamic Database Migration: Translate Chinese nodes to English & filter out '手稿定稿'
   let dbMigrationChanged = false;
   if (db && db.submissions) {
+    dbMigrationChanged = normalizeSubmissionStatuses(db) || dbMigrationChanged;
     db.submissions.forEach(sub => {
       if (sub.timelineNodes && sub.timelineNodes.length > 0) {
         const originalLength = sub.timelineNodes.length;
@@ -947,7 +1028,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       // Migrate on update too
       if (db && db.submissions) {
-        let updateChanged = false;
+        let updateChanged = normalizeSubmissionStatuses(db);
         db.submissions.forEach(sub => {
           if (sub.timelineNodes && sub.timelineNodes.length > 0) {
             const origLen = sub.timelineNodes.length;
@@ -1125,8 +1206,8 @@ function setupSyncListeners() {
     } catch (e) {
       updateSyncStatus('error', 'Sync Failed');
     } finally {
-      syncBtn.disabled = false;
-      syncBtn.innerHTML = '🔄 Force Sync';
+      syncBtn.innerHTML = t('forceSync');
+      updateSyncProviderVisibility();
     }
   });
 }
@@ -1895,8 +1976,8 @@ function isAcceptedSubmission(sub) {
 }
 
 function hasPublicationStatus(sub) {
-  const status = normalizeText(sub?.status);
-  return status === 'accepted' || status === 'published' || status === 'accept';
+  const status = normalizeSubmissionStatus(sub?.status);
+  return status === 'accepted' || status === 'published';
 }
 
 function canHavePublicationLink(sub) {
@@ -2953,6 +3034,7 @@ function getManuscriptStatusLabel(status) {
 }
 
 function getSubmissionStatusLabel(status) {
+  const canonicalStatus = normalizeSubmissionStatus(status);
   const labels = {
     submitted: t('stateSubmitted'),
     under_review: t('stateUnderReview'),
@@ -2961,7 +3043,7 @@ function getSubmissionStatusLabel(status) {
     published: currentLanguage === 'zh' ? '已发表' : 'Published',
     rejected: t('statusRejected')
   };
-  return labels[status] || String(status || t('stateSubmitted')).replace(/_/g, ' ');
+  return labels[canonicalStatus] || String(canonicalStatus || t('stateSubmitted')).replace(/_/g, ' ');
 }
 
 // Add/Edit Manuscript Modal
@@ -3383,7 +3465,10 @@ async function saveSubmissionEditFromValues(sub, prefix, options = {}) {
   sub.complianceChecklist = editValues.complianceChecklist;
   sub.complianceChecklistKeys = editValues.complianceChecklistKeys;
   sub.reviewMatrix = editValues.reviewMatrix;
-  await window.storage.saveAll(db);
+  const savedDatabase = await window.storage.saveAll(db, {
+    mergeOnConflict: options.mergeOnConflict === true
+  });
+  if (savedDatabase) db = savedDatabase;
   renderDashboard();
   renderKanban();
   renderSubmissions();
@@ -3434,6 +3519,7 @@ function setupSubmissionAutoSave(sub) {
           alertOnError: false,
           renderDetails: false,
           notify: false,
+          mergeOnConflict: true,
           onValidationError: error => {
             validationError = error;
           }
@@ -3715,7 +3801,56 @@ function setupJournalPortalListeners() {
   }
 }
 
+function openLinkSubmissionModal(submission) {
+  const manuscripts = Array.isArray(db.manuscripts) ? db.manuscripts : [];
+  if (manuscripts.length === 0) {
+    showGlobalToast(t('noManuscriptsToLink'), 'warning');
+    return;
+  }
+
+  const manuscriptOptions = manuscripts
+    .slice()
+    .sort((a, b) => String(a.title || '').localeCompare(String(b.title || '')))
+    .map(manuscript => `
+      <option value="${escapeHTML(manuscript.id)}">${escapeHTML(manuscript.title || t('untitledManuscript'))}</option>
+    `)
+    .join('');
+
+  openModal(`
+    <div class="modal-header">
+      <div>
+        <h2>${escapeHTML(t('linkSubmissionTitle'))}</h2>
+        <p class="text-muted">${escapeHTML(t('linkSubmissionHelp'))}</p>
+      </div>
+      <button class="btn-secondary btn-icon" id="btn-close-modal" aria-label="${escapeHTML(t('cancel'))}">✕</button>
+    </div>
+    <div class="form-group">
+      <label for="submission-link-manuscript">${escapeHTML(t('workflowManuscriptLabel'))}</label>
+      <select id="submission-link-manuscript">${manuscriptOptions}</select>
+    </div>
+    <button type="button" class="btn-primary w-full" id="btn-confirm-submission-link">
+      ${escapeHTML(t('linkSubmissionConfirm'))}
+    </button>
+  `);
+
+  document.getElementById('btn-confirm-submission-link').addEventListener('click', async () => {
+    const manuscriptId = document.getElementById('submission-link-manuscript').value;
+    const manuscript = db.manuscripts.find(item => item.id === manuscriptId);
+    if (!manuscript) return;
+    submission.manuscriptId = manuscript.id;
+    submission.projectId = manuscript.projectId || submission.projectId || null;
+    submission.updatedAt = new Date().toISOString();
+    await window.storage.saveAll(db);
+    closeModal();
+    renderDashboard();
+    renderKanban();
+    renderSubmissions();
+    showGlobalToast(t('linkSubmissionSaved'), 'success');
+  });
+}
+
 function renderSubmissionDetails(sub) {
+  sub.status = normalizeSubmissionStatus(sub.status);
   normalizeSubmissionTimeline(sub);
   const detailPanel = document.getElementById('submission-detail-panel');
   const man = db.manuscripts.find(m => m.id === sub.manuscriptId);
@@ -3804,7 +3939,14 @@ function renderSubmissionDetails(sub) {
             <p>${escapeHTML(relationshipSummaryLine)}</p>
           </div>
         </div>
-        ${relationship.isOrphanSubmission ? `<span class="badge badge-warning">${escapeHTML(t('workflowNeedsLinking'))}</span>` : `<span class="badge badge-success">${escapeHTML(t('workflowLinkedFlow'))}</span>`}
+        <div class="workflow-context-actions">
+          ${relationship.isOrphanSubmission ? `
+            <span class="badge badge-warning">${escapeHTML(t('workflowNeedsLinking'))}</span>
+            <button type="button" class="btn-secondary workflow-link-button" id="btn-link-submission-manuscript">
+              ${escapeHTML(t('linkManuscript'))}
+            </button>
+          ` : `<span class="badge badge-success">${escapeHTML(t('workflowLinkedFlow'))}</span>`}
+        </div>
       </div>
       <div class="workflow-context-grid">
         <div class="workflow-context-item">
@@ -3827,10 +3969,9 @@ function renderSubmissionDetails(sub) {
           <p>${escapeHTML(journalName)} / ${escapeHTML(statusText)} / ${escapeHTML(t('milestoneSubmission'))} ${escapeHTML(timelineSubmissionDate || t('noDate'))}</p>
         </div>
         <div class="workflow-edit-summary-actions">
-          <span class="badge badge-info" data-editor-mount-badge>${escapeHTML(tf('editorMounted', { version: RF_OPTIONS_RENDER_VERSION }))}</span>
           <button type="button" class="btn-secondary workflow-edit-summary-button" id="btn-focus-edit-center" aria-controls="submission-entry-editor-panel">
             <svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-            <span>${escapeHTML(t('editFields'))}</span>
+            <span>${escapeHTML(t('jumpToEditor'))}</span>
           </button>
         </div>
       </div>
@@ -4055,13 +4196,6 @@ function renderSubmissionDetails(sub) {
   const editorMounted = Boolean(detailPanel.querySelector('#sub-edit-title') && detailPanel.querySelector('[data-submission-autosave-status]'));
   detailPanel.dataset.rfRenderVersion = RF_OPTIONS_RENDER_VERSION;
   detailPanel.dataset.rfEditorMounted = editorMounted ? 'true' : 'false';
-  const editorMountBadge = detailPanel.querySelector('[data-editor-mount-badge]');
-  if (editorMountBadge) {
-    editorMountBadge.textContent = editorMounted
-      ? tf('editorMounted', { version: RF_OPTIONS_RENDER_VERSION })
-      : tf('editorMissing', { version: RF_OPTIONS_RENDER_VERSION });
-    editorMountBadge.className = editorMounted ? 'badge badge-info' : 'badge badge-warning';
-  }
   detailPanel.dataset.currentSubmissionId = sub.id;
   detailPanel.scrollTop = 0;
 
@@ -4091,7 +4225,7 @@ function renderSubmissionDetails(sub) {
   // Delete submission
   document.getElementById('btn-delete-sub').addEventListener('click', async () => {
     if (confirm(t('confirmDeleteSubmission'))) {
-      db.submissions = db.submissions.filter(s => s.id !== sub.id);
+      window.storage.recordEntityDeletion(db, 'submissions', sub.id);
       syncManuscriptStatusesFromSubmissions(db);
       selectedSubmissionId = null;
       await window.storage.saveAll(db);
@@ -4654,6 +4788,33 @@ async function saveSubmissionAssistSettings(state) {
   return normalized;
 }
 
+function updateSyncProviderVisibility() {
+  const routeSelect = document.getElementById('route-db');
+  if (!routeSelect) return;
+  const provider = routeSelect.value || 'local';
+  document.querySelectorAll('[data-sync-provider]').forEach((card) => {
+    const isActive = card.dataset.syncProvider === provider;
+    card.hidden = !isActive;
+    card.setAttribute('aria-hidden', String(!isActive));
+  });
+
+  const summary = document.getElementById('sync-route-summary');
+  if (summary) {
+    const summaryKey = provider === 'webdav'
+      ? 'webdavSyncSummary'
+      : (provider === 'github' ? 'githubSyncSummary' : 'localSyncSummary');
+    summary.textContent = t(summaryKey);
+    summary.dataset.provider = provider;
+  }
+
+  const syncButton = document.getElementById('btn-manual-sync');
+  if (syncButton) {
+    const localOnly = provider === 'local';
+    syncButton.disabled = localOnly;
+    syncButton.title = localOnly ? t('localSyncSummary') : t('forceSync');
+  }
+}
+
 async function loadSettings() {
   const syncProviders = db.settings?.syncProviders || DEFAULT_DB.settings.syncProviders;
   const profile = db.settings?.profile || DEFAULT_DB.settings.profile;
@@ -4664,6 +4825,7 @@ async function loadSettings() {
 
   // Cloud routing
   document.getElementById('route-db').value = syncProviders.metadata.provider || 'local';
+  updateSyncProviderVisibility();
 
   // WebDAV
   document.getElementById('webdav-url').value = syncProviders.metadata.config?.url || '';
@@ -4693,6 +4855,11 @@ function setupSettingsListeners() {
       showGlobalToast(t('submissionAssistSaved'), 'success');
     });
   }
+
+  const linkSubmissionButton = document.getElementById('btn-link-submission-manuscript');
+  if (linkSubmissionButton) {
+    linkSubmissionButton.addEventListener('click', () => openLinkSubmissionModal(sub));
+  }
   if (submissionCaptureToggle) {
     submissionCaptureToggle.addEventListener('change', async () => {
       const captureDetailsEnabled = submissionCaptureToggle.checked;
@@ -4717,28 +4884,26 @@ function setupSettingsListeners() {
 
   const languageSelect = document.getElementById('ui-language');
   if (languageSelect) {
-    languageSelect.addEventListener('change', () => {
+    languageSelect.addEventListener('change', async () => {
       currentLanguage = languageSelect.value;
       document.documentElement.lang = currentLanguage === 'zh' ? 'zh-CN' : 'en';
-      applyLanguage();
-      refreshActiveViewForLanguage();
-    });
-  }
-
-  const saveLanguageBtn = document.getElementById('btn-save-language');
-  if (saveLanguageBtn) {
-    saveLanguageBtn.addEventListener('click', async () => {
       db.settings = db.settings || {};
       db.settings.profile = db.settings.profile || {};
-      db.settings.profile.language = document.getElementById('ui-language').value || 'en';
-      currentLanguage = db.settings.profile.language;
-      document.documentElement.lang = currentLanguage === 'zh' ? 'zh-CN' : 'en';
-      await window.storage.saveAll(db);
+      db.settings.profile.language = currentLanguage;
       applyLanguage();
       refreshActiveViewForLanguage();
+      languageSelect.disabled = true;
+      try {
+        await window.storage.saveAll(db);
+      } finally {
+        languageSelect.disabled = false;
+      }
       showGlobalToast(t('languageSaved'), 'success');
     });
   }
+
+  const routeSelect = document.getElementById('route-db');
+  routeSelect.addEventListener('change', updateSyncProviderVisibility);
 
   // Save Mappings Button
   document.getElementById('btn-save-settings').addEventListener('click', async () => {
@@ -4780,6 +4945,7 @@ function setupSettingsListeners() {
     };
 
     await window.storage.saveAll(db);
+    updateSyncProviderVisibility();
     showGlobalToast('Cloud database mapping saved!', 'success');
   });
 
@@ -4831,14 +4997,16 @@ function setupSettingsListeners() {
   // Export Database
   document.getElementById('btn-export-db').addEventListener('click', () => {
     const safeDb = window.storage.sanitizeDatabaseForExternalUse(db);
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(safeDb, null, 2));
+    const exportBlob = new Blob([JSON.stringify(safeDb, null, 2)], { type: 'application/json;charset=utf-8' });
+    const exportUrl = URL.createObjectURL(exportBlob);
     const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("href", exportUrl);
     downloadAnchor.setAttribute("download", `researchflow-export-${new Date().toISOString().split('T')[0]}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
-    showGlobalToast('Database JSON exported!', 'success');
+    setTimeout(() => URL.revokeObjectURL(exportUrl), 0);
+    showGlobalToast(t('databaseExported'), 'success');
   });
 
   // Trigger File Import Dialog
@@ -4846,15 +5014,61 @@ function setupSettingsListeners() {
     document.getElementById('import-db-file').click();
   });
 
+  document.getElementById('btn-restore-import-backup').addEventListener('click', async () => {
+    const result = await new Promise((resolve) => {
+      chrome.storage.local.get([PRE_IMPORT_BACKUP_KEY], resolve);
+    });
+    const backup = result?.[PRE_IMPORT_BACKUP_KEY];
+    if (!backup?.database) {
+      showGlobalToast(t('noImportBackup'), 'error');
+      return;
+    }
+    if (!confirm(t('restoreImportConfirm'))) return;
+
+    try {
+      const normalizedBackup = await window.storage.ensureDbShape(backup.database, { stamp: false });
+      db = await window.storage.saveAll(normalizedBackup);
+      await renderAllViews();
+      await loadSettings();
+      showGlobalToast(t('importBackupRestored'), 'success');
+    } catch (err) {
+      console.error('Failed to restore pre-import backup.', err);
+      showGlobalToast(err.message || t('invalidBackup'), 'error');
+    }
+  });
+
   // Handle Imported JSON File and Adapt Schema Format
   document.getElementById('import-db-file').addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    if (file.size > MAX_IMPORT_BYTES) {
+      e.target.value = '';
+      showGlobalToast(t('importFileTooLarge'), 'error');
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = async (event) => {
       try {
         const importJson = JSON.parse(event.target.result);
+        const recognizedCollections = [
+          'projects',
+          'researchRecords',
+          'manuscripts',
+          'submissions',
+          'tasks',
+          'achievements',
+          'honorOpportunities',
+          'honorApplications'
+        ];
+        if (
+          !importJson
+          || typeof importJson !== 'object'
+          || Array.isArray(importJson)
+          || !recognizedCollections.some((key) => Array.isArray(importJson[key]))
+        ) {
+          throw new Error(t('invalidBackup'));
+        }
 
         function capitalize(str) {
           if (!str) return '';
@@ -4922,6 +5136,7 @@ function setupSettingsListeners() {
             abstract: man.abstract || '',
             keywords: Array.isArray(man.keywords) ? man.keywords : [],
             authors: Array.isArray(man.authors) ? man.authors : [],
+            firstAuthor: man.firstAuthor || firstAuthorFromList(man.authors) || null,
             correspondingAuthors: Array.isArray(man.correspondingAuthors) ? man.correspondingAuthors : [],
             targetJournals: Array.isArray(man.targetJournals)
               ? man.targetJournals
@@ -4958,6 +5173,7 @@ function setupSettingsListeners() {
               userId: sub.userId || 'user',
               manuscriptId: sub.manuscriptId,
               projectId: sub.projectId || null,
+              firstAuthor: sub.firstAuthor || firstAuthorFromList(sub.authors) || null,
               targetJournal: sub.targetJournal || sub.journalName || '',
               journalUrl: sub.journalUrl || sub.submissionUrl || null,
               doi: doi || null,
@@ -5009,25 +5225,45 @@ function setupSettingsListeners() {
         if (Array.isArray(importJson.honorApplications)) {
           newDb.honorApplications = importJson.honorApplications;
         }
+        if (Array.isArray(importJson.tasks)) {
+          newDb.tasks = importJson.tasks;
+        }
 
         syncManuscriptStatusesFromSubmissions(newDb);
-        newDb.lastUpdated = Date.now();
+        const normalizedImport = await window.storage.ensureDbShape(newDb, { stamp: false });
+        const safeCurrentDb = window.storage.sanitizeDatabaseForExternalUse(db);
+        await new Promise((resolve, reject) => {
+          chrome.storage.local.set({
+            [PRE_IMPORT_BACKUP_KEY]: {
+              database: safeCurrentDb,
+              createdAt: new Date().toISOString(),
+              sourceFileName: String(file.name || '').slice(0, 260)
+            }
+          }, () => {
+            if (chrome.runtime.lastError) {
+              reject(new Error(`Unable to create the pre-import backup: ${chrome.runtime.lastError.message}`));
+              return;
+            }
+            resolve();
+          });
+        });
 
-        // Update database cache and storage state
-        db = newDb;
-        await window.storage.saveAll(db);
-
-        // Reset file input
-        e.target.value = '';
-
-        showGlobalToast('Database JSON successfully imported and adapted!', 'success');
-
-        // Refresh settings panel UI
-        loadSettings().catch(console.error);
+        // Only replace the in-memory cache after parsing, conversion,
+        // normalization and recovery-backup creation have all succeeded.
+        db = await window.storage.saveAll(normalizedImport);
+        await renderAllViews();
+        await loadSettings();
+        showGlobalToast(t('databaseImported'), 'success');
       } catch (err) {
-        alert(`Failed to import JSON: ${err.message}`);
-        console.error(err);
+        console.error('Failed to import database JSON.', err);
+        showGlobalToast(err.message || t('invalidBackup'), 'error');
+      } finally {
+        e.target.value = '';
       }
+    };
+    reader.onerror = () => {
+      e.target.value = '';
+      showGlobalToast(t('invalidBackup'), 'error');
     };
     reader.readAsText(file);
   });

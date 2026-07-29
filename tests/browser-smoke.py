@@ -1,0 +1,82 @@
+import pathlib
+import sys
+
+from playwright.sync_api import sync_playwright
+
+
+base_url = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8765"
+root = pathlib.Path(__file__).resolve().parents[1]
+mock_path = root / "tests" / "fixtures" / "chrome-mock.js"
+artifact_dir = root / "output" / "browser-smoke-latest"
+artifact_dir.mkdir(parents=True, exist_ok=True)
+chrome_candidates = (
+    pathlib.Path(r"C:\Program Files\Google\Chrome\Application\chrome.exe"),
+    pathlib.Path(r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"),
+)
+chrome_executable = next((path for path in chrome_candidates if path.exists()), None)
+if not chrome_executable:
+    raise RuntimeError("Google Chrome executable was not found")
+console_errors = []
+page_errors = []
+
+with sync_playwright() as playwright:
+    browser = playwright.chromium.launch(
+        headless=True,
+        executable_path=str(chrome_executable),
+    )
+    context = browser.new_context(viewport={"width": 1440, "height": 1000})
+    context.add_init_script(path=str(mock_path))
+    page = context.new_page()
+    page.on(
+        "console",
+        lambda message: console_errors.append(message.text)
+        if message.type == "error"
+        else None,
+    )
+    page.on("pageerror", lambda error: page_errors.append(str(error)))
+
+    page.goto(f"{base_url}/pages/options.html", wait_until="networkidle")
+    page.locator("#view-dashboard").wait_for(state="visible")
+    page.screenshot(path=str(artifact_dir / "01-dashboard.png"))
+
+    for view_id in ("view-manuscripts", "view-submissions", "view-settings"):
+        page.locator(f'.nav-item[data-view="{view_id}"]').click()
+        page.locator(f"#{view_id}").wait_for(state="visible")
+        # The active view uses a 300 ms fade/slide transition. Capture only
+        # after it has settled so visual artifacts represent the final UI.
+        page.wait_for_timeout(350)
+        if view_id == "view-submissions":
+            page.locator(".submission-tools-row").wait_for(state="visible")
+            assert not page.locator("[data-editor-mount-badge]").count()
+            assert page.locator("#btn-link-submission-manuscript").count() <= 1
+            page.screenshot(path=str(artifact_dir / "02-submissions.png"))
+        if view_id == "view-settings":
+            assert page.locator("#settings-webdav-card").is_hidden()
+            assert page.locator("#settings-github-card").is_hidden()
+            assert page.locator("#btn-manual-sync").is_disabled()
+            assert not page.locator("#btn-save-language").count()
+            page.screenshot(path=str(artifact_dir / "03-settings-local.png"))
+
+    restore_button = page.locator("#btn-restore-import-backup")
+    restore_button.wait_for(state="visible")
+    assert restore_button.inner_text().strip(), "restore button should have a localized label"
+
+    page.locator("#ui-language").select_option("zh")
+    page.wait_for_function(
+        "() => globalThis.__chromeMockValues?.researchflow_db?.settings?.profile?.language === 'zh'"
+    )
+    assert "语言切换后会自动保存" in page.locator("#language-auto-save-status").inner_text()
+
+    with page.expect_download() as download_info:
+        page.locator("#btn-export-db").click()
+    assert download_info.value.suggested_filename.endswith(".json")
+
+    assert not page.locator("#view-evidence").count(), "Evidence Locker must stay removed"
+    assert not page.locator("#view-projects").count(), "project-tree view must stay removed"
+    assert not page.locator("#view-library").count(), "research-record view must stay removed"
+    assert not page_errors, f"page errors: {page_errors}"
+    assert not console_errors, f"console errors: {console_errors}"
+
+    browser.close()
+
+print("browser smoke test passed")

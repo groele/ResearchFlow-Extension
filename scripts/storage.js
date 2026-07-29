@@ -9,7 +9,7 @@ const SYNC_CREDENTIALS_KEY = 'researchflow_sync_credentials';
 const SYNC_SECRET_KEYS = new Set(['token', 'password', 'accesstoken', 'refreshtoken', 'clientsecret', 'authorization']);
 
 const DEFAULT_DB = {
-  schemaVersion: 6,
+  schemaVersion: 7,
   lastUpdated: 0,
   updatedAt: null,
   revision: 0,
@@ -20,6 +20,14 @@ const DEFAULT_DB = {
   manuscripts: [],
   submissions: [],
   tasks: [],
+  deletedEntities: {
+    researchAreas: [],
+    projects: [],
+    researchRecords: [],
+    manuscripts: [],
+    submissions: [],
+    tasks: []
+  },
   settings: {
     syncProviders: {
       metadata: { provider: 'local', config: {} } // Provider for JSON database sync
@@ -91,27 +99,67 @@ class StorageEngine {
   /**
    * Saves database locally and schedules background cloud sync
    */
-  async saveAll(data) {
+  async saveAll(data, options = {}) {
+    if (
+      options.localOnly !== true
+      && typeof window !== 'undefined'
+      && chrome.runtime?.sendMessage
+    ) {
+      const backgroundResult = await new Promise((resolve) => {
+        chrome.runtime.sendMessage({
+          action: 'SAVE_DATABASE',
+          data,
+          mergeOnConflict: options.mergeOnConflict === true
+        }, (response) => {
+          if (chrome.runtime.lastError) {
+            resolve({ success: false, unavailable: true, error: chrome.runtime.lastError.message });
+            return;
+          }
+          resolve(response || { success: false, unavailable: true });
+        });
+      });
+      if (backgroundResult?.success && backgroundResult.data) {
+        const normalizedResult = await this.ensureDbShape(backgroundResult.data, { stamp: false });
+        this.cache = this.adoptSavedSnapshot(data, normalizedResult);
+        return this.cache;
+      }
+      if (!backgroundResult?.unavailable) {
+        throw new Error(backgroundResult?.error || 'Database save failed.');
+      }
+    }
+
     const normalized = await this.ensureDbShape(data, { stamp: true });
-    this.cache = normalized;
-    await this.persistLocal(normalized);
+    this.cache = this.adoptSavedSnapshot(data, normalized);
+    await this.persistLocal(this.cache);
 
     // Notify other pages (e.g. side panel or dashboard) of data changes
-    chrome.runtime.sendMessage({ action: 'DATABASE_UPDATED', data: normalized }).catch(() => {});
+    chrome.runtime.sendMessage({ action: 'DATABASE_UPDATED', data: this.cache }).catch(() => {});
 
     // Trigger asynchronous cloud sync only when the selected remote provider
     // has a complete, valid configuration. Local persistence must never be
     // coupled to a half-configured WebDAV or GitHub route.
-    if (await this.shouldRunCloudSync(normalized)) {
+    if (await this.shouldRunCloudSync(this.cache)) {
       this.scheduleBackgroundSync();
     }
+    return this.cache;
+  }
+
+  adoptSavedSnapshot(target, savedSnapshot) {
+    if (
+      target
+      && savedSnapshot
+      && target !== savedSnapshot
+      && typeof target === 'object'
+      && !Array.isArray(target)
+    ) {
+      Object.keys(target).forEach((key) => delete target[key]);
+      Object.assign(target, savedSnapshot);
+      return target;
+    }
+    return savedSnapshot;
   }
 
   scheduleBackgroundSync(delayMs = 1000) {
-    if (typeof window === 'undefined') {
-      this.triggerBackgroundSync().catch(console.error);
-      return;
-    }
     if (this.syncTimer) clearTimeout(this.syncTimer);
     this.syncTimer = setTimeout(() => {
       this.syncTimer = null;
@@ -144,6 +192,19 @@ class StorageEngine {
     ].forEach((key) => {
       if (!Array.isArray(normalized[key])) normalized[key] = [];
     });
+    normalized.deletedEntities = normalized.deletedEntities && typeof normalized.deletedEntities === 'object'
+      ? normalized.deletedEntities
+      : {};
+    [
+      'researchAreas',
+      'projects',
+      'researchRecords',
+      'manuscripts',
+      'submissions',
+      'tasks'
+    ].forEach((key) => {
+      normalized.deletedEntities[key] = this.normalizeDeletionTombstones(normalized.deletedEntities[key]);
+    });
 
     normalized.schemaVersion = Math.max(Number(normalized.schemaVersion) || 0, DEFAULT_DB.schemaVersion);
     normalized.settings = this.deepMerge(DEFAULT_DB.settings, normalized.settings || {});
@@ -169,6 +230,57 @@ class StorageEngine {
     }
 
     return normalized;
+  }
+
+  recordEntityDeletion(database, collectionName, entityId) {
+    if (!database || !entityId || !Array.isArray(database?.[collectionName])) return false;
+    database.deletedEntities = database.deletedEntities && typeof database.deletedEntities === 'object'
+      ? database.deletedEntities
+      : {};
+    const existing = this.normalizeDeletionTombstones(database.deletedEntities[collectionName]);
+    const deletedAt = new Date().toISOString();
+    database.deletedEntities[collectionName] = existing
+      .filter(item => item.id !== entityId)
+      .concat({
+        id: String(entityId),
+        deletedAt,
+        deviceId: String(database.deviceId || '')
+      });
+    database[collectionName] = database[collectionName].filter(item => item?.id !== entityId);
+    return true;
+  }
+
+  normalizeDeletionTombstones(items) {
+    const byId = new Map();
+    (Array.isArray(items) ? items : []).forEach((item) => {
+      if (!item || typeof item !== 'object' || !String(item.id || '').trim()) return;
+      const normalized = {
+        id: String(item.id),
+        deletedAt: item.deletedAt || item.updatedAt || new Date(0).toISOString(),
+        deviceId: String(item.deviceId || '')
+      };
+      const previous = byId.get(normalized.id);
+      if (!previous || this.getEntityTimestamp(normalized) >= this.getEntityTimestamp(previous)) {
+        byId.set(normalized.id, normalized);
+      }
+    });
+    return Array.from(byId.values());
+  }
+
+  getEntityTimestamp(item) {
+    const timestamp = new Date(item?.deletedAt || item?.updatedAt || item?.createdAt || 0).getTime();
+    return Number.isFinite(timestamp) ? timestamp : 0;
+  }
+
+  filterDeletedEntities(items, tombstones) {
+    const deletedById = new Map(
+      this.normalizeDeletionTombstones(tombstones).map(item => [item.id, item])
+    );
+    return (Array.isArray(items) ? items : []).filter((item) => {
+      const tombstone = deletedById.get(String(item?.id || ''));
+      if (!tombstone) return true;
+      return this.getEntityTimestamp(item) > this.getEntityTimestamp(tombstone);
+    });
   }
 
   getSyncConfigurationIssue(metadataProvider) {
@@ -538,7 +650,14 @@ class StorageEngine {
       'submissions',
       'tasks'
     ].forEach((collectionName) => {
-      merged[collectionName] = this.mergeEntityArray(local[collectionName], remote[collectionName]);
+      merged.deletedEntities[collectionName] = this.normalizeDeletionTombstones([
+        ...(local.deletedEntities?.[collectionName] || []),
+        ...(remote.deletedEntities?.[collectionName] || [])
+      ]);
+      merged[collectionName] = this.filterDeletedEntities(
+        this.mergeEntityArray(local[collectionName], remote[collectionName]),
+        merged.deletedEntities[collectionName]
+      );
     });
 
     // Keep local routing preferences authoritative on this device; credentials

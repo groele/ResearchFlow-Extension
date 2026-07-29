@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "ResearchFlow Companion",
-  "version": "5.0.0",
-  "description": "A focused, local-first research companion for capturing literature, keeping working notes, tracking next actions, and exporting your data.",
+  "version": "6.0.0",
+  "description": "A focused, local-first companion for manuscript pipelines, journal submissions, peer review, and secure metadata synchronization.",
   "icons": {
     "16": "assets/icons/icon-16.png",
     "32": "assets/icons/icon-32.png",
@@ -11,15 +11,11 @@
   },
   "permissions": [
     "storage",
-    "activeTab",
     "tabs",
-    "scripting",
-    "unlimitedStorage",
-    "contextMenus"
+    "unlimitedStorage"
   ],
   "host_permissions": [
     "https://api.github.com/*",
-    "https://api.unpaywall.org/*",
     "https://*.manuscriptcentral.com/*",
     "https://*.editorialmanager.com/*",
     "https://*.ejournalpress.com/*",

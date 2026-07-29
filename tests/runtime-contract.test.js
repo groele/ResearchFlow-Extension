@@ -55,6 +55,8 @@ for (const [pagePath, ids] of Object.entries(requiredIds)) {
 
 assert(!exists('scripts/modules/projects.js'), 'removed projects dashboard module should stay absent');
 assert(!exists('scripts/modules/library.js'), 'removed library dashboard module should stay absent');
+assert(!exists('scripts/modules/dashboard.js'), 'unused duplicate dashboard module should stay absent');
+assert(!exists('scripts/modules/settings.js'), 'unused duplicate settings module should stay absent');
 assert(!exists('scripts/ai.js'), 'retired AI runtime should stay absent');
 assert(!exists('pages/sidepanel.html'), 'side panel page should be removed');
 assert(!exists('scripts/sidepanel.js'), 'side panel controller should be removed');
@@ -64,6 +66,13 @@ assert(!exists('scripts/popup.js'), 'toolbar popup controller should be removed'
 assert(!('default_popup' in manifest.action), 'toolbar icon should bypass the popup');
 assert(!('side_panel' in manifest), 'manifest should not register a side panel');
 assert(!manifest.permissions.includes('sidePanel'), 'manifest should not request sidePanel permission');
+['activeTab', 'scripting', 'contextMenus'].forEach(permission => {
+  assert(!manifest.permissions.includes(permission), `focused runtime should not request retired ${permission} permission`);
+});
+assert(
+  !manifest.host_permissions.some(origin => origin.includes('api.unpaywall.org')),
+  'focused runtime should not retain the retired Unpaywall host permission'
+);
 
 const backgroundJs = read(manifest.background.service_worker);
 assert(backgroundJs.includes('chrome.action.onClicked.addListener'), 'toolbar icon should have a click handler');
@@ -75,6 +84,11 @@ assert(backgroundJs.includes('openSubmissionCapturePage'), 'detected portals sho
 assert(backgroundJs.includes('?mode=submission-capture'), 'detected portals should request submission capture mode');
 assert(backgroundJs.includes('chrome.tabs.update'), 'an existing workspace should navigate directly to the submission form');
 assert(backgroundJs.includes('chrome.tabs.create'), 'a missing workspace should open the submission form in a new tab');
+assert(backgroundJs.includes('SAVE_DATABASE'), 'background should serialize database writes across extension pages');
+assert(backgroundJs.includes('databaseWriteQueue'), 'background database writes should use a single queue');
+assert(!backgroundJs.includes('chrome.contextMenus'), 'background should not retain the removed research-record context menu');
+assert(!backgroundJs.includes('FETCH_PDF_VIA_UNPAYWALL'), 'background should not retain the removed article lookup route');
+assert(!backgroundJs.includes('CACHE_SCRAPE_RESULT'), 'background should not retain the removed article metadata cache');
 
 const contentJs = read('scripts/content.js');
 assert(contentJs.includes('maybeOfferSubmissionCapture'), 'content script should offer quick submission entry');
@@ -83,6 +97,10 @@ assert(contentJs.includes('collectSubmissionPageSignals'), 'portal capture shoul
 assert(contentJs.includes('Capture information'), 'portal prompt should expose one-click information capture');
 assert(contentJs.includes('captureDetailsEnabled'), 'content capture should respect the independent detail-capture switch');
 assert(contentJs.includes('width: min(344px, calc(100vw - 28px))'), 'portal capture prompt should remain a compact partial-screen card');
+assert(!contentJs.includes('requestIdleCallback(run'), 'portal pages should not start the retired article metadata scan');
+['SCRAPE_PAGE', 'PUSH_TO_CACHE', 'CACHE_SCRAPE_RESULT'].forEach(action => {
+  assert(!contentJs.includes(action), `content runtime should not expose the retired ${action} route`);
+});
 
 const optionsJs = read('scripts/options.js');
 assert(optionsJs.includes('consumePendingSubmissionDraft'), 'main workspace should consume detected submission drafts');
@@ -99,7 +117,10 @@ assert(storageJs.includes('delete normalized.settings.ai'), 'old AI settings sho
 assert(storageJs.includes('delete normalized.settings.syncProviders.files'), 'old evidence file routing should be discarded');
 assert(storageJs.includes("'manuscripts'"), 'storage should normalize manuscripts');
 assert(storageJs.includes("'submissions'"), 'storage should normalize submissions');
-assert(storageJs.includes('shouldRunCloudSync(normalized)'), 'local saves should skip incomplete remote sync configurations');
+assert(storageJs.includes('deletedEntities'), 'storage should retain entity deletion tombstones for remote merges');
+assert(storageJs.includes('filterDeletedEntities'), 'remote merge should filter entities deleted on another device');
+assert(storageJs.includes('shouldRunCloudSync(this.cache)'), 'local saves should skip incomplete remote sync configurations');
+assert(storageJs.includes("action: 'SAVE_DATABASE'"), 'workspace saves should use the serialized background writer');
 assert(storageJs.includes('getSyncConfigurationIssue(metaProvider)'), 'manual sync should report invalid provider configuration without attempting a request');
 assert(storageJs.includes("return 'Invalid WebDAV URL'"), 'WebDAV URL validation should fail before permission or network access');
 

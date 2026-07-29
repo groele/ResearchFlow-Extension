@@ -139,6 +139,36 @@ assert.equal(
   assert.equal(sanitized._github_sha, undefined);
   assert(!JSON.stringify(sanitized).includes('secret'), 'external database payload must not contain credentials');
 
+  const deletionDb = await engine.ensureDbShape({
+    submissions: [{
+      id: 'sub-delete-me',
+      title: 'Old remote submission',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z'
+    }]
+  }, { stamp: false });
+  assert.equal(deletionDb.schemaVersion, 7, 'tombstone support should upgrade the database schema');
+  assert.equal(
+    engine.recordEntityDeletion(deletionDb, 'submissions', 'sub-delete-me'),
+    true,
+    'submission deletion should create a durable tombstone'
+  );
+  assert.equal(deletionDb.submissions.length, 0);
+  assert.equal(deletionDb.deletedEntities.submissions[0].id, 'sub-delete-me');
+  const deletionMerged = await engine.mergeDatabases(deletionDb, {
+    submissions: [{
+      id: 'sub-delete-me',
+      title: 'Stale remote submission',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z'
+    }]
+  });
+  assert.equal(
+    deletionMerged.submissions.length,
+    0,
+    'an older remote snapshot must not resurrect a deleted submission'
+  );
+
   let webdavPayload = '';
   global.fetch = async (_url, options = {}) => {
     webdavPayload = String(options.body || '');
@@ -190,6 +220,32 @@ assert.equal(
     }
   });
   assert.equal(scheduledSyncs, 1, 'local save should schedule a complete WebDAV route');
+
+  let delegatedMessage = null;
+  global.window = {};
+  const originalSendMessage = chrome.runtime.sendMessage;
+  chrome.runtime.sendMessage = (message, callback) => {
+    delegatedMessage = message;
+    callback?.({
+      success: true,
+      data: {
+        revision: 7,
+        settings: { syncProviders: { metadata: { provider: 'local', config: {} } } }
+      }
+    });
+  };
+  const delegatedInput = {
+    revision: 6,
+    settings: { syncProviders: { metadata: { provider: 'local', config: {} } } }
+  };
+  const delegatedResult = await engine.saveAll(delegatedInput, { mergeOnConflict: true });
+  assert.equal(delegatedMessage.action, 'SAVE_DATABASE');
+  assert.equal(delegatedMessage.mergeOnConflict, true);
+  assert.equal(delegatedResult.revision, 7, 'workspace should adopt the serialized writer result');
+  assert.equal(delegatedInput.revision, 7, 'the caller database reference should receive the committed revision');
+  assert.equal(delegatedResult, delegatedInput, 'save callers should retain one authoritative in-memory database object');
+  chrome.runtime.sendMessage = originalSendMessage;
+  delete global.window;
 
   console.log('storage sync configuration tests passed');
 })().catch(error => {

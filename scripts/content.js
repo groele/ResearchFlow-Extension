@@ -1,82 +1,19 @@
 /**
- * ResearchFlow Companion - Content Scraper v2.1
+ * ResearchFlow Companion - submission portal assistant.
  *
- * 分层PDF检测架构:
- *   层1: Meta标签扫描 (同步, ~1ms)
- *   层2: 平台专属DOM解析器 (~5ms)
- *   层3: 通用启发式PDF链接扫描 (~20ms)
- *   层4: Unpaywall API (由background.js异步执行, ~500ms)
- *
- * 所见即所得优化:
- *   - 脚本加载时立即扫描并将结果推送到 background tab cache
- *   - Main workspace clients can reuse the warmed metadata cache
- *   - Submission portals receive an optional quick-entry prompt
- *   - 防重复注入保护：同页面只运行一次
+ * The active runtime only offers reviewed submission capture on supported
+ * journal portals. Retired article-cache and research-record entrypoints are
+ * intentionally not started.
  */
 
 // ─── 防重复注入保护（executeScript 可能被调用多次）───────────────────────────
 // 用 window.__rf_injected 做标志；用 IIFE 包裹，避免 throw 产生未捕获异常
 (function rfContentScriptMain() {
   if (window.__rf_injected) {
-    // 脚本已初始化：静默退出，不重复注册监听器和推送
-    // 如果 background 需要刷新缓存，会发送 PUSH_TO_CACHE 消息
+    // The assistant has already been initialized for this page.
     return;
   }
   window.__rf_injected = true;
-
-// ─── 消息监听器 ───────────────────────────────────────────────────────────────
-
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  // 按需扫描（sidepanel fallback 路径）
-  if (request.action === 'SCRAPE_PAGE') {
-    try {
-      const metadata = scrapeAcademicMetadata();
-      pushToBackgroundCache(metadata);
-      sendResponse(metadata);
-    } catch (e) {
-      console.error('[ResearchFlow] Scrape error:', e);
-      sendResponse({
-        title: document.title, doi: '', authors: [], abstract: '',
-        pdfUrl: '', journal: '', sourceUrl: window.location.href,
-        pubDate: '', siteType: 'generic'
-      });
-    }
-    return true;
-  }
-  // background 请求重新推送缓存（tab 激活且缓存为空时触发）
-  if (request.action === 'PUSH_TO_CACHE') {
-    try {
-      const metadata = scrapeAcademicMetadata();
-      pushToBackgroundCache(metadata);
-      sendResponse({ ok: true });
-    } catch (e) {
-      sendResponse({ ok: false });
-    }
-    return true;
-  }
-  // 显示网页悬浮 Toast 消息
-  if (request.action === 'SHOW_PAGE_TOAST') {
-    try {
-      showPageToast(request.message, request.type);
-      sendResponse({ ok: true });
-    } catch (e) {
-      sendResponse({ ok: false });
-    }
-    return true;
-  }
-  return false; // 未处理的消息：不保持通道
-});
-
-// ─── 缓存推送辅助 ─────────────────────────────────────────────────────────────
-function pushToBackgroundCache(metadata) {
-  try {
-    chrome.runtime.sendMessage(
-      { action: 'CACHE_SCRAPE_RESULT', metadata, url: window.location.href },
-      // 必须提供回调以消费 lastError，否则 MV3 会报 Unchecked runtime.lastError
-      () => { void chrome.runtime.lastError; }
-    );
-  } catch (_) { /* 扩展上下文失效时忽略 */ }
-}
 
 function showPageToast(message, type = 'success') {
   let container = document.getElementById('rf-page-toast-container');
@@ -1235,21 +1172,9 @@ function cleanString(str) {
   return str.replace(/\s+/g, ' ').trim();
 }
 
-// ─── 主动推送：脚本加载时立即扫描并缓存结果 ─────────────────────────────────
-// 使用 requestIdleCallback 避免阻塞页面渲染，但保持快速响应（最长 800ms）
+// ─── 主入口：只启动投稿网站识别 ─────────────────────────────────────────────
 (function proactiveInit() {
   scheduleSubmissionAssist();
-  const run = () => {
-    try {
-      const metadata = scrapeAcademicMetadata();
-      pushToBackgroundCache(metadata);
-    } catch (_) { /* 忽略受限页面 */ }
-  };
-  if (typeof requestIdleCallback !== 'undefined') {
-    requestIdleCallback(run, { timeout: 800 });
-  } else {
-    setTimeout(run, 0);
-  }
 })();
 
 // ─── IIFE 闭合 ───────────────────────────────────────────────────────────────

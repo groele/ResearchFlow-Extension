@@ -16,8 +16,8 @@ const manifest = JSON.parse(read('manifest.json'));
   assert(optionsHtml.includes(`id="${id}"`), `submission recognition settings should include ${id}`);
 });
 assert(optionsHtml.includes('settings-switch-track'), 'submission recognition should use the shared custom switch treatment');
-assert(optionsHtml.includes('v5.0.0 Companion'), 'workspace version label should match the secure workflow release');
-assert.equal(manifest.version, '5.0.0', 'manifest version should match the secure workflow release');
+assert(optionsHtml.includes('v6.0.0 Companion'), 'workspace version label should match the reliability release');
+assert.equal(manifest.version, '6.0.0', 'manifest version should match the reliability release');
 
 ['view-projects', 'view-library', 'metric-projects', 'metric-records', 'metric-evidence', 'recent-records'].forEach((removedSection) => {
   assert(!optionsHtml.includes(removedSection), `options page should not expose removed ${removedSection}`);
@@ -70,5 +70,22 @@ assert(
 assert(optionsJs.includes("window.addEventListener('pagehide', flushPendingSave)"), 'pending editor changes should flush when the page closes');
 assert(optionsJs.includes('findExistingCapturedSubmission'), 'captured submissions should be checked for duplicates');
 assert(optionsJs.includes('sanitizeDatabaseForExternalUse'), 'database export should redact device credentials');
+assert(optionsJs.includes('function normalizeSubmissionStatus'), 'legacy submission status aliases should normalize to one canonical enum');
+assert(optionsJs.includes('openLinkSubmissionModal'), 'detached submissions should provide a direct manuscript-linking flow');
+assert(optionsJs.includes('recordEntityDeletion'), 'submission deletion should create a synchronization tombstone');
+assert(!optionsJs.includes('data-editor-mount-badge'), 'internal render-version badges should not appear in the submission workflow');
+assert(optionsHtml.includes('class="submission-tools-row"'), 'journal shortcuts should use a dedicated row instead of crowding the page title');
+assert(optionsHtml.includes('data-sync-provider="webdav"'), 'WebDAV settings should support provider-specific progressive disclosure');
+assert(optionsHtml.includes('data-sync-provider="github"'), 'GitHub settings should support provider-specific progressive disclosure');
+assert(optionsHtml.includes('id="language-auto-save-status"'), 'language settings should communicate automatic persistence');
+assert(!optionsHtml.includes('id="btn-save-language"'), 'language selection should not require a separate save button');
+assert(optionsHtml.includes('id="btn-restore-import-backup"'), 'settings should expose recovery from the last pre-import backup');
+assert(optionsJs.includes("new Blob([JSON.stringify(safeDb, null, 2)]"), 'large database exports should use a Blob rather than a data URI');
+assert(optionsJs.includes('MAX_IMPORT_BYTES'), 'database imports should enforce a bounded input size');
+assert(optionsJs.includes('PRE_IMPORT_BACKUP_KEY'), 'database imports should create a recoverable pre-import snapshot');
+assert(
+  optionsJs.indexOf('[PRE_IMPORT_BACKUP_KEY]') < optionsJs.indexOf('db = await window.storage.saveAll(normalizedImport)'),
+  'the recovery snapshot should be written before imported data replaces the active database'
+);
 
 console.log('restored main workspace tests passed');
