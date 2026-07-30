@@ -16,6 +16,20 @@ const manifest = JSON.parse(read('manifest.json'));
   assert(optionsHtml.includes(`id="${id}"`), `submission recognition settings should include ${id}`);
 });
 assert(optionsHtml.includes('settings-switch-track'), 'submission recognition should use the shared custom switch treatment');
+['settings-workbench', 'settings-primary-column', 'settings-secondary-column', 'settings-trust-strip', 'settings-route-savebar', 'settings-backup-actions'].forEach((className) => {
+  assert(optionsHtml.includes(`class="${className}`) || optionsHtml.includes(` ${className}`), `settings redesign should include ${className}`);
+});
+assert(optionsHtml.includes('class="settings-hero-index"'), 'settings console should expose a restrained workspace index');
+['settings-kicker', 'settings-route-privacy-note', 'settings-credential-note', 'settings-backup-note'].forEach((id) => {
+  assert(optionsHtml.includes(`id="${id}"`), `settings redesign should expose localized ${id}`);
+});
+assert(optionsHtml.includes('id="settings-local-card" data-sync-provider="local"'), 'local-only routing should retain a visible explanatory provider panel');
+assert(!optionsHtml.includes('class="settings-grid"'), 'settings should use the guided workbench instead of a flat card grid');
+assert(optionsCss.includes('.settings-workbench'), 'settings workbench should have a dedicated responsive layout');
+assert(optionsCss.includes('Settings console refinement'), 'settings should use the integrated scientific-console visual treatment');
+assert(optionsCss.includes('@media (max-width: 1180px)'), 'settings workbench should reflow before the narrow mobile breakpoint');
+assert(optionsJs.includes("setText('#settings-kicker', t('settingsKicker'))"), 'settings hero should localize with the active interface language');
+assert(optionsJs.includes("mainContent.scrollTop = 0"), 'workspace navigation should reveal the beginning of each settings view');
 assert(optionsHtml.includes('v6.0.1 Companion'), 'workspace version label should match the documentation release');
 assert.equal(manifest.version, '6.0.1', 'manifest version should match the documentation release');
 
@@ -73,6 +87,24 @@ assert(optionsJs.includes('sanitizeDatabaseForExternalUse'), 'database export sh
 assert(optionsJs.includes('function normalizeSubmissionStatus'), 'legacy submission status aliases should normalize to one canonical enum');
 assert(optionsJs.includes('openLinkSubmissionModal'), 'detached submissions should provide a direct manuscript-linking flow');
 assert(optionsJs.includes('recordEntityDeletion'), 'submission deletion should create a synchronization tombstone');
+assert(optionsJs.includes('function showAcceptanceCelebration'), 'accepted submissions should trigger the milestone celebration');
+assert(optionsJs.includes("window.matchMedia?.('(prefers-reduced-motion: reduce)')"), 'celebration motion should honor reduced-motion preferences');
+assert(optionsJs.includes('window.RFUI.shouldCelebrateAcceptance'), 'celebration should use a tested one-time status-transition guard');
+assert(
+  optionsJs.indexOf('await window.storage.saveAll(workingDatabase') < optionsJs.indexOf('if (shouldCelebrate) showAcceptanceCelebration(savedSub)'),
+  'celebration should run only after the accepted state is persisted'
+);
+assert(optionsJs.includes('structuredClone(db)'), 'submission edits should be applied to an isolated transaction copy');
+assert(optionsJs.includes('function refreshSubmissionStatusPresentation'), 'auto-save should refresh status chrome without rebuilding the active form');
+assert(optionsJs.includes('function persistManuscriptStatusChange'), 'kanban status changes should use an isolated persistence transaction');
+assert(optionsJs.includes('showAcceptanceCelebration({ title: result.manuscript.title'), 'kanban acceptance should share the milestone celebration');
+assert(optionsJs.includes('data-submission-status-badge="stage"'), 'submission details should expose a lightweight stage badge update target');
+assert(optionsJs.includes('data-submission-status-badge="editor"'), 'submission editor should expose a lightweight status badge update target');
+assert(optionsCss.includes('.acceptance-celebration'), 'acceptance celebration should use the workspace visual system');
+assert(
+  /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.acceptance-confetti-field\s*\{[\s\S]*?display:\s*none;/.test(optionsCss),
+  'reduced-motion mode should suppress falling confetti'
+);
 assert(!optionsJs.includes('data-editor-mount-badge'), 'internal render-version badges should not appear in the submission workflow');
 assert(optionsHtml.includes('class="submission-tools-row"'), 'journal shortcuts should use a dedicated row instead of crowding the page title');
 assert(optionsHtml.includes('data-sync-provider="webdav"'), 'WebDAV settings should support provider-specific progressive disclosure');

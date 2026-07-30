@@ -349,6 +349,27 @@ assert.deepEqual(RFUI.buildSubmissionEditSyncPlan({
   decisionDate: ''
 }).rejectionDate, '2026-02-12');
 
+assert.equal(
+  RFUI.shouldCelebrateAcceptance('under_review', 'accepted'),
+  true,
+  'the first persisted transition into accepted should celebrate'
+);
+assert.equal(
+  RFUI.shouldCelebrateAcceptance('accepted', 'accepted'),
+  false,
+  'editing an already accepted submission should not celebrate repeatedly'
+);
+assert.equal(
+  RFUI.shouldCelebrateAcceptance('published', 'accepted'),
+  false,
+  'moving backward from published should not replay the acceptance celebration'
+);
+assert.equal(
+  RFUI.shouldCelebrateAcceptance('revision', 'published'),
+  false,
+  'publishing is not the acceptance-status easter egg'
+);
+
 assert.deepEqual(RFUI.buildSubmissionCreateMode({
   selectedManuscriptId: 'man_1',
   newManuscriptTitle: '',

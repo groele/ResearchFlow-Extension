@@ -11,6 +11,7 @@ let currentLanguage = 'en';
 let isPipelineExpanded = false;
 let pendingSubmissionCapture = null;
 let submissionAutoSaveCleanup = null;
+let acceptanceCelebrationCleanup = null;
 let previousModalFocus = null;
 
 const RF_OPTIONS_RENDER_VERSION = '6.0.1';
@@ -57,6 +58,28 @@ const I18N = {
     clickEditEvent: 'Click to edit this event.',
     settingsTitle: 'Multi-Cloud Settings',
     settingsSubtitle: 'Control exactly how and where your private data is distributed.',
+    settingsKicker: 'Workspace control',
+    settingsTrustSummary: 'Data protection summary',
+    settingsLocalFirst: 'Local-first',
+    settingsDeviceSecrets: 'Credentials stay on device',
+    settingsPreferencesAutosave: 'Preferences auto-save',
+    settingsRoutingEyebrow: 'Data destination',
+    settingsRoutePrivacy: 'Secrets are stored only on this device.',
+    settingsLocalEyebrow: 'Active route',
+    settingsLocalTitle: 'Local cache only',
+    settingsLocalHelp: 'Research data remains inside this Chrome profile until you export or select a cloud route.',
+    settingsLocalPointAccount: 'No account required',
+    settingsLocalPointSync: 'Manual cloud sync is off',
+    settingsLocalPointBackup: 'JSON backup remains available',
+    settingsProviderEyebrow: 'Provider credentials',
+    settingsWebdavHelp: 'Connect a private WebDAV folder for the database JSON.',
+    settingsCredentialNote: 'Credentials never enter exported or synchronized JSON.',
+    settingsGithubHelp: 'Store the database JSON in a private repository branch.',
+    settingsGithubCredentialNote: 'Use a repository-scoped token with Contents access.',
+    settingsLanguageEyebrow: 'Interface',
+    settingsAssistEyebrow: 'Browser intelligence',
+    settingsBackupEyebrow: 'Data resilience',
+    settingsBackupNote: 'A recoverable snapshot is kept before every valid import.',
     languageCardTitle: 'Language & Interface',
     languageLabel: 'Display Language',
     languageHelp: 'Switch the dashboard interface between English and Chinese.',
@@ -243,6 +266,9 @@ const I18N = {
     statusDueSoon: 'Due soon',
     statusUpcoming: 'Upcoming',
     specialException: 'Special / Exception',
+    manuscriptNotFound: 'Manuscript not found. Refreshing workspace.',
+    manuscriptStatusUpdated: 'Manuscript status updated.',
+    manuscriptStatusUpdatedTo: 'Manuscript status updated to {status}.',
     submissionNotFound: 'Submission not found. Refreshing dashboard.',
     eventNotFound: 'Event not found. Refreshing dashboard.',
     eventAddedToast: 'Added event "{name}".',
@@ -313,6 +339,9 @@ const I18N = {
     autoSaveSaved: 'All changes saved',
     autoSaveInvalid: 'Check the highlighted field',
     autoSaveFailed: 'Auto-save failed. Your text remains in this form.',
+    acceptanceCelebrationEyebrow: 'Milestone unlocked',
+    acceptanceCelebrationTitle: 'Accepted — congratulations!',
+    acceptanceCelebrationBody: '{title} has crossed an important research milestone.',
     transferRoundHelp: 'Close the current round and create the next target journal record in one step.',
     savedReviewPreviewTitle: 'Saved Review Preview',
     savedReviewPreviewHelp: 'Read-only snapshot kept in sync with the Submission Entry Editor.',
@@ -436,6 +465,28 @@ const I18N = {
     clickEditEvent: '点击编辑此事件。',
     settingsTitle: '多云设置',
     settingsSubtitle: '精准控制私有数据的分发与存储位置。',
+    settingsKicker: '工作区控制中心',
+    settingsTrustSummary: '数据保护摘要',
+    settingsLocalFirst: '本地优先',
+    settingsDeviceSecrets: '凭据仅保存在本设备',
+    settingsPreferencesAutosave: '偏好设置自动保存',
+    settingsRoutingEyebrow: '数据去向',
+    settingsRoutePrivacy: '密码与令牌只保存在当前设备。',
+    settingsLocalEyebrow: '当前存储方式',
+    settingsLocalTitle: '仅使用本地缓存',
+    settingsLocalHelp: '研究数据保存在当前 Chrome 配置文件中，直到你导出备份或选择云端同步。',
+    settingsLocalPointAccount: '无需注册同步账号',
+    settingsLocalPointSync: '云端手动同步已关闭',
+    settingsLocalPointBackup: '仍可随时导出 JSON',
+    settingsProviderEyebrow: '服务凭据',
+    settingsWebdavHelp: '连接私有 WebDAV 文件夹，用于保存数据库 JSON。',
+    settingsCredentialNote: '凭据不会进入导出文件或远程同步数据库。',
+    settingsGithubHelp: '将数据库 JSON 保存到私有仓库的指定分支。',
+    settingsGithubCredentialNote: '建议使用仅限目标仓库且具有 Contents 权限的令牌。',
+    settingsLanguageEyebrow: '界面',
+    settingsAssistEyebrow: '浏览器智能识别',
+    settingsBackupEyebrow: '数据韧性',
+    settingsBackupNote: '每次有效导入前都会保留一个可恢复快照。',
     languageCardTitle: '语言与界面',
     languageLabel: '显示语言',
     languageHelp: '在中文和英文之间切换仪表盘界面。',
@@ -622,6 +673,9 @@ const I18N = {
     statusDueSoon: '即将到期',
     statusUpcoming: '未来计划',
     specialException: '特殊 / 异常',
+    manuscriptNotFound: '未找到手稿记录，正在刷新工作区。',
+    manuscriptStatusUpdated: '手稿状态已更新。',
+    manuscriptStatusUpdatedTo: '手稿状态已更新为“{status}”。',
     submissionNotFound: '未找到投稿记录。正在刷新仪表盘。',
     eventNotFound: '未找到事件。正在刷新仪表盘。',
     eventAddedToast: '已添加事件“{name}”。',
@@ -692,6 +746,9 @@ const I18N = {
     autoSaveSaved: '所有更改均已自动保存',
     autoSaveInvalid: '请检查当前填写内容',
     autoSaveFailed: '自动保存失败，当前填写内容仍保留在表单中。',
+    acceptanceCelebrationEyebrow: '重要里程碑达成',
+    acceptanceCelebrationTitle: '文章已接收，恭喜！',
+    acceptanceCelebrationBody: '《{title}》跨过了一个重要的科研里程碑。',
     transferRoundHelp: '一步关闭当前轮次并创建下一个目标期刊记录。',
     savedReviewPreviewTitle: '已保存审稿预览',
     savedReviewPreviewHelp: '与投稿记录编辑器自动同步的只读快照。',
@@ -736,9 +793,23 @@ const I18N = {
     abstractDraft: '摘要草稿',
     abstractPlaceholder: '撰写手稿摘要草稿...',
     createManuscript: '创建手稿',
+    storageRoutingHelp: '选择 ResearchFlow 元数据数据库的存储与同步位置。',
+    routeDbLabel: '数据库 JSON 同步位置',
+    optionLocalCache: '无（仅使用本地缓存）',
+    optionWebDavDrive: 'WebDAV 网盘（坚果云、Nextcloud）',
+    optionGithubRepo: 'GitHub 私有仓库',
     localSyncSummary: '仅本地模式：数据保存在当前设备，云端手动同步已停用。',
     webdavSyncSummary: 'WebDAV 模式：请在下方配置并测试 WebDAV 账户。',
-    githubSyncSummary: 'GitHub 模式：请在下方配置并测试私有仓库。'
+    githubSyncSummary: 'GitHub 模式：请在下方配置并测试私有仓库。',
+    webdavUrlLabel: 'WebDAV 服务器基础 URL',
+    usernameEmailLabel: '用户名 / 邮箱',
+    appPasswordLabel: '应用专用密码',
+    testWebdav: '测试 WebDAV 连接',
+    githubPatLabel: 'GitHub Personal Access Token（PAT）',
+    githubRepoLabel: '仓库名称（所有者/仓库）',
+    githubBranchLabel: '分支名称',
+    testGithub: '测试 GitHub 仓库',
+    backupHelp: '将研究数据库导出为 JSON，或导入并迁移现有的 ResearchFlow JSON 备份。'
   }
 };
 
@@ -899,6 +970,29 @@ function applyLanguage() {
 
   setText('#view-settings .view-header h1', t('settingsTitle'));
   setText('#view-settings .view-header .text-muted', t('settingsSubtitle'));
+  setText('#settings-kicker', t('settingsKicker'));
+  document.querySelector('.settings-trust-strip')?.setAttribute('aria-label', t('settingsTrustSummary'));
+  setText('#settings-local-first-label', t('settingsLocalFirst'));
+  setText('#settings-device-secret-label', t('settingsDeviceSecrets'));
+  setText('#settings-autosave-label', t('settingsPreferencesAutosave'));
+  setText('#settings-routing-eyebrow', t('settingsRoutingEyebrow'));
+  setText('#settings-route-privacy-note', t('settingsRoutePrivacy'));
+  setText('#settings-local-eyebrow', t('settingsLocalEyebrow'));
+  setText('#settings-local-title', t('settingsLocalTitle'));
+  setText('#settings-local-help', t('settingsLocalHelp'));
+  setText('#settings-local-point-account', t('settingsLocalPointAccount'));
+  setText('#settings-local-point-sync', t('settingsLocalPointSync'));
+  setText('#settings-local-point-backup', t('settingsLocalPointBackup'));
+  setText('#settings-webdav-eyebrow', t('settingsProviderEyebrow'));
+  setText('#settings-webdav-help', t('settingsWebdavHelp'));
+  setText('#settings-credential-note', t('settingsCredentialNote'));
+  setText('#settings-github-eyebrow', t('settingsProviderEyebrow'));
+  setText('#settings-github-help', t('settingsGithubHelp'));
+  setText('#settings-github-credential-note', t('settingsGithubCredentialNote'));
+  setText('#settings-language-eyebrow', t('settingsLanguageEyebrow'));
+  setText('#settings-assist-eyebrow', t('settingsAssistEyebrow'));
+  setText('#settings-backup-eyebrow', t('settingsBackupEyebrow'));
+  setText('#settings-backup-note', t('settingsBackupNote'));
   setText('#settings-language-card h3', t('languageCardTitle'));
   setText('label[for="ui-language"]', t('languageLabel'));
   setText('#language-help', t('languageHelp'));
@@ -958,6 +1052,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       item.classList.add('active');
       document.getElementById(targetView).classList.add('active');
+      const mainContent = document.querySelector('.main-content');
+      if (mainContent) mainContent.scrollTop = 0;
 
       // Trigger tab-specific loaders
       if (targetView === 'view-dashboard') renderDashboard();
@@ -2156,16 +2252,16 @@ function getSubmissionLifecycleRank(status) {
   return ranks[normalizeSyncedPublicationStatus(status)] || 0;
 }
 
-function getLinkedActiveSubmissions(manuscriptId) {
-  return (db?.submissions || []).filter(sub => sub.manuscriptId === manuscriptId && sub.status !== 'rejected');
+function getLinkedActiveSubmissions(manuscriptId, database = db) {
+  return (database?.submissions || []).filter(sub => sub.manuscriptId === manuscriptId && sub.status !== 'rejected');
 }
 
-function syncLinkedSubmissionsFromManuscript(manuscript) {
+function syncLinkedSubmissionsFromManuscript(manuscript, database = db) {
   if (!manuscript || !isSubmissionLifecycleStatus(manuscript.status)) return false;
   const nextStatus = normalizeSyncedPublicationStatus(manuscript.status);
   let changed = false;
 
-  getLinkedActiveSubmissions(manuscript.id).forEach(sub => {
+  getLinkedActiveSubmissions(manuscript.id, database).forEach(sub => {
     if (sub.status !== nextStatus) {
       sub.status = nextStatus;
       sub.updatedAt = new Date().toISOString();
@@ -2181,7 +2277,7 @@ function syncLinkedSubmissionsFromManuscript(manuscript) {
   return changed;
 }
 
-function setManuscriptStatus(manuscript, status, { syncSubmissions = true } = {}) {
+function setManuscriptStatus(manuscript, status, { syncSubmissions = true, database = db } = {}) {
   if (!manuscript) return false;
   const nextStatus = normalizeSyncedPublicationStatus(status);
   let changed = false;
@@ -2191,9 +2287,35 @@ function setManuscriptStatus(manuscript, status, { syncSubmissions = true } = {}
     changed = true;
   }
   if (syncSubmissions) {
-    changed = syncLinkedSubmissionsFromManuscript(manuscript) || changed;
+    changed = syncLinkedSubmissionsFromManuscript(manuscript, database) || changed;
   }
   return changed;
+}
+
+async function persistManuscriptStatusChange(manuscript, nextStatus) {
+  const liveManuscript = db.manuscripts.find(item => item.id === manuscript.id);
+  if (!liveManuscript) throw new Error(t('manuscriptNotFound'));
+  const previousStatus = normalizeSyncedPublicationStatus(liveManuscript.status);
+  const workingDatabase = typeof structuredClone === 'function'
+    ? structuredClone(db)
+    : JSON.parse(JSON.stringify(db));
+  const workingManuscript = workingDatabase.manuscripts.find(item => item.id === manuscript.id);
+  if (!workingManuscript) throw new Error(t('manuscriptNotFound'));
+
+  setManuscriptStatus(workingManuscript, nextStatus, { database: workingDatabase });
+  const savedDatabase = await window.storage.saveAll(workingDatabase, { mergeOnConflict: true });
+  db = savedDatabase || workingDatabase;
+  const savedManuscript = db.manuscripts.find(item => item.id === manuscript.id);
+  if (!savedManuscript) throw new Error(t('manuscriptNotFound'));
+  Object.assign(manuscript, savedManuscript);
+
+  return {
+    manuscript: savedManuscript,
+    shouldCelebrate: window.RFUI.shouldCelebrateAcceptance(
+      previousStatus,
+      normalizeSyncedPublicationStatus(savedManuscript.status)
+    )
+  };
 }
 
 function syncManuscriptStatusFromSubmission(submission) {
@@ -2950,12 +3072,20 @@ function renderKanban() {
 
     // Bind status change dropdown
     document.getElementById(`sel-man-status-${m.id}`).addEventListener('change', async (e) => {
-      setManuscriptStatus(m, e.target.value);
-      await window.storage.saveAll(db);
-      renderKanban();
-      renderDashboard();
-      renderSubmissions();
-      showGlobalToast('Manuscript status updated!', 'success');
+      try {
+        const result = await persistManuscriptStatusChange(m, e.target.value);
+        renderKanban();
+        renderDashboard();
+        renderSubmissions();
+        showGlobalToast(t('manuscriptStatusUpdated'), 'success');
+        if (result.shouldCelebrate) {
+          showAcceptanceCelebration({ title: result.manuscript.title, manuscriptId: result.manuscript.id });
+        }
+      } catch (error) {
+        console.error('Manuscript status save failed:', error);
+        renderKanban();
+        showGlobalToast(error.message || t('autoSaveFailed'), 'error');
+      }
     });
 
     // Bind edit button
@@ -2995,12 +3125,20 @@ function renderKanban() {
           else if (col === 'submitted') newStatus = 'submitted';
           else if (col === 'accepted') newStatus = 'accepted';
 
-          setManuscriptStatus(man, newStatus);
-          await window.storage.saveAll(db);
-          renderKanban();
-          renderDashboard();
-          renderSubmissions();
-          showGlobalToast(`Manuscript status updated to ${newStatus}!`, 'success');
+          try {
+            const result = await persistManuscriptStatusChange(man, newStatus);
+            renderKanban();
+            renderDashboard();
+            renderSubmissions();
+            showGlobalToast(tf('manuscriptStatusUpdatedTo', { status: getManuscriptStatusLabel(newStatus) }), 'success');
+            if (result.shouldCelebrate) {
+              showAcceptanceCelebration({ title: result.manuscript.title, manuscriptId: result.manuscript.id });
+            }
+          } catch (error) {
+            console.error('Manuscript status drop save failed:', error);
+            renderKanban();
+            showGlobalToast(error.message || t('autoSaveFailed'), 'error');
+          }
         }
       });
     }
@@ -3448,8 +3586,50 @@ function applySubmissionEditSync(sub, man, syncPlan) {
   syncManuscriptStatusFromSubmission(sub);
 }
 
+function refreshSubmissionStatusPresentation(sub) {
+  const detailPanel = document.getElementById('submission-detail-panel');
+  if (!detailPanel || detailPanel.dataset.currentSubmissionId !== sub.id) return;
+
+  const status = normalizeSubmissionStatus(sub.status);
+  const statusText = getSubmissionStatusLabel(status);
+  const badgeClass = window.RFUI.getSubmissionStatusBadgeClass(status);
+  detailPanel.querySelectorAll('[data-submission-status-badge]').forEach(badge => {
+    badge.className = badgeClass;
+    badge.textContent = badge.dataset.submissionStatusBadge === 'stage'
+      ? `${t('currentStageLabel')}: ${statusText}`
+      : statusText;
+  });
+
+  const summary = detailPanel.querySelector('[data-submission-status-summary]');
+  if (summary) {
+    const analysis = analyzeSubmission(sub);
+    const submitDate = normalizeDateString(sub.submissionDate || analysis.submitDate);
+    summary.textContent = `${getSubmissionJournalName(sub)} / ${statusText} / ${t('milestoneSubmission')} ${submitDate || t('noDate')}`;
+  }
+
+  const cycle = getSubmissionCycleTime(sub);
+  const cycleCard = detailPanel.querySelector('[data-submission-cycle-card]');
+  if (cycleCard) {
+    cycleCard.classList.toggle('submission-cycle-card-complete', cycle.isCompleted);
+    cycleCard.classList.toggle('submission-cycle-card-active', !cycle.isCompleted);
+    const label = cycleCard.querySelector('[data-submission-cycle-label]');
+    const text = cycleCard.querySelector('[data-submission-cycle-text]');
+    const icon = cycleCard.querySelector('.submission-cycle-icon');
+    if (label) label.textContent = t(cycle.isCompleted ? 'cycleTimeCompleted' : 'submissionCycleTracking');
+    if (text) {
+      text.textContent = cycle.isCompleted
+        ? tf('cycleTimeCompletedText', { start: cycle.startDateStr, end: cycle.endDateStr, days: cycle.days })
+        : tf('submissionCycleText', { start: cycle.startDateStr, days: cycle.days });
+    }
+    if (icon) {
+      icon.innerHTML = cycle.isCompleted
+        ? '<svg class="svg-icon" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>'
+        : '<svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>';
+    }
+  }
+}
+
 async function saveSubmissionEditFromValues(sub, prefix, options = {}) {
-  const man = db.manuscripts.find(m => m.id === sub.manuscriptId);
   const editValues = getSubmissionEditValues(prefix);
   const syncPlan = window.RFUI.buildSubmissionEditSyncPlan(editValues);
   if (!syncPlan.ok) {
@@ -3458,22 +3638,42 @@ async function saveSubmissionEditFromValues(sub, prefix, options = {}) {
     return false;
   }
 
-  applySubmissionEditSync(sub, man, syncPlan);
+  const liveSub = db.submissions.find(item => item.id === sub.id);
+  if (!liveSub) throw new Error(t('submissionNotFound'));
+  const previousStatus = normalizeSubmissionStatus(liveSub.status);
+  const workingDatabase = typeof structuredClone === 'function'
+    ? structuredClone(db)
+    : JSON.parse(JSON.stringify(db));
+  const workingSub = workingDatabase.submissions.find(item => item.id === sub.id);
+  if (!workingSub) throw new Error(t('submissionNotFound'));
+  const workingMan = workingDatabase.manuscripts.find(item => item.id === workingSub.manuscriptId);
+
+  applySubmissionEditSync(workingSub, workingMan, syncPlan);
   const firstAuthor = String(editValues.firstAuthor || '').trim().slice(0, 160);
-  sub.firstAuthor = firstAuthor || null;
-  if (man) man.firstAuthor = firstAuthor || null;
-  sub.complianceChecklist = editValues.complianceChecklist;
-  sub.complianceChecklistKeys = editValues.complianceChecklistKeys;
-  sub.reviewMatrix = editValues.reviewMatrix;
-  const savedDatabase = await window.storage.saveAll(db, {
+  workingSub.firstAuthor = firstAuthor || null;
+  if (workingMan) workingMan.firstAuthor = firstAuthor || null;
+  workingSub.complianceChecklist = editValues.complianceChecklist;
+  workingSub.complianceChecklistKeys = editValues.complianceChecklistKeys;
+  workingSub.reviewMatrix = editValues.reviewMatrix;
+  const savedDatabase = await window.storage.saveAll(workingDatabase, {
     mergeOnConflict: options.mergeOnConflict === true
   });
-  if (savedDatabase) db = savedDatabase;
+  db = savedDatabase || workingDatabase;
+  const savedSub = db.submissions.find(item => item.id === sub.id);
+  if (!savedSub) throw new Error(t('submissionNotFound'));
+  Object.assign(sub, savedSub);
+
+  const shouldCelebrate = window.RFUI.shouldCelebrateAcceptance(
+    previousStatus,
+    normalizeSubmissionStatus(savedSub.status)
+  );
   renderDashboard();
   renderKanban();
   renderSubmissions();
-  if (options.renderDetails !== false) renderSubmissionDetails(sub);
+  if (options.renderDetails !== false) renderSubmissionDetails(savedSub);
+  else refreshSubmissionStatusPresentation(savedSub);
   if (options.notify !== false) showGlobalToast(t('submissionEditsSaved'), 'success');
+  if (shouldCelebrate) showAcceptanceCelebration(savedSub);
   return true;
 }
 
@@ -3887,25 +4087,25 @@ function renderSubmissionDetails(sub) {
 
   if (cycle.isCompleted) {
     cycleTimeHtml = `
-      <div class="submission-cycle-card submission-cycle-card-complete">
+      <div class="submission-cycle-card submission-cycle-card-complete" data-submission-cycle-card>
         <span class="submission-cycle-icon" aria-hidden="true">
           <svg class="svg-icon" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
         </span>
         <div class="submission-cycle-copy">
-          <span class="submission-cycle-label">${escapeHTML(t('cycleTimeCompleted'))}</span>
-          <span>${tf('cycleTimeCompletedText', { start: `<strong>${escapeHTML(cycle.startDateStr)}</strong>`, end: `<strong>${escapeHTML(cycle.endDateStr)}</strong>`, days: `<strong>${cycle.days}</strong>` })}</span>
+          <span class="submission-cycle-label" data-submission-cycle-label>${escapeHTML(t('cycleTimeCompleted'))}</span>
+          <span data-submission-cycle-text>${tf('cycleTimeCompletedText', { start: `<strong>${escapeHTML(cycle.startDateStr)}</strong>`, end: `<strong>${escapeHTML(cycle.endDateStr)}</strong>`, days: `<strong>${cycle.days}</strong>` })}</span>
         </div>
       </div>
     `;
   } else {
     cycleTimeHtml = `
-      <div class="submission-cycle-card submission-cycle-card-active">
+      <div class="submission-cycle-card submission-cycle-card-active" data-submission-cycle-card>
         <span class="submission-cycle-icon" aria-hidden="true">
           <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
         </span>
         <div class="submission-cycle-copy">
-          <span class="submission-cycle-label">${escapeHTML(t('submissionCycleTracking'))}</span>
-          <span>${tf('submissionCycleText', { start: `<strong>${escapeHTML(cycle.startDateStr)}</strong>`, days: `<strong>${cycle.days}</strong>` })}</span>
+          <span class="submission-cycle-label" data-submission-cycle-label>${escapeHTML(t('submissionCycleTracking'))}</span>
+          <span data-submission-cycle-text>${tf('submissionCycleText', { start: `<strong>${escapeHTML(cycle.startDateStr)}</strong>`, days: `<strong>${cycle.days}</strong>` })}</span>
         </div>
       </div>
     `;
@@ -3924,7 +4124,7 @@ function renderSubmissionDetails(sub) {
 
     <!-- Timeline indicators -->
     <div class="submission-detail-meta">
-      <span class="${statusBadgeClass}">${escapeHTML(t('currentStageLabel'))}: ${escapeHTML(statusText)}</span>
+      <span class="${statusBadgeClass}" data-submission-status-badge="stage">${escapeHTML(t('currentStageLabel'))}: ${escapeHTML(statusText)}</span>
       <span class="recent-item-date">${escapeHTML(t('trackedSinceLabel'))}: ${sub.createdAt ? new Date(sub.createdAt).toLocaleDateString() : t('noDate')}</span>
     </div>
 
@@ -3966,7 +4166,7 @@ function renderSubmissionDetails(sub) {
         <div class="workflow-edit-summary-copy">
           <span class="workflow-edit-summary-kicker">${escapeHTML(t('editableSummary'))}</span>
           <strong>${escapeHTML(manuscriptTitle)}</strong>
-          <p>${escapeHTML(journalName)} / ${escapeHTML(statusText)} / ${escapeHTML(t('milestoneSubmission'))} ${escapeHTML(timelineSubmissionDate || t('noDate'))}</p>
+          <p data-submission-status-summary>${escapeHTML(journalName)} / ${escapeHTML(statusText)} / ${escapeHTML(t('milestoneSubmission'))} ${escapeHTML(timelineSubmissionDate || t('noDate'))}</p>
         </div>
         <div class="workflow-edit-summary-actions">
           <button type="button" class="btn-secondary workflow-edit-summary-button" id="btn-focus-edit-center" aria-controls="submission-entry-editor-panel">
@@ -3990,7 +4190,7 @@ function renderSubmissionDetails(sub) {
         </div>
         <div class="submission-edit-badges">
           <span class="badge badge-purple">${escapeHTML(man ? t('linkedManuscriptBadge') : t('detachedSubmissionBadge'))}</span>
-          <span class="${statusBadgeClass}">${escapeHTML(statusText)}</span>
+          <span class="${statusBadgeClass}" data-submission-status-badge="editor">${escapeHTML(statusText)}</span>
           ${articleUrl ? `<a class="doi-link" href="${escapeHTML(articleUrl)}" target="_blank" rel="noopener noreferrer">${t('articlePage')}</a>` : ''}
         </div>
       </div>
@@ -5320,6 +5520,82 @@ function setupGlobalModalListeners() {
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && modal.classList.contains('active')) closeModal();
   });
+}
+
+function showAcceptanceCelebration(submission) {
+  acceptanceCelebrationCleanup?.();
+
+  const manuscript = db.manuscripts.find(item => item.id === submission.manuscriptId);
+  const title = String(manuscript?.title || submission.title || t('untitledManuscript')).trim();
+  const layer = document.createElement('div');
+  layer.className = 'acceptance-celebration';
+  layer.dataset.acceptanceCelebration = 'active';
+  layer.setAttribute('role', 'status');
+  layer.setAttribute('aria-live', 'assertive');
+  layer.setAttribute('aria-atomic', 'true');
+
+  const particles = document.createElement('div');
+  particles.className = 'acceptance-confetti-field';
+  particles.setAttribute('aria-hidden', 'true');
+
+  const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
+  if (!reducedMotion) {
+    const colors = ['#059669', '#10b981', '#06b6d4', '#f59e0b', '#fbbf24', '#f97316'];
+    const fragment = document.createDocumentFragment();
+    for (let index = 0; index < 54; index += 1) {
+      const particle = document.createElement('i');
+      particle.className = 'acceptance-confetti-piece';
+      particle.dataset.shape = index % 4 === 0 ? 'round' : 'strip';
+      particle.style.setProperty('--confetti-x', `${Math.random() * 100}vw`);
+      particle.style.setProperty('--confetti-drift', `${(Math.random() - 0.5) * 34}vw`);
+      particle.style.setProperty('--confetti-rotate', `${540 + Math.random() * 900}deg`);
+      particle.style.setProperty('--confetti-delay', `${Math.random() * 0.55}s`);
+      particle.style.setProperty('--confetti-duration', `${2.25 + Math.random() * 1.15}s`);
+      particle.style.setProperty('--confetti-color', colors[index % colors.length]);
+      fragment.appendChild(particle);
+    }
+    particles.appendChild(fragment);
+  }
+
+  const banner = document.createElement('div');
+  banner.className = 'acceptance-celebration-banner';
+
+  const seal = document.createElement('span');
+  seal.className = 'acceptance-celebration-seal';
+  seal.setAttribute('aria-hidden', 'true');
+  seal.innerHTML = `
+    <svg viewBox="0 0 24 24">
+      <path d="M7 12.4 10.2 16 17.4 8.2"></path>
+      <circle cx="12" cy="12" r="9"></circle>
+    </svg>
+  `;
+
+  const copy = document.createElement('span');
+  copy.className = 'acceptance-celebration-copy';
+  const eyebrow = document.createElement('small');
+  eyebrow.textContent = t('acceptanceCelebrationEyebrow');
+  const heading = document.createElement('strong');
+  heading.textContent = t('acceptanceCelebrationTitle');
+  const body = document.createElement('span');
+  body.textContent = tf('acceptanceCelebrationBody', { title });
+  copy.append(eyebrow, heading, body);
+  banner.append(seal, copy);
+  layer.append(particles, banner);
+  document.body.appendChild(layer);
+
+  let removeTimer = null;
+  const leaveTimer = window.setTimeout(() => {
+    layer.classList.add('is-leaving');
+    removeTimer = window.setTimeout(() => cleanup(), 520);
+  }, reducedMotion ? 2400 : 3300);
+
+  const cleanup = () => {
+    clearTimeout(leaveTimer);
+    if (removeTimer) clearTimeout(removeTimer);
+    layer.remove();
+    if (acceptanceCelebrationCleanup === cleanup) acceptanceCelebrationCleanup = null;
+  };
+  acceptanceCelebrationCleanup = cleanup;
 }
 
 // --- GLOBALLY ACCESSIBLE TOAST BANNER ---

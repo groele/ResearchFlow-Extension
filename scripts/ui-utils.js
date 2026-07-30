@@ -298,6 +298,12 @@
     };
   }
 
+  function shouldCelebrateAcceptance(previousStatus, nextStatus) {
+    const previous = String(previousStatus || '').trim().toLowerCase();
+    const next = String(nextStatus || '').trim().toLowerCase();
+    return next === 'accepted' && previous !== 'accepted' && previous !== 'published';
+  }
+
   function buildSubmissionCreateMode(values = {}) {
     const selectedManuscriptId = String(values.selectedManuscriptId || '').trim();
     const targetJournal = String(values.targetJournal || '').trim();
@@ -375,6 +381,7 @@
     buildSubmissionIdentityUpdate,
     buildSubmissionEditCenterUpdate,
     buildSubmissionEditSyncPlan,
+    shouldCelebrateAcceptance,
     buildSubmissionCreateMode,
     getTimelineEventDate,
     findCapturedSubmissionMatch,

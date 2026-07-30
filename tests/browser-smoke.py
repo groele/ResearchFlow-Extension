@@ -50,6 +50,44 @@ with sync_playwright() as playwright:
             assert not page.locator("[data-editor-mount-badge]").count()
             assert page.locator("#btn-link-submission-manuscript").count() <= 1
             page.screenshot(path=str(artifact_dir / "02-submissions.png"))
+            selected_submission_id = page.locator("#submission-detail-panel").get_attribute(
+                "data-current-submission-id"
+            )
+            page.locator("#sub-edit-status").select_option("accepted")
+            celebration = page.locator("[data-acceptance-celebration]")
+            celebration.wait_for(state="visible")
+            page.wait_for_function(
+                """submissionId => (
+                    globalThis.__chromeMockValues?.researchflow_db?.submissions
+                      ?.find(item => item.id === submissionId)?.status === 'accepted'
+                )""",
+                arg=selected_submission_id,
+            )
+            page.locator(
+                "[data-submission-autosave-status][data-state='saved']"
+            ).wait_for(state="visible")
+            assert "ACCEPTED" in page.locator(
+                "[data-submission-status-badge='stage']"
+            ).inner_text()
+            assert page.locator(
+                "[data-submission-status-badge='editor']"
+            ).inner_text().strip() == "ACCEPTED"
+            celebration_handle = celebration.element_handle()
+            page.screenshot(path=str(artifact_dir / "02-acceptance-celebration.png"))
+
+            page.locator("#sub-edit-first-author").fill("Celebration Stability Check")
+            page.wait_for_function(
+                """submissionId => (
+                    globalThis.__chromeMockValues?.researchflow_db?.submissions
+                      ?.find(item => item.id === submissionId)?.firstAuthor
+                      === 'Celebration Stability Check'
+                )""",
+                arg=selected_submission_id,
+            )
+            assert celebration.count() == 1
+            assert celebration_handle.evaluate(
+                "node => node.isConnected"
+            ), "editing an accepted submission should not restart the celebration"
         if view_id == "view-settings":
             assert page.locator("#settings-webdav-card").is_hidden()
             assert page.locator("#settings-github-card").is_hidden()
@@ -66,6 +104,38 @@ with sync_playwright() as playwright:
         "() => globalThis.__chromeMockValues?.researchflow_db?.settings?.profile?.language === 'zh'"
     )
     assert "语言切换后会自动保存" in page.locator("#language-auto-save-status").inner_text()
+
+    page.locator("[data-acceptance-celebration]").wait_for(
+        state="detached", timeout=6000
+    )
+    page.locator('.nav-item[data-view="view-manuscripts"]').click()
+    page.locator("#view-manuscripts").wait_for(state="visible")
+    page.wait_for_timeout(350)
+    manuscript_select = None
+    manuscript_id = None
+    status_selects = page.locator(".kanban-card-select")
+    for index in range(status_selects.count()):
+        candidate = status_selects.nth(index)
+        if candidate.input_value() not in ("accepted", "published"):
+            manuscript_select = candidate
+            manuscript_id = candidate.get_attribute("id").replace(
+                "sel-man-status-", "", 1
+            )
+            break
+    assert manuscript_select is not None, "fixture should include an active manuscript"
+    manuscript_select.select_option("accepted")
+    page.locator("[data-acceptance-celebration]").wait_for(state="visible")
+    page.wait_for_timeout(600)
+    page.wait_for_function(
+        """manuscriptId => (
+            globalThis.__chromeMockValues?.researchflow_db?.manuscripts
+              ?.find(item => item.id === manuscriptId)?.status === 'accepted'
+        )""",
+        arg=manuscript_id,
+    )
+    page.screenshot(path=str(artifact_dir / "04-kanban-acceptance.png"))
+    page.locator('.nav-item[data-view="view-settings"]').click()
+    page.locator("#view-settings").wait_for(state="visible")
 
     with page.expect_download() as download_info:
         page.locator("#btn-export-db").click()
