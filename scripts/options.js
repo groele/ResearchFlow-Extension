@@ -13,7 +13,7 @@ let pendingSubmissionCapture = null;
 let submissionAutoSaveCleanup = null;
 let previousModalFocus = null;
 
-const RF_OPTIONS_RENDER_VERSION = '6.0.0';
+const RF_OPTIONS_RENDER_VERSION = '6.0.1';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 const PRE_IMPORT_BACKUP_KEY = 'researchflow_pre_import_backup';

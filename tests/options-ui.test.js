@@ -16,8 +16,8 @@ const manifest = JSON.parse(read('manifest.json'));
   assert(optionsHtml.includes(`id="${id}"`), `submission recognition settings should include ${id}`);
 });
 assert(optionsHtml.includes('settings-switch-track'), 'submission recognition should use the shared custom switch treatment');
-assert(optionsHtml.includes('v6.0.0 Companion'), 'workspace version label should match the reliability release');
-assert.equal(manifest.version, '6.0.0', 'manifest version should match the reliability release');
+assert(optionsHtml.includes('v6.0.1 Companion'), 'workspace version label should match the documentation release');
+assert.equal(manifest.version, '6.0.1', 'manifest version should match the documentation release');
 
 ['view-projects', 'view-library', 'metric-projects', 'metric-records', 'metric-evidence', 'recent-records'].forEach((removedSection) => {
   assert(!optionsHtml.includes(removedSection), `options page should not expose removed ${removedSection}`);

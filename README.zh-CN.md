@@ -4,7 +4,7 @@
 
 **简体中文** · [English](README.md)
 
-- 当前版本：**6.0.0**
+- 当前版本：**6.0.1**
 - 浏览器要求：**Google Chrome 116 或更高版本**
 - 运行方式：**Manifest V3、原生 JavaScript、无需构建**
 
@@ -638,6 +638,7 @@ ftp://dav.example.com/researchflow
 
 实际安装版本以 `manifest.json` 为准。当前主要文档：
 
+- **v6.0.1** — 中英文项目文档与操作指南更新；
 - [ResearchFlow Companion v6.0.0 发布说明](RELEASE_NOTES_v6.0.0.md)
 - [架构说明](ARCHITECTURE.md)
 

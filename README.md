@@ -4,7 +4,7 @@
 
 [简体中文](README.zh-CN.md) · **English**
 
-- Current version: **6.0.0**
+- Current version: **6.0.1**
 - Browser requirement: **Google Chrome 116 or later**
 - Runtime: **Manifest V3, vanilla JavaScript, no build step**
 
@@ -635,6 +635,7 @@ Use **Restore Pre-Import Backup** immediately, then inspect the imported JSON. D
 
 The installed version is defined in `manifest.json`. Major release details are documented in:
 
+- **v6.0.1** — bilingual documentation and operational guidance refresh;
 - [ResearchFlow Companion v6.0.0 release notes](RELEASE_NOTES_v6.0.0.md)
 - [Architecture overview](ARCHITECTURE.md)
 
