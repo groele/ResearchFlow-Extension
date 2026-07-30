@@ -30,8 +30,8 @@ assert(optionsCss.includes('Settings console refinement'), 'settings should use 
 assert(optionsCss.includes('@media (max-width: 1180px)'), 'settings workbench should reflow before the narrow mobile breakpoint');
 assert(optionsJs.includes("setText('#settings-kicker', t('settingsKicker'))"), 'settings hero should localize with the active interface language');
 assert(optionsJs.includes("mainContent.scrollTop = 0"), 'workspace navigation should reveal the beginning of each settings view');
-assert(optionsHtml.includes('v6.0.1 Companion'), 'workspace version label should match the documentation release');
-assert.equal(manifest.version, '6.0.1', 'manifest version should match the documentation release');
+assert(optionsHtml.includes('v6.1.0 Companion'), 'workspace version label should match the visual reliability release');
+assert.equal(manifest.version, '6.1.0', 'manifest version should match the visual reliability release');
 
 ['view-projects', 'view-library', 'metric-projects', 'metric-records', 'metric-evidence', 'recent-records'].forEach((removedSection) => {
   assert(!optionsHtml.includes(removedSection), `options page should not expose removed ${removedSection}`);
