@@ -17,7 +17,7 @@
         <div class="logo-orb" aria-hidden="true"></div>
         <div>
           <h2>ResearchFlow OS</h2>
-          <span class="version">v6.1.0 Companion</span>
+          <span class="version">v7.0.0 Companion</span>
         </div>
       </div>
 
@@ -64,18 +64,18 @@
 
         <!-- Stats row -->
         <div class="grid-cols-3">
-          <div class="glass-card stat-box interactive-stat-card filter-accepted" id="card-filter-accepted">
+          <button type="button" class="glass-card stat-box interactive-stat-card filter-accepted" id="card-filter-accepted" aria-pressed="false">
             <h4 style="display:flex; align-items:center; gap:6px;">🎉 Accepted & Published <span class="filter-tip">Click to filter</span></h4>
             <div class="stat-number gradient-text-emerald" id="stat-accepted-submissions">0</div>
-          </div>
-          <div class="glass-card stat-box interactive-stat-card filter-active" id="card-filter-active">
+          </button>
+          <button type="button" class="glass-card stat-box interactive-stat-card filter-active" id="card-filter-active" aria-pressed="false">
             <h4 style="display:flex; align-items:center; gap:6px;">🕒 Active In-Review <span class="filter-tip">Click to filter</span></h4>
             <div class="stat-number gradient-text-purple" id="stat-active-submissions">0</div>
-          </div>
-          <div class="glass-card stat-box interactive-stat-card filter-all active" id="card-filter-all">
+          </button>
+          <button type="button" class="glass-card stat-box interactive-stat-card filter-all active" id="card-filter-all" aria-pressed="true">
             <h4 style="display:flex; align-items:center; gap:6px;">📊 Total Submissions <span class="filter-tip">Click to filter</span></h4>
             <div class="stat-number gradient-text-purple" id="stat-total-submissions">0</div>
-          </div>
+          </button>
         </div>
 
         <!-- Pipeline Timeline Module -->
@@ -538,6 +538,15 @@
                   </svg>
                   <span>Import JSON</span>
                 </button>
+                <button id="btn-export-diagnostics" class="btn-secondary">
+                  <svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4 4h16v16H4z"></path>
+                    <path d="M8 9h8"></path>
+                    <path d="M8 13h5"></path>
+                    <path d="M8 17h3"></path>
+                  </svg>
+                  <span>Export Diagnostics</span>
+                </button>
                 <button id="btn-restore-import-backup" class="btn-secondary settings-restore-button">
                   <svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path>
@@ -565,7 +574,7 @@
   </div>
 
   <!-- Dynamic Form Dialog Modals -->
-  <div class="modal-backdrop" id="modal-container" aria-hidden="true">
+  <div class="modal-backdrop" id="modal-container" aria-hidden="true" inert>
     <div class="modal-card glass-panel" id="modal-card-content" role="dialog" aria-modal="true" tabindex="-1">
       <!-- Injected via JS -->
     </div>

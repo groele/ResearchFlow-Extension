@@ -4,7 +4,7 @@
 
 [简体中文](README.zh-CN.md) · **English**
 
-- Current version: **6.0.1**
+- Current version: **7.0.0**
 - Browser requirement: **Google Chrome 116 or later**
 - Runtime: **Manifest V3, vanilla JavaScript, no build step**
 
@@ -17,6 +17,7 @@
 - [Feature overview](#feature-overview)
 - [Status model](#status-model)
 - [Journal submission recognition](#journal-submission-recognition)
+- [Google Scholar and mirror capture](#google-scholar-and-mirror-capture)
 - [Installation](#installation)
 - [Quick start](#quick-start)
 - [Data storage and synchronization](#data-storage-and-synchronization)
@@ -253,6 +254,22 @@ Settings contains two independent switches:
 
 An individual portal prompt can be ignored. Ignored websites can be restored from Settings.
 
+## Google Scholar and mirror capture
+
+ResearchFlow captures publication metadata from official Google Scholar result pages and structurally compatible mirror sites without maintaining a fixed mirror-domain list.
+
+1. Open a Scholar search-results page and click the ResearchFlow toolbar icon.
+2. ResearchFlow receives temporary access to that active tab and verifies Scholar result structures.
+3. If several results are available, choose the intended paper from the compact selector.
+4. Review the title, publication, authors, DOI, article URL, abstract, source host, and confidence.
+5. Confirm the form to create or update the manuscript.
+
+The detector requires an actual result container plus Scholar-specific metadata or search structure. Official Scholar home pages, empty pages, and ordinary pages with coincidentally similar markup are rejected.
+
+Scholar publications default to `published`, but the status remains editable. Duplicate protection checks DOI, then a normalized article URL, then a normalized title. Author names are normalized into a list and the first author is stored explicitly. Capture provenance records the source and human review without writing anything before confirmation.
+
+Inspection is triggered only by the toolbar click and uses temporary `activeTab` access rather than persistent access to arbitrary browsing history.
+
 ## Installation
 
 ResearchFlow is currently distributed as an unpacked Chrome extension.
@@ -433,6 +450,8 @@ This recovery point:
 | --- | --- |
 | `storage` | Store the local database, preferences, credentials, and recovery snapshot. |
 | `tabs` | Focus or open the ResearchFlow workspace during reviewed portal capture. |
+| `activeTab` | Temporarily inspect only the current tab after the toolbar icon is clicked. |
+| `scripting` | Inject the packaged Scholar detector into the temporarily authorized tab. |
 | `unlimitedStorage` | Allow a growing local research database beyond the small default extension quota. |
 | Supported portal host permissions | Detect submission portals and show the capture prompt. |
 | `https://api.github.com/*` | Optional GitHub database synchronization. |
@@ -442,7 +461,7 @@ Review `manifest.json` before installation if your organization has extension-da
 
 ## Removed modules and migration
 
-The following earlier experimental surfaces are intentionally not part of the active v6 product:
+The following earlier experimental surfaces are intentionally not part of the active v7 product:
 
 - Domain & Project Tree dashboard;
 - Research Records dashboard;
@@ -475,6 +494,7 @@ ResearchFlow-Extension/
 │  ├─ background.js             # Toolbar entry, write queue, sync and capture handoff
 │  ├─ content.js                # Supported submission-site prompt and field collection
 │  ├─ journal-portals.js        # Portal rules, status inference and confidence scoring
+│  ├─ scholar-mirrors.js        # Scholar/mirror fingerprints and metadata extraction
 │  ├─ options.js                # Dashboard, Kanban, submissions, review and settings UI
 │  ├─ research-core.js          # Shared research-domain helpers
 │  ├─ storage.js                # Schema, local persistence, merge and cloud providers
@@ -635,8 +655,8 @@ Use **Restore Pre-Import Backup** immediately, then inspect the imported JSON. D
 
 The installed version is defined in `manifest.json`. Major release details are documented in:
 
-- **v6.0.1** — bilingual documentation and operational guidance refresh;
-- [ResearchFlow Companion v6.0.0 release notes](RELEASE_NOTES_v6.0.0.md)
+- [ResearchFlow Companion v7.0.0 release notes](RELEASE_NOTES_v7.0.0.md)
+- [ResearchFlow Companion v6.1.0 release notes](RELEASE_NOTES_v6.1.0.md)
 - [Architecture overview](ARCHITECTURE.md)
 
 For bugs or feature requests, use the repository issue tracker and include:

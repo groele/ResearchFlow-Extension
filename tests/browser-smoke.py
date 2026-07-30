@@ -99,6 +99,23 @@ with sync_playwright() as playwright:
     restore_button.wait_for(state="visible")
     assert restore_button.inner_text().strip(), "restore button should have a localized label"
 
+    page.locator("#btn-export-db").focus()
+    page.evaluate(
+        """() => openModal(`
+          <div class="modal-header">
+            <h2>Focus regression</h2>
+            <button class="btn-secondary btn-icon" id="btn-close-modal">Close</button>
+          </div>
+        `)"""
+    )
+    page.wait_for_function("() => document.activeElement?.id === 'btn-close-modal'")
+    page.locator("#btn-close-modal").click()
+    assert page.locator("#modal-container").get_attribute("aria-hidden") == "true"
+    assert page.locator("#modal-container").get_attribute("inert") is not None
+    assert page.evaluate(
+        "() => !document.querySelector('#modal-container').contains(document.activeElement)"
+    ), "closing a modal should move focus outside before applying aria-hidden"
+
     page.locator("#ui-language").select_option("zh")
     page.wait_for_function(
         "() => globalThis.__chromeMockValues?.researchflow_db?.settings?.profile?.language === 'zh'"

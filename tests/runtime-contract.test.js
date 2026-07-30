@@ -41,7 +41,7 @@ const requiredIds = {
     'view-dashboard', 'view-manuscripts', 'view-submissions', 'view-settings',
     'dashboard-gantt', 'cards-idea', 'cards-drafting', 'cards-submitted',
     'cards-accepted', 'submissions-list-container', 'submission-detail-panel',
-    'journal-portals-list', 'route-db', 'btn-export-db', 'btn-manual-sync',
+    'journal-portals-list', 'route-db', 'btn-export-db', 'btn-export-diagnostics', 'btn-manual-sync',
     'modal-container'
   ]
 };
@@ -66,9 +66,9 @@ assert(!exists('scripts/popup.js'), 'toolbar popup controller should be removed'
 assert(!('default_popup' in manifest.action), 'toolbar icon should bypass the popup');
 assert(!('side_panel' in manifest), 'manifest should not register a side panel');
 assert(!manifest.permissions.includes('sidePanel'), 'manifest should not request sidePanel permission');
-['activeTab', 'scripting', 'contextMenus'].forEach(permission => {
-  assert(!manifest.permissions.includes(permission), `focused runtime should not request retired ${permission} permission`);
-});
+assert(manifest.permissions.includes('activeTab'), 'Scholar mirror capture should use temporary active-tab access');
+assert(manifest.permissions.includes('scripting'), 'Scholar mirror capture should inject its detector only after a toolbar click');
+assert(!manifest.permissions.includes('contextMenus'), 'focused runtime should not request the retired contextMenus permission');
 assert(
   !manifest.host_permissions.some(origin => origin.includes('api.unpaywall.org')),
   'focused runtime should not retain the retired Unpaywall host permission'
@@ -77,11 +77,16 @@ assert(
 const backgroundJs = read(manifest.background.service_worker);
 assert(backgroundJs.includes('chrome.action.onClicked.addListener'), 'toolbar icon should have a click handler');
 assert(backgroundJs.includes('chrome.runtime.openOptionsPage()'), 'toolbar icon should open the main workspace');
+assert(backgroundJs.includes('captureScholarPageFromTab'), 'toolbar clicks should inspect Scholar-compatible result pages');
+assert(backgroundJs.includes("files: ['scripts/scholar-mirrors.js']"), 'Scholar detection should be injected on demand');
+assert(backgroundJs.includes('researchflow_pending_academic_draft'), 'captured Scholar metadata should use a short-lived review draft');
+assert(backgroundJs.includes("'academic-capture'"), 'Scholar capture should open the manuscript review route');
+assert(exists('scripts/scholar-mirrors.js'), 'Scholar mirror detector should ship with the extension');
 assert(!backgroundJs.includes('openPanelOnActionClick'), 'toolbar icon should not open the side panel');
 assert(backgroundJs.includes('OPEN_SUBMISSION_CAPTURE'), 'background should accept detected submission drafts');
 assert(backgroundJs.includes('researchflow_pending_submission_draft'), 'background should persist a short-lived submission draft');
 assert(backgroundJs.includes('openSubmissionCapturePage'), 'detected portals should open the direct submission form route');
-assert(backgroundJs.includes('?mode=submission-capture'), 'detected portals should request submission capture mode');
+assert(backgroundJs.includes("openWorkspacePage('submission-capture')"), 'detected portals should request submission capture mode');
 assert(backgroundJs.includes('chrome.tabs.update'), 'an existing workspace should navigate directly to the submission form');
 assert(backgroundJs.includes('chrome.tabs.create'), 'a missing workspace should open the submission form in a new tab');
 assert(backgroundJs.includes('SAVE_DATABASE'), 'background should serialize database writes across extension pages');
@@ -104,6 +109,12 @@ assert(!contentJs.includes('requestIdleCallback(run'), 'portal pages should not 
 
 const optionsJs = read('scripts/options.js');
 assert(optionsJs.includes('consumePendingSubmissionDraft'), 'main workspace should consume detected submission drafts');
+assert(optionsJs.includes('consumePendingAcademicDraft'), 'main workspace should consume Scholar capture drafts');
+assert(optionsJs.includes('openManuscriptModal(man = null, prefill = null)'), 'manuscript form should accept captured metadata for review');
+assert(optionsJs.includes('man-authors'), 'Scholar review should expose captured authors');
+assert(optionsJs.includes('man-doi'), 'Scholar review should expose a captured DOI');
+assert(optionsJs.includes('man-article-url'), 'Scholar review should expose the source article URL');
+assert(optionsJs.includes('academicCaptureProvenance'), 'confirmed Scholar captures should retain local provenance');
 assert(optionsJs.includes("classList.add('submission-capture-mode')"), 'detected drafts should enter focused submission form mode');
 assert(optionsJs.includes('selectedSubmissionId = newSub.id'), 'new submissions should open as the selected record');
 assert(optionsJs.includes('window.RFCore.upsertProject'), 'confirmed capture should create a linked project');

@@ -418,6 +418,7 @@ class StorageEngine {
     };
     scrub(sanitized);
     delete sanitized._github_sha;
+    delete sanitized._webdav_etag;
     return sanitized;
   }
 
@@ -629,11 +630,10 @@ class StorageEngine {
    * Saves database JSON to selected cloud
    */
   async saveToCloud(provider, config, db) {
-    const safeDb = this.sanitizeDatabaseForExternalUse(db);
     if (provider === 'webdav') {
-      await this.saveToWebDAV(config, safeDb);
+      await this.saveToWebDAV(config, db);
     } else if (provider === 'github') {
-      await this.saveToGitHub(config, safeDb);
+      await this.saveToGitHub(config, db);
     }
   }
 
@@ -664,6 +664,7 @@ class StorageEngine {
     // live outside the synchronized database.
     merged.settings = local.settings;
     merged._github_sha = remote._github_sha || local._github_sha;
+    merged._webdav_etag = remote._webdav_etag || local._webdav_etag;
     merged.lastUpdated = Math.max(Number(local.lastUpdated) || 0, Number(remote.lastUpdated) || 0);
     merged.updatedAt = new Date(merged.lastUpdated || Date.now()).toISOString();
     merged.revision = Math.max(Number(local.revision) || 0, Number(remote.revision) || 0);
@@ -722,7 +723,11 @@ class StorageEngine {
     const response = await fetch(dbUrl, { method: 'GET', headers });
     if (response.status === 404) return null;
     if (!response.ok) throw new Error(`WebDAV read failed: ${response.statusText}`);
-    return await response.json();
+    const parsed = await response.json();
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      parsed._webdav_etag = response.headers?.get?.('etag') || null;
+    }
+    return parsed;
   }
 
   async saveToWebDAV(config, db) {
@@ -735,12 +740,16 @@ class StorageEngine {
     const credentialBytes = new TextEncoder().encode(`${username}:${password}`);
     headers.set('Authorization', 'Basic ' + btoa(String.fromCharCode(...credentialBytes)));
     headers.set('Content-Type', 'application/json');
+    if (db._webdav_etag) headers.set('If-Match', db._webdav_etag);
 
     const response = await fetch(dbUrl, {
       method: 'PUT',
       headers,
       body: JSON.stringify(this.sanitizeDatabaseForExternalUse(db), null, 2)
     });
+    if (response.status === 409 || response.status === 412) {
+      throw new Error('WebDAV conflict: the remote database changed. Sync again to merge before retrying.');
+    }
     if (!response.ok) throw new Error(`WebDAV write failed: ${response.statusText}`);
   }
 
@@ -829,7 +838,7 @@ class StorageEngine {
     };
     if (sha) putBody.sha = sha;
 
-    const response = await fetch(dbUrl, {
+    let response = await fetch(dbUrl, {
       method: 'PUT',
       headers: {
         'Authorization': `token ${token}`,
@@ -839,10 +848,44 @@ class StorageEngine {
       body: JSON.stringify(putBody)
     });
 
+    let rebasedDatabase = null;
+    if (response.status === 409 || response.status === 422) {
+      const latestRemote = await this.fetchFromGitHub(config);
+      if (latestRemote?._github_sha) {
+        const rebased = await this.mergeDatabases(db, latestRemote);
+        rebasedDatabase = rebased;
+        const retryBody = {
+          message: 'sync: merge and update researchflow database',
+          content: btoa(unescape(encodeURIComponent(JSON.stringify(
+            this.sanitizeDatabaseForExternalUse(rebased),
+            null,
+            2
+          )))),
+          branch,
+          sha: latestRemote._github_sha
+        };
+        response = await fetch(dbUrl, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `token ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/vnd.github.v3+json'
+          },
+          body: JSON.stringify(retryBody)
+        });
+      }
+    }
+
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
       throw new Error(`GitHub save failed: ${err.message || response.statusText}`);
     }
+    const saved = await response.json().catch(() => null);
+    if (rebasedDatabase) {
+      Object.keys(db).forEach(key => delete db[key]);
+      Object.assign(db, rebasedDatabase);
+    }
+    if (saved?.content?.sha) db._github_sha = saved.content.sha;
   }
 
 }

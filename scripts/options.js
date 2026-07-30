@@ -14,9 +14,10 @@ let submissionAutoSaveCleanup = null;
 let acceptanceCelebrationCleanup = null;
 let previousModalFocus = null;
 
-const RF_OPTIONS_RENDER_VERSION = '6.1.0';
+const RF_OPTIONS_RENDER_VERSION = '7.0.0';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
+const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
 const PRE_IMPORT_BACKUP_KEY = 'researchflow_pre_import_backup';
 const MAX_IMPORT_BYTES = 25 * 1024 * 1024;
 
@@ -128,10 +129,12 @@ const I18N = {
     saveLanguage: 'Save Language',
     saveMappings: 'Save Storage Mapping',
     exportDb: 'Export Database',
+    exportDiagnostics: 'Export Diagnostics',
     importJson: 'Import JSON',
     restoreImportBackup: 'Restore Pre-Import Backup',
     languageSaved: 'Language preference saved.',
     databaseExported: 'Database JSON exported!',
+    diagnosticsExported: 'Privacy-safe diagnostics exported.',
     databaseImported: 'Database JSON imported successfully.',
     importBackupRestored: 'The database state from before the last import was restored.',
     noImportBackup: 'No pre-import backup is available on this device.',
@@ -426,7 +429,19 @@ const I18N = {
     statusInternalReview: 'Internal Review',
     abstractDraft: 'Abstract Draft',
     abstractPlaceholder: 'Outline manuscript abstract draft...',
-    createManuscript: 'Create Manuscript'
+    createManuscript: 'Create Manuscript',
+    unassignedProject: 'Unassigned',
+    academicCapturePrefilled: 'Scholar result captured for review. Confirm the fields before creating the manuscript.',
+    scholarSourcePage: 'Scholar result / article URL',
+    manuscriptTitleRequired: 'Enter a manuscript title before continuing.',
+    academicCaptureChooseTitle: 'Choose a Scholar result',
+    academicCaptureChooseHelp: 'Select the paper you intended to capture. Nothing is saved until you confirm the form.',
+    academicCaptureSource: 'Capture source',
+    academicCaptureConfidence: 'Detection confidence',
+    academicCaptureDetected: 'results detected',
+    academicDuplicateConfirm: 'A matching manuscript already exists. Update the existing record with the reviewed fields?',
+    academicDuplicateUpdated: 'Existing manuscript updated without creating a duplicate.',
+    academicCaptureSaved: 'Scholar manuscript reviewed and saved.'
   },
   zh: {
     dashboardNav: '仪表盘总览',
@@ -535,10 +550,12 @@ const I18N = {
     saveLanguage: '保存语言设置',
     saveMappings: '保存存储映射',
     exportDb: '导出数据库',
+    exportDiagnostics: '导出诊断信息',
     importJson: '导入 JSON',
     restoreImportBackup: '恢复导入前备份',
     languageSaved: '语言偏好已保存。',
     databaseExported: '数据库 JSON 已导出！',
+    diagnosticsExported: '已导出不含凭据的诊断信息。',
     databaseImported: '数据库 JSON 已成功导入。',
     importBackupRestored: '已恢复到上一次导入操作前的数据库状态。',
     noImportBackup: '当前设备上没有可恢复的导入前备份。',
@@ -793,6 +810,18 @@ const I18N = {
     abstractDraft: '摘要草稿',
     abstractPlaceholder: '撰写手稿摘要草稿...',
     createManuscript: '创建手稿',
+    unassignedProject: '暂不关联项目',
+    academicCapturePrefilled: '已捕获学术搜索结果，请核对信息后创建手稿。',
+    scholarSourcePage: '学术结果 / 文章链接',
+    manuscriptTitleRequired: '请填写手稿题目后再继续。',
+    academicCaptureChooseTitle: '选择要录入的学术结果',
+    academicCaptureChooseHelp: '请选择你要捕获的论文；在核对表单并确认前不会写入数据库。',
+    academicCaptureSource: '捕获来源',
+    academicCaptureConfidence: '识别置信度',
+    academicCaptureDetected: '条结果已识别',
+    academicDuplicateConfirm: '检测到相同手稿。是否用当前核对后的信息更新已有记录，避免重复创建？',
+    academicDuplicateUpdated: '已更新现有手稿，未创建重复条目。',
+    academicCaptureSaved: 'Scholar 手稿已核对并保存。',
     storageRoutingHelp: '选择 ResearchFlow 元数据数据库的存储与同步位置。',
     routeDbLabel: '数据库 JSON 同步位置',
     optionLocalCache: '无（仅使用本地缓存）',
@@ -1025,6 +1054,7 @@ function applyLanguage() {
   setButtonText('#btn-test-github', t('testGithub'));
   setText('#settings-backup-card .text-muted', t('backupHelp'));
   setButtonText('#btn-export-db', t('exportDb'));
+  setButtonText('#btn-export-diagnostics', t('exportDiagnostics'));
   setButtonText('#btn-trigger-import', t('importJson'));
   setButtonText('#btn-restore-import-backup', t('restoreImportBackup'));
   updateSyncProviderVisibility();
@@ -1190,7 +1220,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupGlobalModalListeners();
   setupJournalPortalListeners();
   setupDashboardFilterListeners();
-  await consumePendingSubmissionDraft();
+  const requestedMode = new URL(window.location.href).searchParams.get('mode');
+  if (requestedMode === 'academic-capture') {
+    await consumePendingAcademicDraft();
+  } else {
+    await consumePendingSubmissionDraft();
+  }
 
   // Pipeline View Toggle and Drawer Event Listeners
   initializePipelineViewMode();
@@ -1245,15 +1280,17 @@ function setupDashboardFilterListeners() {
   if (!cardAccepted || !cardActive || !cardAll) return;
 
   const clearActiveClasses = () => {
-    cardAccepted.classList.remove('active');
-    cardActive.classList.remove('active');
-    cardAll.classList.remove('active');
+    [cardAccepted, cardActive, cardAll].forEach(card => {
+      card.classList.remove('active');
+      card.setAttribute('aria-pressed', 'false');
+    });
   };
 
   cardAccepted.addEventListener('click', () => {
     currentDashboardFilter = 'accepted';
     clearActiveClasses();
     cardAccepted.classList.add('active');
+    cardAccepted.setAttribute('aria-pressed', 'true');
     renderDashboard();
   });
 
@@ -1261,6 +1298,7 @@ function setupDashboardFilterListeners() {
     currentDashboardFilter = 'active';
     clearActiveClasses();
     cardActive.classList.add('active');
+    cardActive.setAttribute('aria-pressed', 'true');
     renderDashboard();
   });
 
@@ -1268,6 +1306,7 @@ function setupDashboardFilterListeners() {
     currentDashboardFilter = 'all';
     clearActiveClasses();
     cardAll.classList.add('active');
+    cardAll.setAttribute('aria-pressed', 'true');
     renderDashboard();
   });
 }
@@ -3189,10 +3228,106 @@ document.getElementById('btn-add-manuscript').addEventListener('click', () => {
   openManuscriptModal(null);
 });
 
-function openManuscriptModal(man = null) {
+function splitAcademicAuthors(value) {
+  if (Array.isArray(value)) return value.map(normalizeAuthorName).filter(Boolean);
+  const text = String(value || '').trim();
+  if (!text) return [];
+  let authors = text
+    .split(/\s*(?:;|；|\n|\band\b|、)\s*/i)
+    .map(author => author.trim())
+    .filter(Boolean);
+  if (authors.length === 1 && text.includes(',')) {
+    const commaAuthors = text.split(/\s*,\s*/).map(author => author.trim()).filter(Boolean);
+    if (
+      commaAuthors.length > 1
+      && commaAuthors.length <= 30
+      && commaAuthors.every(author => author.split(/\s+/).length <= 6)
+    ) {
+      authors = commaAuthors;
+    }
+  }
+  return authors;
+}
+
+function normalizeAcademicTitle(value) {
+  return normalizeText(value).replace(/[^\p{L}\p{N}]+/gu, '');
+}
+
+function normalizeAcademicUrl(value) {
+  try {
+    const url = new URL(String(value || '').trim());
+    url.hash = '';
+    ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid']
+      .forEach(key => url.searchParams.delete(key));
+    return url.href.replace(/\/$/, '').toLowerCase();
+  } catch (_) {
+    return '';
+  }
+}
+
+function findAcademicManuscriptMatch({ title, doi, articleUrl }) {
+  const normalizedDoi = normalizeDoi(doi);
+  const normalizedUrl = normalizeAcademicUrl(articleUrl);
+  const normalizedTitle = normalizeAcademicTitle(title);
+  return db.manuscripts.find(manuscript => {
+    const manuscriptDoi = normalizeDoi(manuscript.doi);
+    if (normalizedDoi && manuscriptDoi && normalizedDoi === manuscriptDoi) return true;
+    const manuscriptUrl = normalizeAcademicUrl(manuscript.articleUrl);
+    if (normalizedUrl && manuscriptUrl && normalizedUrl === manuscriptUrl) return true;
+    return normalizedTitle
+      && normalizedTitle.length >= 16
+      && normalizedTitle === normalizeAcademicTitle(manuscript.title);
+  }) || null;
+}
+
+function academicCaptureProvenance(prefill) {
+  if (!prefill) return null;
+  return {
+    sourceType: prefill.sourceType || 'google-scholar-mirror',
+    sourceHost: prefill.sourceHost || '',
+    sourcePageUrl: prefill.sourcePageUrl || '',
+    pdfUrl: prefill.pdfUrl || '',
+    confidenceScore: Number(prefill.confidenceScore) || 0,
+    capturedAt: new Date().toISOString(),
+    reviewedByUser: true
+  };
+}
+
+function buildAcademicCaptureSummary(prefill) {
+  if (!prefill) return '';
+  const source = prefill.sourceHost || prefill.sourceType || 'Google Scholar';
+  const confidence = Math.max(0, Math.min(Number(prefill.confidenceScore) || 0, 100));
+  return `
+    <section class="academic-capture-review" aria-label="${escapeHTML(t('academicCaptureSource'))}">
+      <div class="academic-capture-review-icon" aria-hidden="true">S</div>
+      <div>
+        <strong>${escapeHTML(t('academicCaptureSource'))}</strong>
+        <span>${escapeHTML(source)}</span>
+      </div>
+      <div class="academic-capture-confidence">
+        <strong>${escapeHTML(t('academicCaptureConfidence'))}</strong>
+        <span>${confidence}%</span>
+      </div>
+    </section>
+  `;
+}
+
+function openManuscriptModal(man = null, prefill = null) {
   const isEdit = !!man;
+  const initialProjectId = isEdit ? man.projectId : prefill?.projectId;
+  const initialTitle = isEdit ? man.title : prefill?.title;
+  const initialJournal = isEdit ? man.targetJournals?.[0] : prefill?.publication;
+  const initialAbstract = isEdit ? man.abstract : prefill?.abstract;
+  const initialAuthors = isEdit
+    ? (Array.isArray(man.authors) ? man.authors.join('; ') : man.authors)
+    : (Array.isArray(prefill?.authorList) && prefill.authorList.length
+      ? prefill.authorList.join('; ')
+      : prefill?.authors);
+  const initialDoi = isEdit ? man.doi : prefill?.doi;
+  const initialArticleUrl = isEdit ? man.articleUrl : (prefill?.articleUrl || prefill?.pdfUrl);
+  const initialStatus = isEdit ? man.status : (prefill ? 'published' : 'idea');
   const projectOpts = db.projects.map(project => `
-    <option value="${escapeHTML(project.id)}" ${man && man.projectId === project.id ? 'selected' : ''}>${escapeHTML(project.title || t('untitledProject'))}</option>
+    <option value="${escapeHTML(project.id)}" ${initialProjectId === project.id ? 'selected' : ''}>${escapeHTML(project.title || t('untitledProject'))}</option>
   `).join('');
 
   openModal(`
@@ -3201,41 +3336,62 @@ function openManuscriptModal(man = null) {
       <button class="btn-secondary btn-icon" id="btn-close-modal">✕</button>
     </div>
 
+    ${buildAcademicCaptureSummary(prefill)}
+
     <div class="form-group">
       <label>${escapeHTML(t('linkedProjectContext'))}</label>
-      <select id="man-proj-select">${projectOpts}</select>
+      <select id="man-proj-select">
+        <option value="">${escapeHTML(t('unassignedProject'))}</option>
+        ${projectOpts}
+      </select>
     </div>
 
     <div class="form-group">
       <label>${escapeHTML(t('manuscriptTitleLabel'))}</label>
-      <input type="text" id="man-title" value="${isEdit ? escapeHTML(man.title) : ''}" placeholder="${escapeHTML(t('paperTitlePlaceholder'))}">
+      <input type="text" id="man-title" value="${escapeHTML(initialTitle || '')}" placeholder="${escapeHTML(t('paperTitlePlaceholder'))}">
     </div>
 
     <div class="grid-cols-2">
       <div class="form-group">
         <label>${escapeHTML(t('writingStatus'))}</label>
         <select id="man-status">
-          <option value="idea" ${man && man.status === 'idea' ? 'selected' : ''}>${escapeHTML(t('statusIdea'))}</option>
-          <option value="outline" ${man && man.status === 'outline' ? 'selected' : ''}>${escapeHTML(t('statusOutline'))}</option>
-          <option value="figure_preparation" ${man && man.status === 'figure_preparation' ? 'selected' : ''}>${escapeHTML(t('statusFiguresPrep'))}</option>
-          <option value="drafting" ${man && man.status === 'drafting' ? 'selected' : ''}>${escapeHTML(t('statusDrafting'))}</option>
-          <option value="internal_review" ${man && man.status === 'internal_review' ? 'selected' : ''}>${escapeHTML(t('statusInternalReview'))}</option>
-          <option value="submitted" ${man && man.status === 'submitted' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('submitted'))}</option>
-          <option value="under_review" ${man && man.status === 'under_review' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('under_review'))}</option>
-          <option value="revision" ${man && man.status === 'revision' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('revision'))}</option>
-          <option value="accepted" ${man && man.status === 'accepted' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('accepted'))}</option>
-          <option value="published" ${man && man.status === 'published' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('published'))}</option>
+          <option value="idea" ${initialStatus === 'idea' ? 'selected' : ''}>${escapeHTML(t('statusIdea'))}</option>
+          <option value="outline" ${initialStatus === 'outline' ? 'selected' : ''}>${escapeHTML(t('statusOutline'))}</option>
+          <option value="figure_preparation" ${initialStatus === 'figure_preparation' ? 'selected' : ''}>${escapeHTML(t('statusFiguresPrep'))}</option>
+          <option value="drafting" ${initialStatus === 'drafting' ? 'selected' : ''}>${escapeHTML(t('statusDrafting'))}</option>
+          <option value="internal_review" ${initialStatus === 'internal_review' ? 'selected' : ''}>${escapeHTML(t('statusInternalReview'))}</option>
+          <option value="submitted" ${initialStatus === 'submitted' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('submitted'))}</option>
+          <option value="under_review" ${initialStatus === 'under_review' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('under_review'))}</option>
+          <option value="revision" ${initialStatus === 'revision' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('revision'))}</option>
+          <option value="accepted" ${initialStatus === 'accepted' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('accepted'))}</option>
+          <option value="published" ${initialStatus === 'published' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('published'))}</option>
         </select>
       </div>
       <div class="form-group">
         <label>${escapeHTML(t('targetJournalInput'))}</label>
-        <input type="text" id="man-journal" value="${escapeHTML(isEdit ? man.targetJournals?.[0] || '' : '')}" placeholder="${escapeHTML(t('targetJournalPlaceholder'))}">
+        <input type="text" id="man-journal" value="${escapeHTML(initialJournal || '')}" placeholder="${escapeHTML(t('targetJournalPlaceholder'))}">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>${escapeHTML(t('authorsLabel'))}</label>
+      <input type="text" id="man-authors" value="${escapeHTML(initialAuthors || '')}" placeholder="A. Researcher; B. Scientist">
+    </div>
+
+    <div class="grid-cols-2">
+      <div class="form-group">
+        <label>${escapeHTML(t('doiLabel'))}</label>
+        <input type="text" id="man-doi" value="${escapeHTML(initialDoi || '')}" placeholder="10.xxxx/xxxxx">
+      </div>
+      <div class="form-group">
+        <label>${escapeHTML(t('scholarSourcePage'))}</label>
+        <input type="url" id="man-article-url" value="${escapeHTML(initialArticleUrl || '')}" placeholder="https://…">
       </div>
     </div>
 
     <div class="form-group">
       <label>${escapeHTML(t('abstractDraft'))}</label>
-      <textarea id="man-abstract" placeholder="${escapeHTML(t('abstractPlaceholder'))}">${escapeHTML(isEdit ? man.abstract || '' : '')}</textarea>
+      <textarea id="man-abstract" placeholder="${escapeHTML(t('abstractPlaceholder'))}">${escapeHTML(initialAbstract || '')}</textarea>
     </div>
 
     <button class="btn-primary w-full" id="btn-submit-man">${escapeHTML(isEdit ? t('saveChanges') : t('createManuscript'))}</button>
@@ -3246,34 +3402,54 @@ function openManuscriptModal(man = null) {
     const title = document.getElementById('man-title').value.trim();
     const status = document.getElementById('man-status').value;
     const journal = document.getElementById('man-journal').value.trim();
+    const authors = splitAcademicAuthors(document.getElementById('man-authors').value);
+    const doi = normalizeDoi(document.getElementById('man-doi').value);
+    const articleUrl = document.getElementById('man-article-url').value.trim();
     const abstract = document.getElementById('man-abstract').value.trim();
 
-    if (!projectId || !title) {
-      alert('Project context and title are required');
+    if (!title) {
+      alert(t('manuscriptTitleRequired'));
       return;
     }
 
-    if (isEdit) {
-      man.projectId = projectId;
-      man.title = title;
-      setManuscriptStatus(man, status);
-      man.targetJournals = [journal];
-      man.abstract = abstract;
-      man.updatedAt = new Date().toISOString();
+    const duplicate = !isEdit && prefill
+      ? findAcademicManuscriptMatch({ title, doi, articleUrl })
+      : null;
+    if (duplicate && !confirm(t('academicDuplicateConfirm'))) return;
+
+    const targetManuscript = isEdit ? man : duplicate;
+    if (targetManuscript) {
+      targetManuscript.projectId = isEdit
+        ? (projectId || null)
+        : (projectId || targetManuscript.projectId || null);
+      targetManuscript.title = title;
+      setManuscriptStatus(targetManuscript, status);
+      targetManuscript.targetJournals = journal ? [journal] : [];
+      targetManuscript.abstract = abstract;
+      targetManuscript.authors = authors;
+      targetManuscript.firstAuthor = authors[0] || targetManuscript.firstAuthor || null;
+      targetManuscript.doi = doi || null;
+      targetManuscript.articleUrl = articleUrl || null;
+      if (prefill) targetManuscript.academicCaptureProvenance = academicCaptureProvenance(prefill);
+      targetManuscript.updatedAt = new Date().toISOString();
     } else {
       const newMan = {
         id: 'man_' + Math.random().toString(36).substring(2, 9),
         userId: 'user',
-        projectId,
+        projectId: projectId || null,
         title,
         shortTitle: null,
         manuscriptType: 'article',
         status,
         abstract,
         keywords: [],
-        authors: [],
+        authors,
+        firstAuthor: authors[0] || null,
         correspondingAuthors: [],
-        targetJournals: [journal],
+        targetJournals: journal ? [journal] : [],
+        doi: doi || null,
+        articleUrl: articleUrl || null,
+        academicCaptureProvenance: academicCaptureProvenance(prefill),
         currentVersion: '1.0',
         plannedFigures: [],
         notes: null,
@@ -3284,11 +3460,17 @@ function openManuscriptModal(man = null) {
     }
 
     await window.storage.saveAll(db);
+    if (prefill) await chrome.storage.local.remove(PENDING_ACADEMIC_DRAFT_KEY);
     closeModal();
     renderKanban();
     renderDashboard();
     renderSubmissions();
-    showGlobalToast('Manuscripts updated!', 'success');
+    showGlobalToast(
+      duplicate
+        ? t('academicDuplicateUpdated')
+        : (prefill ? t('academicCaptureSaved') : 'Manuscripts updated!'),
+      'success'
+    );
   });
 }
 
@@ -4940,6 +5122,75 @@ async function consumePendingSubmissionDraft() {
   }), 'success');
 }
 
+async function consumePendingAcademicDraft() {
+  const stored = await chrome.storage.local.get([PENDING_ACADEMIC_DRAFT_KEY]);
+  const draft = stored?.[PENDING_ACADEMIC_DRAFT_KEY];
+  if (!draft) return;
+
+  if (!draft.expiresAt || Number(draft.expiresAt) < Date.now()) {
+    await chrome.storage.local.remove(PENDING_ACADEMIC_DRAFT_KEY);
+    return;
+  }
+
+  document.querySelector('.nav-item[data-view="view-manuscripts"]')?.click();
+  const results = Array.isArray(draft.results) && draft.results.length
+    ? draft.results
+    : [draft];
+  if (results.length > 1) {
+    openAcademicCaptureChooser(draft, results);
+  } else {
+    openManuscriptModal(null, results[0]);
+    enableAcademicCaptureLayout();
+    showGlobalToast(t('academicCapturePrefilled'), 'success');
+  }
+}
+
+function enableAcademicCaptureLayout() {
+  document.body.classList.add('academic-capture-mode');
+  modalContent?.classList.add('academic-capture-card');
+}
+
+function openAcademicCaptureChooser(draft, results) {
+  openModal(`
+    <div class="modal-header">
+      <div>
+        <h2>${escapeHTML(t('academicCaptureChooseTitle'))}</h2>
+        <p class="text-muted academic-capture-chooser-help">${escapeHTML(t('academicCaptureChooseHelp'))}</p>
+      </div>
+      <button class="btn-secondary btn-icon" id="btn-close-modal" aria-label="${escapeHTML(t('close'))}">✕</button>
+    </div>
+    <section class="academic-capture-chooser" aria-label="${escapeHTML(t('academicCaptureChooseTitle'))}">
+      <div class="academic-capture-count">
+        <strong>${results.length}</strong> ${escapeHTML(t('academicCaptureDetected'))}
+        <span>${escapeHTML(draft.sourceHost || '')}</span>
+      </div>
+      <div class="academic-capture-result-list">
+        ${results.map((result, index) => `
+          <button type="button" class="academic-capture-result" data-academic-result-index="${index}">
+            <span class="academic-result-index">${String(index + 1).padStart(2, '0')}</span>
+            <span class="academic-result-copy">
+              <strong>${escapeHTML(result.title || t('untitledManuscript'))}</strong>
+              <span>${escapeHTML(result.authors || '')}</span>
+              <small>${escapeHTML(result.publication || result.articleUrl || '')}</small>
+            </span>
+            <span class="academic-result-arrow" aria-hidden="true">→</span>
+          </button>
+        `).join('')}
+      </div>
+    </section>
+  `);
+  enableAcademicCaptureLayout();
+  modalContent.querySelectorAll('[data-academic-result-index]').forEach(button => {
+    button.addEventListener('click', () => {
+      const result = results[Number(button.dataset.academicResultIndex)];
+      if (!result) return;
+      openManuscriptModal(null, result);
+      enableAcademicCaptureLayout();
+      showGlobalToast(t('academicCapturePrefilled'), 'success');
+    });
+  });
+}
+
 // --- VIEW 6: MULTI-CLOUD SETTINGS ---
 function normalizeSubmissionAssistSettings(value = {}) {
   return {
@@ -5209,6 +5460,60 @@ function setupSettingsListeners() {
     showGlobalToast(t('databaseExported'), 'success');
   });
 
+  document.getElementById('btn-export-diagnostics').addEventListener('click', async () => {
+    const metadataRoute = db?.settings?.syncProviders?.metadata || { provider: 'local', config: {} };
+    const effectiveRoute = await window.storage.getEffectiveMetadataProvider(db);
+    const diagnosticReport = {
+      generatedAt: new Date().toISOString(),
+      extension: {
+        name: chrome.runtime.getManifest?.().name || 'ResearchFlow Companion',
+        version: chrome.runtime.getManifest?.().version || RF_OPTIONS_RENDER_VERSION,
+        schemaVersion: Number(db.schemaVersion) || null,
+        revision: Number(db.revision) || 0
+      },
+      runtime: {
+        language: currentLanguage,
+        online: navigator.onLine,
+        platform: navigator.platform || '',
+        userAgent: navigator.userAgent || ''
+      },
+      database: {
+        lastUpdated: db.updatedAt || null,
+        counts: {
+          projects: db.projects?.length || 0,
+          manuscripts: db.manuscripts?.length || 0,
+          submissions: db.submissions?.length || 0,
+          tasks: db.tasks?.length || 0
+        }
+      },
+      synchronization: {
+        provider: metadataRoute.provider || 'local',
+        configurationValid: !window.storage.getSyncConfigurationIssue(effectiveRoute)
+      },
+      capture: {
+        submissionRecognitionEnabled: document.getElementById('submission-assist-enabled')?.checked !== false,
+        detailedCaptureEnabled: document.getElementById('submission-assist-capture-enabled')?.checked !== false
+      },
+      privacy: {
+        credentialsIncluded: false,
+        manuscriptMetadataIncluded: false
+      }
+    };
+    const diagnosticBlob = new Blob(
+      [JSON.stringify(diagnosticReport, null, 2)],
+      { type: 'application/json;charset=utf-8' }
+    );
+    const diagnosticUrl = URL.createObjectURL(diagnosticBlob);
+    const anchor = document.createElement('a');
+    anchor.href = diagnosticUrl;
+    anchor.download = `researchflow-diagnostics-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(diagnosticUrl), 0);
+    showGlobalToast(t('diagnosticsExported'), 'success');
+  });
+
   // Trigger File Import Dialog
   document.getElementById('btn-trigger-import').addEventListener('click', () => {
     document.getElementById('import-db-file').click();
@@ -5341,6 +5646,21 @@ function setupSettingsListeners() {
             targetJournals: Array.isArray(man.targetJournals)
               ? man.targetJournals
               : (man.targetJournal ? [man.targetJournal] : []),
+            doi: normalizeDoi(man.doi || man.DOI || '') || null,
+            articleUrl: String(man.articleUrl || '').trim() || null,
+            academicCaptureProvenance: man.academicCaptureProvenance
+              && typeof man.academicCaptureProvenance === 'object'
+              && !Array.isArray(man.academicCaptureProvenance)
+              ? {
+                  sourceType: String(man.academicCaptureProvenance.sourceType || '').slice(0, 40),
+                  sourceHost: String(man.academicCaptureProvenance.sourceHost || '').slice(0, 255),
+                  sourcePageUrl: String(man.academicCaptureProvenance.sourcePageUrl || '').slice(0, 2000),
+                  pdfUrl: String(man.academicCaptureProvenance.pdfUrl || '').slice(0, 2000),
+                  confidenceScore: Number(man.academicCaptureProvenance.confidenceScore) || 0,
+                  capturedAt: man.academicCaptureProvenance.capturedAt || null,
+                  reviewedByUser: man.academicCaptureProvenance.reviewedByUser === true
+                }
+              : null,
             currentVersion: man.currentVersion || '1.0',
             plannedFigures: Array.isArray(man.plannedFigures) ? man.plannedFigures : [],
             notes: man.notes || null,
@@ -5474,10 +5794,17 @@ const modal = document.getElementById('modal-container');
 const modalContent = document.getElementById('modal-card-content');
 
 function openModal(htmlContent) {
-  previousModalFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  if (!modal.classList.contains('active')) {
+    const activeElement = document.activeElement;
+    previousModalFocus = activeElement instanceof HTMLElement && !modal.contains(activeElement)
+      ? activeElement
+      : null;
+  }
   modalContent.innerHTML = htmlContent;
   modalContent.classList.toggle('stage-modal-wide', htmlContent.includes('stage-editor'));
-  const isCaptureReview = htmlContent.includes('submission-capture-review');
+  const isCaptureReview = htmlContent.includes('submission-capture-review')
+    || htmlContent.includes('academic-capture-review')
+    || htmlContent.includes('academic-capture-chooser');
   modalContent.setAttribute('aria-modal', String(!isCaptureReview));
   const heading = modalContent.querySelector('h2');
   if (heading) {
@@ -5486,8 +5813,10 @@ function openModal(htmlContent) {
   } else {
     modalContent.removeAttribute('aria-labelledby');
   }
-  modal.classList.add('active');
+  modal.inert = false;
+  modal.removeAttribute('inert');
   modal.setAttribute('aria-hidden', 'false');
+  modal.classList.add('active');
 
   // Auto-bind close trigger inside modal
   const closeBtn = document.getElementById('btn-close-modal');
@@ -5499,17 +5828,31 @@ function openModal(htmlContent) {
 }
 
 function closeModal() {
+  const restoreTarget = previousModalFocus?.isConnected && !modal.contains(previousModalFocus)
+    ? previousModalFocus
+    : null;
+  if (restoreTarget) {
+    restoreTarget.focus({ preventScroll: true });
+  }
+  const focusedElement = document.activeElement;
+  if (focusedElement instanceof HTMLElement && modal.contains(focusedElement)) {
+    focusedElement.blur();
+  }
+
+  modal.inert = true;
+  modal.setAttribute('inert', '');
   modal.classList.remove('active');
   modal.setAttribute('aria-hidden', 'true');
   modalContent.classList.remove('submission-capture-card');
+  modalContent.classList.remove('academic-capture-card');
   document.body.classList.remove('submission-capture-mode');
+  document.body.classList.remove('academic-capture-mode');
   pendingSubmissionCapture = null;
   const url = new URL(window.location.href);
   if (url.searchParams.has('mode')) {
     url.searchParams.delete('mode');
     window.history.replaceState({}, '', url);
   }
-  if (previousModalFocus?.isConnected) previousModalFocus.focus();
   previousModalFocus = null;
 }
 
@@ -5600,22 +5943,33 @@ function showAcceptanceCelebration(submission) {
 
 // --- GLOBALLY ACCESSIBLE TOAST BANNER ---
 function showGlobalToast(message, type = 'success') {
-  const toast = document.createElement('div');
+  let toast = document.querySelector('[data-global-toast]');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.dataset.globalToast = 'true';
+    toast.setAttribute('role', 'status');
+    toast.setAttribute('aria-live', 'polite');
+    toast.style.position = 'fixed';
+    toast.style.bottom = '24px';
+    toast.style.right = '24px';
+    toast.style.zIndex = '999999';
+    toast.style.padding = '10px 20px';
+    toast.style.boxShadow = '0 8px 32px 0 rgba(0, 0, 0, 0.4)';
+    toast.style.fontSize = '13px';
+    document.body.appendChild(toast);
+  }
+
+  clearTimeout(toast._hideTimer);
+  clearTimeout(toast._removeTimer);
   toast.className = `badge badge-${type === 'success' ? 'success' : 'danger'}`;
-  toast.style.position = 'fixed';
-  toast.style.bottom = '24px';
-  toast.style.right = '24px';
-  toast.style.zIndex = '999999';
-  toast.style.padding = '10px 20px';
-  toast.style.boxShadow = '0 8px 32px 0 rgba(0, 0, 0, 0.4)';
+  toast.style.opacity = '1';
+  toast.style.transition = 'none';
   toast.style.animation = 'slideIn 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards';
-  toast.style.fontSize = '13px';
   toast.textContent = message;
 
-  document.body.appendChild(toast);
-  setTimeout(() => {
+  toast._hideTimer = setTimeout(() => {
     toast.style.opacity = '0';
     toast.style.transition = 'opacity 0.25s ease';
-    setTimeout(() => toast.remove(), 250);
+    toast._removeTimer = setTimeout(() => toast.remove(), 250);
   }, 3000);
 }

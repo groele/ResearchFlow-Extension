@@ -9,6 +9,13 @@ const optionsJs = read('scripts/options.js');
 const optionsCss = read('styles/options.css');
 const manifest = JSON.parse(read('manifest.json'));
 
+assert(optionsJs.includes('consumePendingAcademicDraft'), 'main workspace should consume captured Scholar metadata');
+assert(optionsJs.includes('openManuscriptModal(man = null, prefill = null)'), 'manuscript review form should support capture prefill');
+assert(optionsJs.includes('id="man-authors"'), 'manuscript review should expose authors');
+assert(optionsJs.includes('id="man-doi"'), 'manuscript review should expose DOI');
+assert(optionsJs.includes('id="man-article-url"'), 'manuscript review should expose the source URL');
+assert(optionsJs.includes('academicCaptureProvenance'), 'confirmed Scholar captures should preserve provenance');
+
 ['view-dashboard', 'view-manuscripts', 'view-submissions', 'view-settings'].forEach((id) => {
   assert(optionsHtml.includes(`id="${id}"`), `main workspace should include ${id}`);
 });
@@ -30,8 +37,8 @@ assert(optionsCss.includes('Settings console refinement'), 'settings should use 
 assert(optionsCss.includes('@media (max-width: 1180px)'), 'settings workbench should reflow before the narrow mobile breakpoint');
 assert(optionsJs.includes("setText('#settings-kicker', t('settingsKicker'))"), 'settings hero should localize with the active interface language');
 assert(optionsJs.includes("mainContent.scrollTop = 0"), 'workspace navigation should reveal the beginning of each settings view');
-assert(optionsHtml.includes('v6.1.0 Companion'), 'workspace version label should match the visual reliability release');
-assert.equal(manifest.version, '6.1.0', 'manifest version should match the visual reliability release');
+assert(optionsHtml.includes('v7.0.0 Companion'), 'workspace version label should match the Scholar reliability release');
+assert.equal(manifest.version, '7.0.0', 'manifest version should match the Scholar reliability release');
 
 ['view-projects', 'view-library', 'metric-projects', 'metric-records', 'metric-evidence', 'recent-records'].forEach((removedSection) => {
   assert(!optionsHtml.includes(removedSection), `options page should not expose removed ${removedSection}`);
@@ -74,13 +81,21 @@ assert(optionsJs.includes('lastSavedSnapshot'), 'automatic persistence should sk
 assert(optionsJs.includes('data-submission-autosave-status'), 'submission editor should expose accessible automatic save state');
 assert(!optionsJs.includes('id="btn-save-sub-edit-center"'), 'submission editor should not require a standalone save button');
 assert(
-  /body\.submission-capture-mode \.modal-backdrop\s*\{[\s\S]*?pointer-events:\s*none;[\s\S]*?background:\s*transparent;/.test(optionsCss),
+  /body\.submission-capture-mode \.modal-backdrop,[\s\S]*?body\.academic-capture-mode \.modal-backdrop\s*\{[\s\S]*?pointer-events:\s*none;[\s\S]*?background:\s*transparent;/.test(optionsCss),
   'capture review should leave the workspace visible and interactive'
 );
 assert(
-  /\.modal-card\.submission-capture-card\s*\{[\s\S]*?width:\s*clamp\(520px,\s*46vw,\s*680px\);[\s\S]*?max-height:\s*calc\(100vh - 48px\);[\s\S]*?pointer-events:\s*auto;/.test(optionsCss),
+  /\.modal-card\.submission-capture-card,[\s\S]*?\.modal-card\.academic-capture-card\s*\{[\s\S]*?width:\s*clamp\(520px,\s*46vw,\s*680px\);[\s\S]*?max-height:\s*calc\(100vh - 48px\);[\s\S]*?pointer-events:\s*auto;/.test(optionsCss),
   'capture review should use a bounded non-blocking side card'
 );
+assert(optionsJs.includes('findAcademicManuscriptMatch'), 'Scholar capture should prevent duplicate manuscripts');
+assert(
+  /targetManuscript\.projectId = isEdit[\s\S]{0,100}\? \(projectId \|\| null\)/.test(optionsJs),
+  'editing a manuscript should allow its project relationship to be cleared'
+);
+assert(optionsJs.includes('openAcademicCaptureChooser'), 'multiple Scholar results should require an explicit selection');
+assert(optionsJs.includes('academicCaptureProvenance: man.academicCaptureProvenance'), 'database import should preserve Scholar provenance');
+assert(optionsHtml.includes('id="card-filter-all" aria-pressed="true"'), 'dashboard filters should expose keyboard-accessible button state');
 assert(optionsJs.includes("window.addEventListener('pagehide', flushPendingSave)"), 'pending editor changes should flush when the page closes');
 assert(optionsJs.includes('findExistingCapturedSubmission'), 'captured submissions should be checked for duplicates');
 assert(optionsJs.includes('sanitizeDatabaseForExternalUse'), 'database export should redact device credentials');
@@ -112,6 +127,19 @@ assert(optionsHtml.includes('data-sync-provider="github"'), 'GitHub settings sho
 assert(optionsHtml.includes('id="language-auto-save-status"'), 'language settings should communicate automatic persistence');
 assert(!optionsHtml.includes('id="btn-save-language"'), 'language selection should not require a separate save button');
 assert(optionsHtml.includes('id="btn-restore-import-backup"'), 'settings should expose recovery from the last pre-import backup');
+assert(optionsHtml.includes('id="btn-export-diagnostics"'), 'settings should provide a privacy-safe diagnostic export');
+assert(optionsJs.includes('credentialsIncluded: false'), 'diagnostic exports should explicitly exclude credentials');
+assert(optionsJs.includes('manuscriptMetadataIncluded: false'), 'diagnostic exports should exclude manuscript metadata');
+assert(
+  optionsHtml.includes('id="modal-container" aria-hidden="true" inert'),
+  'the initially hidden modal should be removed from focus navigation'
+);
+assert(optionsJs.includes("modal.inert = false"), 'opening a modal should make its controls focusable');
+assert(optionsJs.includes("modal.inert = true"), 'closing a modal should disable its controls before hiding them');
+assert(
+  /function closeModal\(\)[\s\S]*?restoreTarget\.focus\(\{ preventScroll: true \}\)[\s\S]*?modal\.setAttribute\('aria-hidden', 'true'\)/.test(optionsJs),
+  'modal close should restore focus before hiding the focused dialog subtree'
+);
 assert(optionsJs.includes("new Blob([JSON.stringify(safeDb, null, 2)]"), 'large database exports should use a Blob rather than a data URI');
 assert(optionsJs.includes('MAX_IMPORT_BYTES'), 'database imports should enforce a bounded input size');
 assert(optionsJs.includes('PRE_IMPORT_BACKUP_KEY'), 'database imports should create a recoverable pre-import snapshot');
@@ -119,5 +147,11 @@ assert(
   optionsJs.indexOf('[PRE_IMPORT_BACKUP_KEY]') < optionsJs.indexOf('db = await window.storage.saveAll(normalizedImport)'),
   'the recovery snapshot should be written before imported data replaces the active database'
 );
+assert(optionsJs.includes("document.querySelector('[data-global-toast]')"),
+  'global toast updates should reuse one live status element');
+assert(optionsJs.includes("toast.setAttribute('role', 'status')"),
+  'global toast should expose non-blocking updates to assistive technology');
+assert(optionsJs.includes('clearTimeout(toast._hideTimer)'),
+  'repeated toast updates should reset the pending dismissal timer');
 
 console.log('restored main workspace tests passed');

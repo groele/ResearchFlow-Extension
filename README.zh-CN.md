@@ -4,7 +4,7 @@
 
 **简体中文** · [English](README.md)
 
-- 当前版本：**6.0.1**
+- 当前版本：**7.0.0**
 - 浏览器要求：**Google Chrome 116 或更高版本**
 - 运行方式：**Manifest V3、原生 JavaScript、无需构建**
 
@@ -17,6 +17,7 @@
 - [功能总览](#功能总览)
 - [状态模型](#状态模型)
 - [投稿网站智能识别](#投稿网站智能识别)
+- [Google Scholar 与镜像捕获](#google-scholar-与镜像捕获)
 - [安装与更新](#安装与更新)
 - [快速开始](#快速开始)
 - [数据存储与同步](#数据存储与同步)
@@ -258,6 +259,22 @@ ResearchFlow 可以识别主流期刊投稿系统，并直接在投稿网页内�
 
 用户可以在单个网站上忽略提示，并可在设置中恢复所有已忽略网站。
 
+## Google Scholar 与镜像捕获
+
+ResearchFlow 可以从 Google Scholar 官方结果页及结构兼容的镜像网站捕获论文元数据，不依赖容易失效的固定镜像域名列表。
+
+1. 打开 Scholar 搜索结果页面并点击 ResearchFlow 工具栏图标。
+2. 插件只在本次点击后临时检查当前标签页的 Scholar 结果结构。
+3. 存在多条结果时，在紧凑选择器中选择目标论文。
+4. 核对标题、期刊、作者、DOI、文章链接、摘要、来源域名和识别置信度。
+5. 确认表单后创建或更新手稿。
+
+识别器要求页面同时存在有效结果容器以及 Scholar 元数据或搜索结构。Scholar 首页、空结果页以及仅偶然包含相似标签的普通网页不会生成空手稿。
+
+Scholar 捕获论文默认状态为“已发表”，但用户可以修改。重复检测依次比较 DOI、规范化文章链接和规范化题目。作者信息会拆分成列表，并明确保存第一作者；来源记录会保留人工核对标记。任何内容在用户确认前都不会写入数据库。
+
+页面检查仅在用户点击图标后通过临时 `activeTab` 权限执行，不会持续读取任意网站的浏览历史。
+
 ## 安装与更新
 
 ResearchFlow 当前以“加载已解压扩展程序”的方式安装。
@@ -438,6 +455,8 @@ GitHub Token 和 WebDAV 凭据保存在独立的设备本地存储项中，并�
 | --- | --- |
 | `storage` | 保存本地数据库、设置、凭据和导入前恢复点。 |
 | `tabs` | 投稿捕获后打开或聚焦 ResearchFlow 主程序。 |
+| `activeTab` | 用户点击工具栏图标后，仅临时检查当前标签页。 |
+| `scripting` | 将插件自带的 Scholar 识别器注入本次临时授权的标签页。 |
 | `unlimitedStorage` | 允许本地研究数据库超过扩展默认的小容量配额。 |
 | 受支持投稿域名权限 | 识别投稿网站并显示快捷录入卡片。 |
 | `https://api.github.com/*` | 用户启用 GitHub 数据库同步时访问 Contents API。 |
@@ -447,7 +466,7 @@ GitHub Token 和 WebDAV 凭据保存在独立的设备本地存储项中，并�
 
 ## 已移除模块与迁移说明
 
-以下早期实验模块不再属于 v6 的活动产品：
+以下早期实验模块不再属于 v7 的活动产品：
 
 - 领域与项目树主面板；
 - 研究记录主面板；
@@ -480,6 +499,7 @@ ResearchFlow-Extension/
 │  ├─ background.js             # 图标入口、写入队列、同步和捕获转交
 │  ├─ content.js                # 投稿网站提示卡片和字段采集
 │  ├─ journal-portals.js        # 平台规则、状态推断和置信度
+│  ├─ scholar-mirrors.js        # Scholar/镜像结构指纹和元数据提取
 │  ├─ options.js                # 仪表盘、看板、投稿审稿和设置界面
 │  ├─ research-core.js          # 共享科研领域逻辑
 │  ├─ storage.js                # Schema、本地存储、合并和云端适配
@@ -638,8 +658,8 @@ ftp://dav.example.com/researchflow
 
 实际安装版本以 `manifest.json` 为准。当前主要文档：
 
-- **v6.0.1** — 中英文项目文档与操作指南更新；
-- [ResearchFlow Companion v6.0.0 发布说明](RELEASE_NOTES_v6.0.0.md)
+- [ResearchFlow Companion v7.0.0 发布说明](RELEASE_NOTES_v7.0.0.md)
+- [ResearchFlow Companion v6.1.0 发布说明](RELEASE_NOTES_v6.1.0.md)
 - [架构说明](ARCHITECTURE.md)
 
 报告问题或提出功能建议时，请尽量提供：

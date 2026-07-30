@@ -132,11 +132,13 @@ assert.equal(
       }
     },
     nested: { refreshToken: 'refresh-secret', value: 1 },
-    _github_sha: 'temporary'
+    _github_sha: 'temporary',
+    _webdav_etag: '"temporary-etag"'
   });
   assert.deepEqual(sanitized.settings.syncProviders.metadata.config, { repo: 'owner/repo', branch: 'main' });
   assert.equal(sanitized.nested.refreshToken, undefined);
   assert.equal(sanitized._github_sha, undefined);
+  assert.equal(sanitized._webdav_etag, undefined);
   assert(!JSON.stringify(sanitized).includes('secret'), 'external database payload must not contain credentials');
 
   const deletionDb = await engine.ensureDbShape({
@@ -189,6 +191,72 @@ assert.equal(
   );
   assert(!webdavPayload.includes('pässword'), 'WebDAV payload must redact credentials');
   assert(!webdavPayload.includes('研究者'), 'WebDAV payload must redact usernames');
+
+  let webdavIfMatch = '';
+  global.fetch = async (_url, options = {}) => {
+    webdavIfMatch = options.headers?.get?.('If-Match') || '';
+    return { ok: true, status: 200, json: async () => ({}) };
+  };
+  await engine.saveToWebDAV(
+    { url: 'https://dav.example.com/dav', username: 'user', password: 'secret' },
+    { _webdav_etag: '"remote-version-7"', settings: {} }
+  );
+  assert.equal(webdavIfMatch, '"remote-version-7"', 'WebDAV writes should use the fetched ETag to prevent silent overwrite');
+
+  const githubRequests = [];
+  global.fetch = async (url, options = {}) => {
+    githubRequests.push({ url, options });
+    if (options.method === 'PUT' && githubRequests.filter(item => item.options.method === 'PUT').length === 1) {
+      return {
+        ok: false,
+        status: 409,
+        json: async () => ({ message: 'sha does not match' })
+      };
+    }
+    if (!options.method) {
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          sha: 'fresh-remote-sha',
+          content: btoa(JSON.stringify({
+            manuscripts: [{
+              id: 'remote-only-manuscript',
+              title: 'Remote concurrent manuscript',
+              createdAt: '2026-07-30T00:00:00.000Z',
+              updatedAt: '2026-07-30T00:00:00.000Z'
+            }],
+            settings: { syncProviders: { metadata: { provider: 'local', config: {} } } }
+          }))
+        })
+      };
+    }
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ content: { sha: 'saved-sha' } })
+    };
+  };
+  const githubDatabase = await engine.ensureDbShape({
+    _github_sha: 'stale-sha',
+    settings: { syncProviders: { metadata: { provider: 'local', config: {} } } }
+  }, { stamp: false });
+  await engine.saveToGitHub(
+    { token: 'token', repo: 'owner/repo', branch: 'main' },
+    githubDatabase
+  );
+  const githubPutRequests = githubRequests.filter(item => item.options.method === 'PUT');
+  assert.equal(githubPutRequests.length, 2, 'GitHub SHA conflicts should retry exactly once');
+  assert.equal(
+    JSON.parse(githubPutRequests[1].options.body).sha,
+    'fresh-remote-sha',
+    'the GitHub retry should use the latest remote SHA'
+  );
+  assert.equal(githubDatabase._github_sha, 'saved-sha', 'successful GitHub writes should retain the new SHA');
+  assert(
+    githubDatabase.manuscripts.some(item => item.id === 'remote-only-manuscript'),
+    'the local database should adopt records merged during a GitHub conflict retry'
+  );
 
   let scheduledSyncs = 0;
   engine.ensureDbShape = async data => data;
