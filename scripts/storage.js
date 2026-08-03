@@ -30,7 +30,7 @@ const DEFAULT_DB = {
   },
   settings: {
     syncProviders: {
-      metadata: { provider: 'local', config: {} } // Provider for JSON database sync
+      metadata: { provider: 'local', config: {}, autoSync: true } // Provider for JSON database sync
     },
     profile: {
       displayName: '',
@@ -38,7 +38,8 @@ const DEFAULT_DB = {
       englishName: '',
       affiliation: '',
       orcid: '',
-      language: 'en'
+      language: 'en',
+      theme: 'system'
     },
     journalPortals: [
       { id: 'acs', name: 'ACS', url: 'https://publish.acs.org/app/login?code=1000', color: '#002C6C', isDefault: true },
@@ -320,6 +321,8 @@ class StorageEngine {
   }
 
   async shouldRunCloudSync(database = this.cache) {
+    const metadata = database?.settings?.syncProviders?.metadata;
+    if (metadata?.autoSync === false) return false;
     const metadataProvider = await this.getEffectiveMetadataProvider(database);
     return metadataProvider.provider !== 'local' && !this.getSyncConfigurationIssue(metadataProvider);
   }

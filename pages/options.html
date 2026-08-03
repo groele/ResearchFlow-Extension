@@ -17,7 +17,7 @@
         <div class="logo-orb" aria-hidden="true"></div>
         <div>
           <h2>ResearchFlow OS</h2>
-          <span class="version">v7.0.0 Companion</span>
+          <span class="version">v7.1.0 Companion</span>
         </div>
       </div>
 
@@ -222,6 +222,20 @@
             <h1>Multi-Cloud Settings</h1>
             <p class="text-muted">Control exactly how and where your private data is distributed.</p>
           </div>
+        </header>
+
+        <section class="settings-security-assurance" aria-labelledby="settings-security-title">
+          <div class="settings-security-mark" aria-hidden="true">
+            <svg class="svg-icon" viewBox="0 0 24 24">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              <path d="m9 12 2 2 4-4"></path>
+            </svg>
+          </div>
+          <div class="settings-security-copy">
+            <span class="settings-panel-eyebrow" id="settings-security-eyebrow">Privacy by architecture</span>
+            <h2 id="settings-security-title">Your research data stays on this device by default.</h2>
+            <p id="settings-security-help">Cloud sync only starts after you choose and configure a provider. Passwords and tokens are excluded from database files, exports, and cloud payloads.</p>
+          </div>
           <div class="settings-trust-strip" aria-label="Data protection summary">
             <span class="settings-trust-chip">
               <svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -244,7 +258,7 @@
               <span id="settings-autosave-label">Preferences auto-save</span>
             </span>
           </div>
-        </header>
+        </section>
 
         <div class="settings-workbench">
           <div class="settings-primary-column">
@@ -278,6 +292,18 @@
                   </div>
                 </div>
                 <div class="sync-route-summary" id="sync-route-summary" role="status"></div>
+                <div class="settings-sync-control" id="settings-auto-sync-control">
+                  <div class="settings-assist-control-copy">
+                    <strong id="auto-cloud-sync-label">Automatic cloud sync</strong>
+                    <small id="auto-cloud-sync-help">Sync valid cloud routes shortly after local changes are saved.</small>
+                  </div>
+                  <label class="settings-switch" for="auto-cloud-sync">
+                    <input type="checkbox" id="auto-cloud-sync" checked>
+                    <span class="settings-switch-track" aria-hidden="true">
+                      <span class="settings-switch-thumb"></span>
+                    </span>
+                  </label>
+                </div>
                 <div class="settings-route-savebar">
                   <div class="settings-route-privacy">
                     <svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -294,10 +320,10 @@
                   </button>
                 </div>
               </div>
-            </div>
 
-            <!-- Local-only route -->
-            <div class="glass-panel settings-card sync-provider-card settings-local-card" id="settings-local-card" data-sync-provider="local">
+              <div class="settings-provider-stage">
+              <!-- Local-only route -->
+              <div class="glass-panel settings-card sync-provider-card settings-local-card" id="settings-local-card" data-sync-provider="local">
               <div class="settings-panel-head">
                 <div class="settings-panel-mark settings-panel-mark-emerald" aria-hidden="true">
                   <svg class="svg-icon" viewBox="0 0 24 24">
@@ -328,10 +354,10 @@
                   <strong id="settings-local-point-backup">JSON backup remains available</strong>
                 </div>
               </div>
-            </div>
+              </div>
 
-            <!-- WebDAV config -->
-            <div class="glass-panel settings-card sync-provider-card settings-credential-card" id="settings-webdav-card" data-sync-provider="webdav">
+              <!-- WebDAV config -->
+              <div class="glass-panel settings-card sync-provider-card settings-credential-card" id="settings-webdav-card" data-sync-provider="webdav">
               <div class="settings-panel-head">
                 <div class="settings-panel-mark settings-panel-mark-cyan" aria-hidden="true">
                   <svg class="svg-icon" viewBox="0 0 24 24">
@@ -370,10 +396,10 @@
                   <span>Test WebDAV Connection</span>
                 </button>
               </div>
-            </div>
+              </div>
 
-            <!-- GitHub config -->
-            <div class="glass-panel settings-card sync-provider-card settings-credential-card" id="settings-github-card" data-sync-provider="github">
+              <!-- GitHub config -->
+              <div class="glass-panel settings-card sync-provider-card settings-credential-card" id="settings-github-card" data-sync-provider="github">
               <div class="settings-panel-head">
                 <div class="settings-panel-mark settings-panel-mark-slate" aria-hidden="true">
                   <svg class="svg-icon" viewBox="0 0 24 24">
@@ -410,6 +436,8 @@
                   <span>Test GitHub Repository</span>
                 </button>
               </div>
+              </div>
+              </div>
             </div>
           </div>
 
@@ -431,14 +459,24 @@
                 </div>
               </div>
               <p class="text-muted" id="language-help">Switch the dashboard interface between English and Chinese.</p>
-              <div class="form-group settings-language-field">
-                <label for="ui-language">Display Language</label>
-                <select id="ui-language">
-                  <option value="en">English</option>
-                  <option value="zh">中文</option>
-                </select>
+              <div class="settings-preference-grid">
+                <div class="form-group settings-language-field">
+                  <label for="ui-language">Display Language</label>
+                  <select id="ui-language">
+                    <option value="en">English</option>
+                    <option value="zh">中文</option>
+                  </select>
+                </div>
+                <div class="form-group settings-language-field">
+                  <label for="ui-theme">Appearance</label>
+                  <select id="ui-theme">
+                    <option value="system">Follow system</option>
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                  </select>
+                </div>
               </div>
-              <p class="settings-inline-status" id="language-auto-save-status" role="status">Changes are saved automatically.</p>
+              <p class="settings-inline-status" id="language-auto-save-status" role="status">Interface preferences are saved automatically.</p>
             </div>
 
             <!-- Submission portal recognition -->

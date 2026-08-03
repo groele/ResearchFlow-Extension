@@ -472,3 +472,47 @@ label {
   stroke-linejoin: round;
   fill: none;
 }
+
+/* Explicit appearance preference. These tokens intentionally follow the
+   existing system palettes so manual selection never feels like a new theme. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg-color: 220 20% 97%;
+  --sidebar-bg: rgba(255, 255, 255, 0.85);
+  --card-bg: 0 0% 100%;
+  --card-glow: 220 20% 94%;
+  --card-border: 220 15% 90%;
+  --card-fill: rgba(0, 0, 0, 0.02);
+  --card-fill-hover: rgba(0, 0, 0, 0.04);
+  --text-primary: 224 25% 12%;
+  --text-muted: 220 10% 45%;
+  --text-placeholder: 220 8% 60%;
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(0, 0, 0, 0.06);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
+  --input-bg: rgba(0, 0, 0, 0.015);
+  --input-border: rgba(0, 0, 0, 0.08);
+  --scrollbar-thumb: rgba(0, 0, 0, 0.12);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.25);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg-color: 224 25% 6%;
+  --sidebar-bg: rgba(11, 15, 25, 0.85);
+  --card-bg: 224 20% 10%;
+  --card-glow: 224 25% 15%;
+  --card-border: 224 20% 18%;
+  --card-fill: rgba(255, 255, 255, 0.02);
+  --card-fill-hover: rgba(255, 255, 255, 0.04);
+  --text-primary: 220 20% 97%;
+  --text-muted: 218 12% 65%;
+  --text-placeholder: 218 8% 40%;
+  --glass-bg: rgba(19, 23, 34, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.07);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
+  --input-bg: rgba(255, 255, 255, 0.025);
+  --input-border: rgba(255, 255, 255, 0.08);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.12);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.25);
+}

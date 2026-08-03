@@ -121,6 +121,13 @@ assert.equal(
     }),
     true
   );
+  assert.equal(
+    await engine.shouldRunCloudSync({
+      settings: { syncProviders: { metadata: { provider: 'webdav', config: { url: 'https://dav.example.com/dav' }, autoSync: false } } }
+    }),
+    false,
+    'manual-only cloud routes should not schedule background synchronization'
+  );
 
   const sanitized = engine.sanitizeDatabaseForExternalUse({
     settings: {

@@ -14,12 +14,13 @@ let submissionAutoSaveCleanup = null;
 let acceptanceCelebrationCleanup = null;
 let previousModalFocus = null;
 
-const RF_OPTIONS_RENDER_VERSION = '7.0.0';
+const RF_OPTIONS_RENDER_VERSION = '7.1.0';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
 const PRE_IMPORT_BACKUP_KEY = 'researchflow_pre_import_backup';
 const MAX_IMPORT_BYTES = 25 * 1024 * 1024;
+const UI_THEME_OPTIONS = new Set(['system', 'light', 'dark']);
 
 const I18N = {
   en: {
@@ -61,9 +62,12 @@ const I18N = {
     settingsSubtitle: 'Control exactly how and where your private data is distributed.',
     settingsKicker: 'Workspace control',
     settingsTrustSummary: 'Data protection summary',
-    settingsLocalFirst: 'Local-first',
-    settingsDeviceSecrets: 'Credentials stay on device',
-    settingsPreferencesAutosave: 'Preferences auto-save',
+    settingsLocalFirst: 'Local database',
+    settingsDeviceSecrets: 'Device-only credentials',
+    settingsPreferencesAutosave: 'Optional cloud sync',
+    settingsSecurityEyebrow: 'Privacy by architecture',
+    settingsSecurityTitle: 'Your research data stays on this device by default.',
+    settingsSecurityHelp: 'Cloud sync only starts after you choose and configure a provider. Passwords and tokens are excluded from database files, exports, and cloud payloads.',
     settingsRoutingEyebrow: 'Data destination',
     settingsRoutePrivacy: 'Secrets are stored only on this device.',
     settingsLocalEyebrow: 'Active route',
@@ -81,10 +85,18 @@ const I18N = {
     settingsAssistEyebrow: 'Browser intelligence',
     settingsBackupEyebrow: 'Data resilience',
     settingsBackupNote: 'A recoverable snapshot is kept before every valid import.',
-    languageCardTitle: 'Language & Interface',
+    languageCardTitle: 'Interface Preferences',
     languageLabel: 'Display Language',
-    languageHelp: 'Switch the dashboard interface between English and Chinese.',
-    languageAutoSaved: 'Language changes are saved automatically.',
+    languageHelp: 'Choose the language and appearance used across this workspace.',
+    languageAutoSaved: 'Interface preferences are saved automatically.',
+    appearanceLabel: 'Appearance',
+    appearanceSystem: 'Follow system',
+    appearanceLight: 'Light',
+    appearanceDark: 'Dark',
+    appearanceSaved: 'Appearance preference saved.',
+    autoCloudSyncLabel: 'Automatic cloud sync',
+    autoCloudSyncHelp: 'Sync valid cloud routes shortly after local changes are saved.',
+    autoCloudSyncLocalHelp: 'Choose WebDAV or GitHub to enable automatic cloud sync.',
     submissionAssistTitle: 'Submission Portal Recognition',
     submissionAssistHelp: 'Show a quick-entry card when a supported journal submission system is detected.',
     submissionAssistToggle: 'Automatic detection',
@@ -482,9 +494,12 @@ const I18N = {
     settingsSubtitle: '精准控制私有数据的分发与存储位置。',
     settingsKicker: '工作区控制中心',
     settingsTrustSummary: '数据保护摘要',
-    settingsLocalFirst: '本地优先',
-    settingsDeviceSecrets: '凭据仅保存在本设备',
-    settingsPreferencesAutosave: '偏好设置自动保存',
+    settingsLocalFirst: '数据库本地保存',
+    settingsDeviceSecrets: '凭据仅限本设备',
+    settingsPreferencesAutosave: '云同步按需开启',
+    settingsSecurityEyebrow: '架构级隐私保护',
+    settingsSecurityTitle: '研究数据默认仅保存在当前设备。',
+    settingsSecurityHelp: '只有在你主动选择并配置云服务后才会同步；密码与令牌不会进入数据库文件、导出备份或云端同步载荷。',
     settingsRoutingEyebrow: '数据去向',
     settingsRoutePrivacy: '密码与令牌只保存在当前设备。',
     settingsLocalEyebrow: '当前存储方式',
@@ -502,10 +517,18 @@ const I18N = {
     settingsAssistEyebrow: '浏览器智能识别',
     settingsBackupEyebrow: '数据韧性',
     settingsBackupNote: '每次有效导入前都会保留一个可恢复快照。',
-    languageCardTitle: '语言与界面',
+    languageCardTitle: '界面偏好',
     languageLabel: '显示语言',
-    languageHelp: '在中文和英文之间切换仪表盘界面。',
-    languageAutoSaved: '语言切换后会自动保存。',
+    languageHelp: '设置整个工作区使用的语言与外观模式。',
+    languageAutoSaved: '界面偏好修改后会自动保存。',
+    appearanceLabel: '外观模式',
+    appearanceSystem: '跟随系统',
+    appearanceLight: '浅色',
+    appearanceDark: '深色',
+    appearanceSaved: '外观偏好已保存。',
+    autoCloudSyncLabel: '自动云同步',
+    autoCloudSyncHelp: '本地修改保存后，自动同步到已配置完成的云端。',
+    autoCloudSyncLocalHelp: '选择 WebDAV 或 GitHub 后可启用自动云同步。',
     submissionAssistTitle: '投稿网站智能识别',
     submissionAssistHelp: '识别到支持的期刊投稿系统时，在网页内显示快捷录入卡片。',
     submissionAssistToggle: '自动识别投稿网站',
@@ -846,6 +869,29 @@ function t(key) {
   return I18N[currentLanguage]?.[key] || I18N.en[key] || key;
 }
 
+function normalizeThemePreference(value) {
+  const normalized = String(value || 'system').trim().toLowerCase();
+  return UI_THEME_OPTIONS.has(normalized) ? normalized : 'system';
+}
+
+function applyThemePreference(value) {
+  const theme = normalizeThemePreference(value);
+  if (theme === 'system') {
+    delete document.documentElement.dataset.theme;
+    document.documentElement.style.colorScheme = 'light dark';
+  } else {
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.style.colorScheme = theme;
+  }
+  return theme;
+}
+
+function isDarkThemeActive() {
+  const explicitTheme = document.documentElement.dataset.theme;
+  if (explicitTheme) return explicitTheme === 'dark';
+  return Boolean(window.matchMedia?.('(prefers-color-scheme: dark)').matches);
+}
+
 function tf(key, vars = {}) {
   return t(key).replace(/\{(\w+)\}/g, (_, name) => vars[name] ?? '');
 }
@@ -1004,6 +1050,9 @@ function applyLanguage() {
   setText('#settings-local-first-label', t('settingsLocalFirst'));
   setText('#settings-device-secret-label', t('settingsDeviceSecrets'));
   setText('#settings-autosave-label', t('settingsPreferencesAutosave'));
+  setText('#settings-security-eyebrow', t('settingsSecurityEyebrow'));
+  setText('#settings-security-title', t('settingsSecurityTitle'));
+  setText('#settings-security-help', t('settingsSecurityHelp'));
   setText('#settings-routing-eyebrow', t('settingsRoutingEyebrow'));
   setText('#settings-route-privacy-note', t('settingsRoutePrivacy'));
   setText('#settings-local-eyebrow', t('settingsLocalEyebrow'));
@@ -1024,8 +1073,13 @@ function applyLanguage() {
   setText('#settings-backup-note', t('settingsBackupNote'));
   setText('#settings-language-card h3', t('languageCardTitle'));
   setText('label[for="ui-language"]', t('languageLabel'));
+  setText('label[for="ui-theme"]', t('appearanceLabel'));
+  setOptionText('#ui-theme', 'system', t('appearanceSystem'));
+  setOptionText('#ui-theme', 'light', t('appearanceLight'));
+  setOptionText('#ui-theme', 'dark', t('appearanceDark'));
   setText('#language-help', t('languageHelp'));
   setText('#language-auto-save-status', t('languageAutoSaved'));
+  setText('#auto-cloud-sync-label', t('autoCloudSyncLabel'));
   setText('#settings-submission-assist-card h3', t('submissionAssistTitle'));
   setText('#submission-assist-help', t('submissionAssistHelp'));
   setText('#submission-assist-toggle-label', t('submissionAssistToggle'));
@@ -1095,6 +1149,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Load Database
   db = await window.storage.loadAll();
+  applyThemePreference(db.settings?.profile?.theme || 'system');
   currentLanguage = db.settings?.profile?.language || 'en';
   document.documentElement.lang = currentLanguage === 'zh' ? 'zh-CN' : 'en';
 
@@ -2078,7 +2133,7 @@ function analyzeSubmission(sub) {
   }
 
   // Adjust display theme variables based on prefers-color-scheme dynamically
-  const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const isDarkMode = isDarkThemeActive();
   if (isDarkMode) {
     if (display.mode === 'prepare') {
       display.bg = 'rgba(37,99,235,0.08)';
@@ -5259,10 +5314,24 @@ function updateSyncProviderVisibility() {
   }
 
   const syncButton = document.getElementById('btn-manual-sync');
+  const localOnly = provider === 'local';
   if (syncButton) {
-    const localOnly = provider === 'local';
     syncButton.disabled = localOnly;
     syncButton.title = localOnly ? t('localSyncSummary') : t('forceSync');
+  }
+
+  const autoSyncToggle = document.getElementById('auto-cloud-sync');
+  const autoSyncControl = document.getElementById('settings-auto-sync-control');
+  const autoSyncHelp = document.getElementById('auto-cloud-sync-help');
+  if (autoSyncToggle) {
+    autoSyncToggle.disabled = localOnly;
+    autoSyncToggle.checked = localOnly
+      ? false
+      : autoSyncToggle.dataset.savedValue !== 'false';
+  }
+  if (autoSyncControl) autoSyncControl.classList.toggle('is-disabled', localOnly);
+  if (autoSyncHelp) {
+    autoSyncHelp.textContent = t(localOnly ? 'autoCloudSyncLocalHelp' : 'autoCloudSyncHelp');
   }
 }
 
@@ -5273,6 +5342,15 @@ async function loadSettings() {
 
   const languageSelect = document.getElementById('ui-language');
   if (languageSelect) languageSelect.value = currentLanguage || profile.language || 'en';
+  const themeSelect = document.getElementById('ui-theme');
+  if (themeSelect) themeSelect.value = normalizeThemePreference(profile.theme);
+
+  const autoSyncToggle = document.getElementById('auto-cloud-sync');
+  if (autoSyncToggle) {
+    const autoSyncEnabled = syncProviders.metadata.autoSync !== false;
+    autoSyncToggle.dataset.savedValue = String(autoSyncEnabled);
+    autoSyncToggle.checked = autoSyncEnabled;
+  }
 
   // Cloud routing
   document.getElementById('route-db').value = syncProviders.metadata.provider || 'local';
@@ -5353,8 +5431,38 @@ function setupSettingsListeners() {
     });
   }
 
+  const themeSelect = document.getElementById('ui-theme');
+  if (themeSelect) {
+    themeSelect.addEventListener('change', async () => {
+      const previousTheme = normalizeThemePreference(db.settings?.profile?.theme);
+      const nextTheme = applyThemePreference(themeSelect.value);
+      db.settings = db.settings || {};
+      db.settings.profile = db.settings.profile || {};
+      db.settings.profile.theme = nextTheme;
+      themeSelect.disabled = true;
+      try {
+        await window.storage.saveAll(db);
+      } catch (error) {
+        db.settings.profile.theme = previousTheme;
+        themeSelect.value = previousTheme;
+        applyThemePreference(previousTheme);
+        throw error;
+      } finally {
+        themeSelect.disabled = false;
+      }
+      showGlobalToast(t('appearanceSaved'), 'success');
+    });
+  }
+
   const routeSelect = document.getElementById('route-db');
   routeSelect.addEventListener('change', updateSyncProviderVisibility);
+
+  const autoSyncToggle = document.getElementById('auto-cloud-sync');
+  if (autoSyncToggle) {
+    autoSyncToggle.addEventListener('change', () => {
+      autoSyncToggle.dataset.savedValue = String(autoSyncToggle.checked);
+    });
+  }
 
   // Save Mappings Button
   document.getElementById('btn-save-settings').addEventListener('click', async () => {
@@ -5374,6 +5482,7 @@ function setupSettingsListeners() {
     const selectedConfig = routeDb === 'webdav'
       ? webdavConfig
       : (routeDb === 'github' ? githubConfig : {});
+    const autoSync = document.getElementById('auto-cloud-sync')?.dataset.savedValue !== 'false';
     const configurationIssue = window.storage.getSyncConfigurationIssue({
       provider: routeDb,
       config: selectedConfig
@@ -5391,7 +5500,8 @@ function setupSettingsListeners() {
     db.settings.syncProviders = {
       metadata: {
         provider: routeDb,
-        config: publicConfig
+        config: publicConfig,
+        autoSync
       }
     };
 

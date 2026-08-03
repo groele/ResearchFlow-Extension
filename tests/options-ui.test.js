@@ -30,15 +30,26 @@ assert(optionsHtml.includes('class="settings-hero-index"'), 'settings console sh
 ['settings-kicker', 'settings-route-privacy-note', 'settings-credential-note', 'settings-backup-note'].forEach((id) => {
   assert(optionsHtml.includes(`id="${id}"`), `settings redesign should expose localized ${id}`);
 });
+['settings-security-title', 'settings-security-help', 'settings-security-eyebrow'].forEach((id) => {
+  assert(optionsHtml.includes(`id="${id}"`), `settings should clearly explain local-first security through ${id}`);
+});
+assert(optionsHtml.includes('class="settings-security-assurance"'), 'settings should lead with a dedicated local-security assurance panel');
+['ui-theme', 'auto-cloud-sync', 'settings-auto-sync-control'].forEach((id) => {
+  assert(optionsHtml.includes(`id="${id}"`), `settings should expose functional preference ${id}`);
+});
 assert(optionsHtml.includes('id="settings-local-card" data-sync-provider="local"'), 'local-only routing should retain a visible explanatory provider panel');
+assert(optionsHtml.includes('class="settings-provider-stage"'), 'provider details should stay grouped inside the storage route card');
 assert(!optionsHtml.includes('class="settings-grid"'), 'settings should use the guided workbench instead of a flat card grid');
 assert(optionsCss.includes('.settings-workbench'), 'settings workbench should have a dedicated responsive layout');
 assert(optionsCss.includes('Settings console refinement'), 'settings should use the integrated scientific-console visual treatment');
 assert(optionsCss.includes('@media (max-width: 1180px)'), 'settings workbench should reflow before the narrow mobile breakpoint');
 assert(optionsJs.includes("setText('#settings-kicker', t('settingsKicker'))"), 'settings hero should localize with the active interface language');
+assert(optionsJs.includes('function applyThemePreference'), 'appearance selection should apply a real workspace theme');
+assert(optionsJs.includes('autoSyncToggle.dataset.savedValue'), 'automatic cloud sync should retain its saved state across route changes');
+assert(optionsCss.includes('html[data-theme="dark"] #view-settings'), 'explicit dark appearance should override the system preference');
 assert(optionsJs.includes("mainContent.scrollTop = 0"), 'workspace navigation should reveal the beginning of each settings view');
-assert(optionsHtml.includes('v7.0.0 Companion'), 'workspace version label should match the Scholar reliability release');
-assert.equal(manifest.version, '7.0.0', 'manifest version should match the Scholar reliability release');
+assert(optionsHtml.includes('v7.1.0 Companion'), 'workspace version label should match the security settings release');
+assert.equal(manifest.version, '7.1.0', 'manifest version should match the security settings release');
 
 ['view-projects', 'view-library', 'metric-projects', 'metric-records', 'metric-evidence', 'recent-records'].forEach((removedSection) => {
   assert(!optionsHtml.includes(removedSection), `options page should not expose removed ${removedSection}`);
