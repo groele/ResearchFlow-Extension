@@ -48,8 +48,8 @@ assert(optionsJs.includes('function applyThemePreference'), 'appearance selectio
 assert(optionsJs.includes('autoSyncToggle.dataset.savedValue'), 'automatic cloud sync should retain its saved state across route changes');
 assert(optionsCss.includes('html[data-theme="dark"] #view-settings'), 'explicit dark appearance should override the system preference');
 assert(optionsJs.includes("mainContent.scrollTop = 0"), 'workspace navigation should reveal the beginning of each settings view');
-assert(optionsHtml.includes('v7.1.0 Companion'), 'workspace version label should match the security settings release');
-assert.equal(manifest.version, '7.1.0', 'manifest version should match the security settings release');
+assert(optionsHtml.includes('v7.2.0 Companion'), 'workspace version label should match the manuscript workspace release');
+assert.equal(manifest.version, '7.2.0', 'manifest version should match the manuscript workspace release');
 
 ['view-projects', 'view-library', 'metric-projects', 'metric-records', 'metric-evidence', 'recent-records'].forEach((removedSection) => {
   assert(!optionsHtml.includes(removedSection), `options page should not expose removed ${removedSection}`);
@@ -100,9 +100,12 @@ assert(
   'capture review should use a bounded non-blocking side card'
 );
 assert(optionsJs.includes('findAcademicManuscriptMatch'), 'Scholar capture should prevent duplicate manuscripts');
+assert(!optionsJs.includes('id="man-proj-select"'), 'manuscript editor should not expose the retired project context selector');
+assert(!optionsJs.includes("t('linkedProjectContext')"), 'manuscript editor should not render the retired project context label');
+assert(!optionsJs.includes("document.getElementById('man-proj-select')"), 'manuscript editor save should not read a retired project selector');
 assert(
-  /targetManuscript\.projectId = isEdit[\s\S]{0,100}\? \(projectId \|\| null\)/.test(optionsJs),
-  'editing a manuscript should allow its project relationship to be cleared'
+  /legacy relationship on edits[\s\S]{0,220}new manuscripts stay independent/.test(optionsJs),
+  'manuscript editor should preserve legacy project data without creating new project context'
 );
 assert(optionsJs.includes('openAcademicCaptureChooser'), 'multiple Scholar results should require an explicit selection');
 assert(optionsJs.includes('academicCaptureProvenance: man.academicCaptureProvenance'), 'database import should preserve Scholar provenance');

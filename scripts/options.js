@@ -14,7 +14,7 @@ let submissionAutoSaveCleanup = null;
 let acceptanceCelebrationCleanup = null;
 let previousModalFocus = null;
 
-const RF_OPTIONS_RENDER_VERSION = '7.1.0';
+const RF_OPTIONS_RENDER_VERSION = '7.2.0';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
@@ -425,14 +425,11 @@ const I18N = {
     transferModalHelp: 'This will mark the current submission as rejected and create a new active submission for the next journal.',
     validPortalUrlOrBlank: 'Please enter a valid portal URL, or leave it blank.',
     newManuscriptTitleLabel: 'New Manuscript Title',
-    linkedProjectLabel: 'Linked Project',
-    noProjectYet: 'No project yet',
     createNewManuscriptOption: '+ Create new manuscript...',
     targetJournalPlaceholder: 'e.g. Advanced Functional Materials',
     rejectionNotePlaceholder: 'Optional editor decision, scope mismatch, reviewer summary, or next-action note...',
     editManuscriptMetadata: 'Edit Manuscript Metadata',
     addNewManuscriptTitle: 'Add New Manuscript',
-    linkedProjectContext: 'Linked Project Context',
     writingStatus: 'Writing Status',
     statusIdea: 'Idea',
     statusOutline: 'Outline',
@@ -442,7 +439,6 @@ const I18N = {
     abstractDraft: 'Abstract Draft',
     abstractPlaceholder: 'Outline manuscript abstract draft...',
     createManuscript: 'Create Manuscript',
-    unassignedProject: 'Unassigned',
     academicCapturePrefilled: 'Scholar result captured for review. Confirm the fields before creating the manuscript.',
     scholarSourcePage: 'Scholar result / article URL',
     manuscriptTitleRequired: 'Enter a manuscript title before continuing.',
@@ -816,14 +812,11 @@ const I18N = {
     transferModalHelp: '这会将当前投稿标记为拒稿，并为下一个期刊创建新的进行中投稿。',
     validPortalUrlOrBlank: '请输入有效的期刊入口 URL，或保持为空。',
     newManuscriptTitleLabel: '新手稿题目',
-    linkedProjectLabel: '关联项目',
-    noProjectYet: '暂无项目',
     createNewManuscriptOption: '+ 创建新手稿...',
     targetJournalPlaceholder: '例如：Advanced Functional Materials',
     rejectionNotePlaceholder: '可选的主编决定、范围不符说明、审稿总结或下一步操作备注...',
     editManuscriptMetadata: '编辑手稿元数据',
     addNewManuscriptTitle: '添加新手稿',
-    linkedProjectContext: '关联项目上下文',
     writingStatus: '写作状态',
     statusIdea: '想法',
     statusOutline: '提纲',
@@ -833,7 +826,6 @@ const I18N = {
     abstractDraft: '摘要草稿',
     abstractPlaceholder: '撰写手稿摘要草稿...',
     createManuscript: '创建手稿',
-    unassignedProject: '暂不关联项目',
     academicCapturePrefilled: '已捕获学术搜索结果，请核对信息后创建手稿。',
     scholarSourcePage: '学术结果 / 文章链接',
     manuscriptTitleRequired: '请填写手稿题目后再继续。',
@@ -3369,7 +3361,6 @@ function buildAcademicCaptureSummary(prefill) {
 
 function openManuscriptModal(man = null, prefill = null) {
   const isEdit = !!man;
-  const initialProjectId = isEdit ? man.projectId : prefill?.projectId;
   const initialTitle = isEdit ? man.title : prefill?.title;
   const initialJournal = isEdit ? man.targetJournals?.[0] : prefill?.publication;
   const initialAbstract = isEdit ? man.abstract : prefill?.abstract;
@@ -3381,10 +3372,6 @@ function openManuscriptModal(man = null, prefill = null) {
   const initialDoi = isEdit ? man.doi : prefill?.doi;
   const initialArticleUrl = isEdit ? man.articleUrl : (prefill?.articleUrl || prefill?.pdfUrl);
   const initialStatus = isEdit ? man.status : (prefill ? 'published' : 'idea');
-  const projectOpts = db.projects.map(project => `
-    <option value="${escapeHTML(project.id)}" ${initialProjectId === project.id ? 'selected' : ''}>${escapeHTML(project.title || t('untitledProject'))}</option>
-  `).join('');
-
   openModal(`
     <div class="modal-header">
       <h2>${escapeHTML(isEdit ? t('editManuscriptMetadata') : t('addNewManuscriptTitle'))}</h2>
@@ -3392,14 +3379,6 @@ function openManuscriptModal(man = null, prefill = null) {
     </div>
 
     ${buildAcademicCaptureSummary(prefill)}
-
-    <div class="form-group">
-      <label>${escapeHTML(t('linkedProjectContext'))}</label>
-      <select id="man-proj-select">
-        <option value="">${escapeHTML(t('unassignedProject'))}</option>
-        ${projectOpts}
-      </select>
-    </div>
 
     <div class="form-group">
       <label>${escapeHTML(t('manuscriptTitleLabel'))}</label>
@@ -3453,7 +3432,6 @@ function openManuscriptModal(man = null, prefill = null) {
   `);
 
   document.getElementById('btn-submit-man').addEventListener('click', async () => {
-    const projectId = document.getElementById('man-proj-select').value;
     const title = document.getElementById('man-title').value.trim();
     const status = document.getElementById('man-status').value;
     const journal = document.getElementById('man-journal').value.trim();
@@ -3474,9 +3452,9 @@ function openManuscriptModal(man = null, prefill = null) {
 
     const targetManuscript = isEdit ? man : duplicate;
     if (targetManuscript) {
-      targetManuscript.projectId = isEdit
-        ? (projectId || null)
-        : (projectId || targetManuscript.projectId || null);
+      // The manuscript editor no longer exposes project context. Preserve a
+      // legacy relationship on edits so existing records remain intact, while
+      // new manuscripts stay independent of the retired project framework.
       targetManuscript.title = title;
       setManuscriptStatus(targetManuscript, status);
       targetManuscript.targetJournals = journal ? [journal] : [];
@@ -3491,7 +3469,6 @@ function openManuscriptModal(man = null, prefill = null) {
       const newMan = {
         id: 'man_' + Math.random().toString(36).substring(2, 9),
         userId: 'user',
-        projectId: projectId || null,
         title,
         shortTitle: null,
         manuscriptType: 'article',
