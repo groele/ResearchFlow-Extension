@@ -48,8 +48,8 @@ assert(optionsJs.includes('function applyThemePreference'), 'appearance selectio
 assert(optionsJs.includes('autoSyncToggle.dataset.savedValue'), 'automatic cloud sync should retain its saved state across route changes');
 assert(optionsCss.includes('html[data-theme="dark"] #view-settings'), 'explicit dark appearance should override the system preference');
 assert(optionsJs.includes("mainContent.scrollTop = 0"), 'workspace navigation should reveal the beginning of each settings view');
-assert(optionsHtml.includes('v7.2.0 Companion'), 'workspace version label should match the manuscript workspace release');
-assert.equal(manifest.version, '7.2.0', 'manifest version should match the manuscript workspace release');
+assert(optionsHtml.includes('v7.3.0 Companion'), 'workspace version label should match the current companion release');
+assert.equal(manifest.version, '7.3.0', 'manifest version should match the current companion release');
 
 ['view-projects', 'view-library', 'metric-projects', 'metric-records', 'metric-evidence', 'recent-records'].forEach((removedSection) => {
   assert(!optionsHtml.includes(removedSection), `options page should not expose removed ${removedSection}`);
@@ -74,6 +74,26 @@ assert(optionsJs.includes('captureProvenance'), 'confirmed captures should retai
 assert(optionsJs.includes("reviewedByUser: true"), 'captured information should only be marked reviewed after confirmation');
 assert(optionsJs.includes('sub-edit-first-author'), 'submission editor should expose a first-author module');
 assert(optionsJs.includes('pipeline-first-author'), 'dashboard pipeline cards should render first-author information');
+assert(optionsJs.includes('btn-pipeline-share'), 'dashboard pipeline cards should expose a one-click share-image action');
+assert(optionsJs.includes('createSubmissionShareCanvas'), 'submission journeys should be rendered into a local canvas image');
+assert(optionsJs.includes('canvas.toBlob'), 'share images should be encoded as PNG blobs without remote services');
+assert(optionsJs.includes("navigator.canShare?.({ files: [file] })"), 'share previews should use native file sharing only when supported');
+assert(optionsJs.includes('navigator.clipboard.write([new ClipboardItem'), 'share previews should support copying the generated PNG');
+assert(optionsCss.includes('.share-preview-card'), 'generated journey images should use a dedicated responsive preview');
+assert(optionsCss.includes('.btn-pipeline-share'), 'the homepage share shortcut should have a dedicated visual treatment');
+assert(optionsJs.includes('SHARE_PREFS_STORAGE_KEY'), 'share-image visibility choices should persist across previews');
+assert(optionsJs.includes('normalizeShareVisibility'), 'share-image visibility settings should retain safe defaults');
+['title', 'journal', 'author', 'status', 'duration', 'dates', 'footer'].forEach((field) => {
+  assert(optionsJs.includes(`[\'${field}\', \'shareField`) || optionsJs.includes(`['${field}', 'shareField`), `share controls should expose ${field}`);
+});
+assert(optionsCss.includes('.share-visibility-chip'), 'share-image fields should use accessible visibility controls');
+assert(optionsJs.includes('id="share-image-size"'), 'share studio should expose optimized image-size presets');
+assert(optionsJs.includes("? 1920"), 'share studio should support a full-screen story export');
+assert(optionsJs.includes('canvasWidth = 1080'), 'share images should use a platform-ready 1080 px width');
+assert(optionsCss.includes('.share-size-control'), 'share image-size controls should match the scientific workspace');
+assert(optionsCss.includes('Share studio — modern scientific workspace'), 'share studio should retain the modern scientific visual system');
+assert(optionsJs.includes("const canvasBg = '#f3f7fc'"), 'share posters should use a cool neutral canvas instead of a vintage paper palette');
+assert(optionsJs.includes("const displayFont = font"), 'share posters should use the modern sans-serif display family consistently');
 assert(!optionsJs.includes('pipeline-first-author-index'), 'dashboard first-author typography should not use a competing number badge');
 assert(
   /\.pipeline-first-author\s*\{[\s\S]*?font:\s*inherit;[\s\S]*?font-size:\s*11px;/.test(optionsCss),

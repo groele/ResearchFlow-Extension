@@ -39,6 +39,55 @@ with sync_playwright() as playwright:
     page.locator("#view-dashboard").wait_for(state="visible")
     page.screenshot(path=str(artifact_dir / "01-dashboard.png"))
 
+    share_buttons = page.locator(".btn-pipeline-share")
+    assert share_buttons.count() > 0, "dashboard pipelines should expose a share shortcut"
+    share_buttons.first.click()
+    share_preview = page.locator(".share-preview-shell")
+    share_preview.wait_for(state="visible")
+    page.wait_for_function(
+        """() => {
+          const image = document.querySelector('.share-preview-frame img');
+          const frame = document.querySelector('.share-preview-frame');
+          return frame?.dataset.renderState === 'ready'
+            && image?.complete && image.naturalWidth === 1080 && image.naturalHeight === 1350;
+        }"""
+    )
+    assert page.locator(".share-preview-frame img").get_attribute("src").startswith("blob:")
+    assert "Generated locally" in page.locator(".share-preview-header p").inner_text()
+    visibility_controls = page.locator("[data-share-field]")
+    assert visibility_controls.count() == 7
+    assert page.locator('[data-share-field="title"]').is_checked()
+    page.locator('label:has([data-share-field="title"])').click()
+    page.wait_for_function(
+        """() => globalThis.__chromeMockValues?.researchflow_share_visibility?.title === false"""
+    )
+    page.locator("#share-image-size").select_option("story")
+    page.wait_for_function(
+        """() => document.querySelector('.share-preview-frame')?.dataset.renderState === 'ready'
+          && document.querySelector('.share-preview-frame img')?.naturalHeight === 1920"""
+    )
+    page.locator("#share-image-size").select_option("portrait")
+    page.wait_for_function(
+        """() => document.querySelector('.share-preview-frame')?.dataset.renderState === 'ready'
+          && document.querySelector('.share-preview-frame img')?.naturalHeight === 1350"""
+    )
+    journal_control = page.locator('[data-share-field="journal"]')
+    page.locator('label:has([data-share-field="journal"])').click()
+    page.wait_for_function(
+        """() => globalThis.__chromeMockValues?.researchflow_share_visibility?.journal === false"""
+    )
+    page.wait_for_function(
+        """() => document.querySelector('.share-preview-frame img')?.complete"""
+    )
+    assert page.locator('.share-preview-frame img').get_attribute("src").startswith("blob:")
+    page.screenshot(path=str(artifact_dir / "01-share-preview.png"))
+    with page.expect_download() as share_download:
+        page.locator("#btn-share-download").click()
+    assert share_download.value.suggested_filename.endswith("-journey.png")
+    page.locator("#btn-close-modal").click()
+    assert page.locator("#modal-container").get_attribute("aria-hidden") == "true"
+    assert page.evaluate("() => activeSharePreviewUrl === null")
+
     for view_id in ("view-manuscripts", "view-submissions", "view-settings"):
         page.locator(f'.nav-item[data-view="{view_id}"]').click()
         page.locator(f"#{view_id}").wait_for(state="visible")

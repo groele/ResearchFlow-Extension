@@ -13,12 +13,14 @@ let pendingSubmissionCapture = null;
 let submissionAutoSaveCleanup = null;
 let acceptanceCelebrationCleanup = null;
 let previousModalFocus = null;
+let activeSharePreviewUrl = null;
 
-const RF_OPTIONS_RENDER_VERSION = '7.2.0';
+const RF_OPTIONS_RENDER_VERSION = '7.3.0';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
 const PRE_IMPORT_BACKUP_KEY = 'researchflow_pre_import_backup';
+const SHARE_PREFS_STORAGE_KEY = 'researchflow_share_visibility';
 const MAX_IMPORT_BYTES = 25 * 1024 * 1024;
 const UI_THEME_OPTIONS = new Set(['system', 'light', 'dark']);
 
@@ -54,6 +56,37 @@ const I18N = {
     latestEvent: 'Latest Event',
     timelineEvents: 'Timeline Events',
     manageEvents: 'Manage Events',
+    shareJourney: 'Share journey',
+    shareJourneyTitle: 'Submission journey',
+    shareJourneyHelp: 'Generated locally. Nothing is uploaded until you choose to share it.',
+    shareJourneySystem: 'Share image',
+    shareJourneyDownload: 'Download PNG',
+    shareJourneyCopy: 'Copy image',
+    shareJourneyCopied: 'Share image copied to clipboard.',
+    shareJourneyDownloaded: 'Share image downloaded.',
+    shareJourneyReady: 'Share image is ready.',
+    shareJourneyFailed: 'Could not generate the share image.',
+    shareJourneyUnsupported: 'Image sharing is unavailable here. Download the PNG instead.',
+    shareJourneyEyebrow: 'RESEARCHFLOW · SUBMISSION JOURNEY',
+    shareJourneyStatus: 'CURRENT STATUS',
+    shareJourneyDuration: 'DAYS IN THIS JOURNEY',
+    shareJourneyTimeline: 'JOURNEY MILESTONES',
+    shareJournalLabel: 'TARGET JOURNAL',
+    shareJourneyNoEvents: 'No dated milestones yet',
+    shareJourneyFooter: 'Built locally from your ResearchFlow timeline',
+    shareVisibilityTitle: 'Visible information',
+    shareVisibilityHelp: 'Your choices are remembered for the next image.',
+    shareFieldTitle: 'Title',
+    shareFieldJournal: 'Journal',
+    shareFieldAuthor: 'First author',
+    shareFieldStatus: 'Status',
+    shareFieldDuration: 'Journey days',
+    shareFieldDates: 'Milestone dates',
+    shareFieldFooter: 'ResearchFlow footer',
+    shareSizeTitle: 'Image size',
+    shareSizePortrait: 'Mobile portrait · 1080 × 1350',
+    shareSizeStory: 'Story · 1080 × 1920',
+    shareSizeAuto: 'Adaptive long image',
     noEventYet: 'No event yet',
     addEventStart: 'Add an event to start tracking',
     clickAddEvent: 'Click here to add a timeline event for this manuscript.',
@@ -482,6 +515,37 @@ const I18N = {
     latestEvent: '最新事件',
     timelineEvents: '时间线事件',
     manageEvents: '管理事件',
+    shareJourney: '分享历程',
+    shareJourneyTitle: '投稿历程分享图',
+    shareJourneyHelp: '图片仅在本地生成，只有在你主动分享时才会离开设备。',
+    shareJourneySystem: '分享图片',
+    shareJourneyDownload: '下载 PNG',
+    shareJourneyCopy: '复制图片',
+    shareJourneyCopied: '分享图已复制到剪贴板。',
+    shareJourneyDownloaded: '分享图已下载。',
+    shareJourneyReady: '分享图已生成。',
+    shareJourneyFailed: '分享图生成失败。',
+    shareJourneyUnsupported: '当前环境无法直接分享图片，请下载 PNG。',
+    shareJourneyEyebrow: 'RESEARCHFLOW · 投稿历程',
+    shareJourneyStatus: '当前状态',
+    shareJourneyDuration: '历程天数',
+    shareJourneyTimeline: '关键节点',
+    shareJournalLabel: '目标期刊',
+    shareJourneyNoEvents: '暂无已记录日期的节点',
+    shareJourneyFooter: '由 ResearchFlow 在本地根据你的时间线生成',
+    shareVisibilityTitle: '显示内容',
+    shareVisibilityHelp: '隐藏选择会自动保存，并沿用到下一张分享图。',
+    shareFieldTitle: '题目',
+    shareFieldJournal: '期刊',
+    shareFieldAuthor: '第一作者',
+    shareFieldStatus: '当前状态',
+    shareFieldDuration: '历程天数',
+    shareFieldDates: '节点日期',
+    shareFieldFooter: 'ResearchFlow 页脚',
+    shareSizeTitle: '图片尺寸',
+    shareSizePortrait: '移动竖版 · 1080 × 1350',
+    shareSizeStory: '全屏 · 1080 × 1920',
+    shareSizeAuto: '自适应长图',
     noEventYet: '暂无事件',
     addEventStart: '添加事件开始跟踪',
     clickAddEvent: '点击此处为此手稿添加时间线事件。',
@@ -1315,6 +1379,712 @@ function updatePipelineViewToggle() {
   if (button) {
     button.classList.toggle('active', isPipelineExpanded);
     button.setAttribute('aria-pressed', String(isPipelineExpanded));
+  }
+}
+
+function buildDefaultSubmissionTimeline(submission) {
+  const stamp = Date.now();
+  const definitions = [
+    ['Experiments Completed', 'research', 'completed'],
+    ['Data Organization', 'research', 'completed'],
+    ['Draft Completed', 'writing', 'completed'],
+    ['Manuscript Submitted', 'submission', 'active'],
+    ['Review Comments R1', 'review', 'pending'],
+    ['R1 Revision Submitted', 'revision', 'pending'],
+    ['Accepted', 'publication', 'pending'],
+    ['Online Publication', 'publication', 'pending']
+  ];
+  return definitions.map(([name, type, status], index) => ({
+    id: `node_${index + 1}_${submission.id}_${stamp}`,
+    name,
+    type,
+    planDate: '',
+    completeDate: '',
+    dueDate: '',
+    status,
+    notes: ''
+  }));
+}
+
+function roundedRectPath(ctx, x, y, width, height, radius) {
+  ctx.beginPath();
+  ctx.roundRect(x, y, width, height, Math.min(radius, width / 2, height / 2));
+}
+
+function canvasTextLines(ctx, text, maxWidth) {
+  const value = String(text || '').trim();
+  if (!value) return [];
+  const lines = [];
+  let line = '';
+  const hasWordSpaces = /\s/.test(value);
+  const tokens = hasWordSpaces ? value.split(/\s+/) : Array.from(value);
+  tokens.forEach((token) => {
+    const next = `${line}${hasWordSpaces && line ? ' ' : ''}${token}`;
+    if (line && ctx.measureText(next).width > maxWidth) {
+      lines.push(line.trim());
+      line = token;
+    } else {
+      line = next;
+    }
+  });
+  if (line) lines.push(line.trim());
+  return lines;
+}
+
+function drawWrappedCanvasText(ctx, text, x, y, maxWidth, lineHeight, maxLines = Infinity) {
+  let lines = canvasTextLines(ctx, text, maxWidth);
+  if (lines.length > maxLines) {
+    lines = lines.slice(0, maxLines);
+    let finalLine = lines[maxLines - 1];
+    while (finalLine && ctx.measureText(`${finalLine}…`).width > maxWidth) finalLine = finalLine.slice(0, -1);
+    lines[maxLines - 1] = `${finalLine}…`;
+  }
+  lines.forEach((line, index) => ctx.fillText(line, x, y + index * lineHeight));
+  return lines.length;
+}
+
+function formatShareDate(value) {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value).slice(0, 10);
+  return new Intl.DateTimeFormat(currentLanguage === 'zh' ? 'zh-CN' : 'en-US', {
+    year: 'numeric', month: 'short', day: '2-digit'
+  }).format(date);
+}
+
+function getSubmissionShareEvents(submission) {
+  return autoSortNodes(submission.timelineNodes || [])
+    .map(node => ({
+      name: getTimelineNodeDisplayName(node),
+      date: getNodeDate(node),
+      type: node.type || 'special',
+      status: computeNodeStatus(node)
+    }))
+    .filter(event => event.date)
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+}
+
+function normalizeShareVisibility(value = {}) {
+  const size = ['portrait', 'story', 'auto'].includes(value.size) ? value.size : 'portrait';
+  return {
+    title: value.title !== false,
+    journal: value.journal !== false,
+    author: value.author !== false,
+    status: value.status !== false,
+    duration: value.duration !== false,
+    dates: value.dates !== false,
+    footer: value.footer !== false,
+    size
+  };
+}
+function createSubmissionShareCanvas(submission, visibility = {}) {
+  const visible = normalizeShareVisibility(visibility);
+  const manuscript = db?.manuscripts?.find(item => item.id === submission.manuscriptId);
+  const title = manuscript?.title || submission.title || t('untitledManuscript');
+  const journal = getSubmissionJournalName(submission);
+  const firstAuthor = getSubmissionFirstAuthor(submission, manuscript);
+  const analysis = analyzeSubmission(submission);
+  const events = getSubmissionShareEvents(submission);
+  const eventRows = Math.max(events.length, 1);
+  const canvasWidth = 1080;
+  const canvasHeight = visible.size === 'story'
+    ? 1920
+    : (visible.size === 'auto' ? Math.max(1350, Math.round((1060 + eventRows * 112) * 0.9)) : 1350);
+  const width = 1200;
+  const scale = canvasWidth / width;
+  const height = canvasHeight / scale;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvasWidth;
+  canvas.height = canvasHeight;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas is unavailable');
+  ctx.scale(scale, scale);
+
+  const ink = '#0f172a';
+  const inkSecondary = '#334155';
+  const canvasBg = '#f3f7fc';
+  const muted = '#64748b';
+  const subtle = '#94a3b8';
+  const paper = '#ffffff';
+  const accent = analysis.accepted ? '#059669' : '#2563eb';
+  const cyan = '#0891b2';
+  const font = 'Bahnschrift, "Aptos Display", "Microsoft YaHei UI", sans-serif';
+  const displayFont = font;
+  const shareTypeColors = {
+    research: '#2563eb',
+    writing: '#7c3aed',
+    submission: '#0891b2',
+    review: '#d97706',
+    revision: '#ea580c',
+    publication: '#059669',
+    special: '#64748b'
+  };
+
+  // 1. Base Canvas Background (Outer Frame)
+  const canvasGradient = ctx.createLinearGradient(0, 0, width, height);
+  canvasGradient.addColorStop(0, '#ffffff');
+  canvasGradient.addColorStop(0.35, '#f8fafd');
+  canvasGradient.addColorStop(1, canvasBg);
+  ctx.fillStyle = canvasGradient;
+  ctx.fillRect(0, 0, width, height);
+
+  // 2. Main Unified Poster Card
+  const cardX = 48;
+  const cardY = 44;
+  const cardW = width - 96; // 1104
+  const cardH = height - 88;
+  const innerX = 88;
+  const innerW = width - 176; // 1024
+  const innerRight = innerX + innerW; // 1112
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(15, 23, 42, 0.08)';
+  ctx.shadowBlur = 40;
+  ctx.shadowOffsetY = 14;
+  roundedRectPath(ctx, cardX, cardY, cardW, cardH, 28);
+  ctx.fillStyle = paper;
+  ctx.fill();
+  ctx.strokeStyle = '#e2e8f0';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.restore();
+
+  // Top Accent Gradient Stripe on the Card
+  ctx.save();
+  roundedRectPath(ctx, cardX, cardY, cardW, cardH, 28);
+  ctx.clip();
+  const signalGradient = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY);
+  signalGradient.addColorStop(0, '#2563eb');
+  signalGradient.addColorStop(0.5, '#06b6d4');
+  signalGradient.addColorStop(1, '#10b981');
+  ctx.fillStyle = signalGradient;
+  ctx.fillRect(cardX, cardY, cardW, 6);
+  ctx.restore();
+
+  // 3. Header Bar: RF / 01 Capsule & Date
+  const headerY = cardY + 28;
+  roundedRectPath(ctx, innerX, headerY, 88, 30, 8);
+  ctx.fillStyle = 'rgba(37, 99, 235, 0.08)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(37, 99, 235, 0.2)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  ctx.fillStyle = '#2563eb';
+  ctx.font = `800 13px ${font}`;
+  ctx.textAlign = 'center';
+  ctx.fillText('RF / 01', innerX + 44, headerY + 20);
+  ctx.textAlign = 'left';
+
+  ctx.textAlign = 'right';
+  ctx.fillStyle = muted;
+  ctx.font = `700 14px ${font}`;
+  ctx.fillText(formatShareDate(new Date()).toUpperCase(), innerRight, headerY + 20);
+  ctx.textAlign = 'left';
+
+  let cursorY = headerY + 48;
+  let hasHeroContent = false;
+
+  // 4. Hero Section: Journal Card, Manuscript Title, First Author
+  if (visible.journal && journal) {
+    hasHeroContent = true;
+    const journalCardH = 86;
+    roundedRectPath(ctx, innerX, cursorY, innerW, journalCardH, 16);
+    const journalBg = ctx.createLinearGradient(innerX, cursorY, innerRight, cursorY + journalCardH);
+    journalBg.addColorStop(0, '#0f172a');
+    journalBg.addColorStop(0.55, '#1e293b');
+    journalBg.addColorStop(1, '#1e3a8a');
+    ctx.fillStyle = journalBg;
+    ctx.fill();
+
+    // Glowing accent stripe on the left edge
+    const accentGrad = ctx.createLinearGradient(innerX, cursorY, innerX, cursorY + journalCardH);
+    accentGrad.addColorStop(0, '#2dd4bf');
+    accentGrad.addColorStop(1, '#38bdf8');
+    ctx.fillStyle = accentGrad;
+    ctx.beginPath();
+    ctx.roundRect(innerX, cursorY, 8, journalCardH, [16, 0, 0, 16]);
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(186, 230, 253, 0.88)';
+    ctx.font = `800 12px ${font}`;
+    ctx.fillText(t('shareJournalLabel').toUpperCase(), innerX + 30, cursorY + 28);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `800 30px ${displayFont}`;
+    drawWrappedCanvasText(ctx, journal, innerX + 30, cursorY + 64, innerW - 60, 36, 1);
+    cursorY += journalCardH + 18;
+  }
+
+  if (visible.title) {
+    hasHeroContent = true;
+    ctx.fillStyle = ink;
+    ctx.font = `800 42px ${displayFont}`;
+    const titleLineCount = drawWrappedCanvasText(ctx, title, innerX, cursorY + 38, innerW, 54, 4);
+    cursorY += 38 + (titleLineCount - 1) * 54 + 20;
+  }
+
+  if (visible.author && firstAuthor) {
+    hasHeroContent = true;
+    ctx.font = `700 12px ${font}`;
+    const labelW = ctx.measureText(t('firstAuthorLabel')).width;
+    ctx.font = `600 15px ${font}`;
+    const authorW = ctx.measureText(firstAuthor).width;
+    const authorPillW = labelW + authorW + 36;
+
+    roundedRectPath(ctx, innerX, cursorY, authorPillW, 34, 8);
+    ctx.fillStyle = 'rgba(37, 99, 235, 0.06)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(37, 99, 235, 0.16)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = '#2563eb';
+    ctx.font = `700 12px ${font}`;
+    ctx.fillText(t('firstAuthorLabel'), innerX + 12, cursorY + 22);
+
+    ctx.fillStyle = inkSecondary;
+    ctx.font = `600 15px ${font}`;
+    ctx.fillText(firstAuthor, innerX + 12 + labelW + 12, cursorY + 22);
+
+    cursorY += 46;
+  }
+
+  if (hasHeroContent) {
+    ctx.fillStyle = '#f1f5f9';
+    ctx.fillRect(innerX, cursorY + 4, innerW, 1.5);
+    cursorY += 24;
+  }
+
+  // 5. Key Metrics Section (Duration & Status)
+  const duration = analysis.display?.value;
+  const showMetrics = visible.status || visible.duration;
+
+  if (showMetrics) {
+    const cardH = 118;
+    const both = visible.duration && visible.status;
+    const colW = both ? (innerW - 24) / 2 : innerW;
+
+    if (visible.duration) {
+      roundedRectPath(ctx, innerX, cursorY, colW, cardH, 16);
+      ctx.fillStyle = '#f8fafc';
+      ctx.fill();
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      ctx.fillStyle = muted;
+      ctx.font = `700 13px ${font}`;
+      ctx.fillText(t('shareJourneyDuration'), innerX + 28, cursorY + 34);
+
+      const durationStr = duration === null || duration === undefined ? '—' : String(duration);
+      ctx.fillStyle = ink;
+      ctx.font = `800 52px ${displayFont}`;
+      ctx.fillText(durationStr, innerX + 28, cursorY + 90);
+      const numW = ctx.measureText(durationStr).width;
+
+      if (duration !== null && duration !== undefined) {
+        ctx.fillStyle = accent;
+        ctx.font = `800 20px ${font}`;
+        ctx.fillText(t('days').toUpperCase(), innerX + 28 + numW + 10, cursorY + 84);
+      }
+
+      if (!visible.status) {
+        // Active timeline tracking indicator on wide duration card
+        roundedRectPath(ctx, innerX + colW - 190, cursorY + 42, 162, 34, 17);
+        ctx.fillStyle = 'rgba(37, 99, 235, 0.08)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(37, 99, 235, 0.16)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.fillStyle = '#2563eb';
+        ctx.beginPath();
+        ctx.arc(innerX + colW - 174, cursorY + 59, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#1e40af';
+        ctx.font = `700 12px ${font}`;
+        ctx.fillText(t('shareJourneyTimeline'), innerX + colW - 162, cursorY + 63);
+      }
+    }
+
+    if (visible.status) {
+      const statusX = visible.duration ? innerX + colW + 24 : innerX;
+      roundedRectPath(ctx, statusX, cursorY, colW, cardH, 16);
+      ctx.fillStyle = '#f8fafc';
+      ctx.fill();
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      ctx.fillStyle = muted;
+      ctx.font = `700 13px ${font}`;
+      ctx.fillText(t('shareJourneyStatus'), statusX + 28, cursorY + 34);
+
+      const statusText = getSubmissionStatusLabel(submission.status);
+      ctx.font = `800 19px ${font}`;
+      const stW = ctx.measureText(statusText).width;
+      const pillW = Math.min(colW - 56, stW + 44);
+
+      roundedRectPath(ctx, statusX + 28, cursorY + 52, pillW, 40, 10);
+      ctx.fillStyle = analysis.accepted ? 'rgba(5, 150, 105, 0.1)' : 'rgba(37, 99, 235, 0.08)';
+      ctx.fill();
+      ctx.strokeStyle = analysis.accepted ? '#a7f3d0' : '#bfdbfe';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      ctx.fillStyle = accent;
+      ctx.beginPath();
+      ctx.arc(statusX + 28 + 16, cursorY + 72, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = analysis.accepted ? '#065f46' : '#1e40af';
+      ctx.font = `800 19px ${font}`;
+      ctx.fillText(statusText, statusX + 28 + 30, cursorY + 78);
+    }
+
+    ctx.fillStyle = '#f1f5f9';
+    ctx.fillRect(innerX, cursorY + cardH + 20, innerW, 1.5);
+    cursorY += cardH + 42;
+  }
+
+  // 6. Timeline Milestones Section
+  ctx.fillStyle = ink;
+  ctx.font = `800 20px ${font}`;
+  ctx.fillText(t('shareJourneyTimeline'), innerX, cursorY + 6);
+
+  // Progress Pill Badge
+  roundedRectPath(ctx, innerRight - 88, cursorY - 14, 88, 26, 13);
+  ctx.fillStyle = '#f1f5f9';
+  ctx.fill();
+  ctx.strokeStyle = '#e2e8f0';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.fillStyle = '#475569';
+  ctx.font = `700 12px ${font}`;
+  ctx.textAlign = 'center';
+  ctx.fillText(`${String(events.length).padStart(2, '0')} / ${String((submission.timelineNodes || []).length).padStart(2, '0')}`, innerRight - 44, cursorY + 3);
+  ctx.textAlign = 'left';
+
+  const railX = innerX + 36;
+  const firstY = cursorY + 54;
+  const timelineBottom = (cardY + cardH) - (visible.footer ? 72 : 32);
+  const maxRowGap = visible.size === 'story' ? 180 : (visible.size === 'auto' ? 104 : 116);
+  const rowGap = events.length > 1
+    ? Math.min(maxRowGap, Math.max(50, (timelineBottom - firstY) / (events.length - 1)))
+    : 0;
+  const compactTimeline = rowGap < 78;
+  const lastY = firstY + Math.max(0, eventRows - 1) * rowGap;
+
+  ctx.strokeStyle = '#e2e8f0';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(railX, firstY);
+  ctx.lineTo(railX, lastY);
+  ctx.stroke();
+
+  if (!events.length) {
+    ctx.fillStyle = accent;
+    ctx.beginPath();
+    ctx.arc(railX, firstY, 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = muted;
+    ctx.font = `500 22px ${font}`;
+    ctx.fillText(t('shareJourneyNoEvents'), railX + 44, firstY + 8);
+  } else {
+    events.forEach((event, index) => {
+      const y = firstY + index * rowGap;
+      const meta = getTimelineTypeMeta(event.type);
+      const eventColor = shareTypeColors[event.type] || accent;
+      const contentX = railX + 44;
+
+      // Outer Numbered Milestone Circle
+      ctx.fillStyle = paper;
+      ctx.beginPath();
+      ctx.arc(railX, y, compactTimeline ? 16 : 18, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = eventColor;
+      ctx.lineWidth = compactTimeline ? 3 : 3.5;
+      ctx.stroke();
+
+      ctx.fillStyle = ink;
+      ctx.font = `800 ${compactTimeline ? 11 : 12}px ${font}`;
+      ctx.textAlign = 'center';
+      ctx.fillText(String(index + 1).padStart(2, '0'), railX, y + (compactTimeline ? 4 : 4.5));
+      ctx.textAlign = 'left';
+
+      // Event Type Tag Pill
+      ctx.font = `700 11px ${font}`;
+      const tagText = meta.label;
+      const tagW = ctx.measureText(tagText).width + 16;
+      const tagY = y - (compactTimeline ? 18 : 22);
+
+      roundedRectPath(ctx, contentX, tagY, tagW, 20, 5);
+      ctx.save();
+      ctx.globalAlpha = 0.12;
+      ctx.fillStyle = eventColor;
+      ctx.fill();
+      ctx.restore();
+
+      ctx.fillStyle = eventColor;
+      ctx.font = `700 11px ${font}`;
+      ctx.fillText(tagText, contentX + 8, tagY + 14);
+
+      // Event Name
+      ctx.fillStyle = ink;
+      ctx.font = `700 ${compactTimeline ? 18 : 22}px ${font}`;
+      drawWrappedCanvasText(ctx, event.name, contentX, y + (compactTimeline ? 14 : 16), visible.dates ? 640 : 900, compactTimeline ? 24 : 28, compactTimeline ? 1 : 2);
+
+      // Event Date
+      if (visible.dates) {
+        ctx.fillStyle = muted;
+        ctx.font = `600 ${compactTimeline ? 15 : 17}px ${font}`;
+        ctx.textAlign = 'right';
+        ctx.fillText(formatShareDate(event.date), innerRight, y + (compactTimeline ? 14 : 16));
+        ctx.textAlign = 'left';
+      }
+
+      if (index < events.length - 1 && !compactTimeline) {
+        ctx.fillStyle = '#f1f5f9';
+        ctx.fillRect(contentX, y + rowGap / 2, innerRight - contentX, 1);
+      }
+    });
+  }
+
+  // 7. Footer Branding & Privacy Attribution
+  if (visible.footer) {
+    const footerY = (cardY + cardH) - 34;
+    ctx.fillStyle = '#f1f5f9';
+    ctx.fillRect(innerX, footerY - 20, innerW, 1);
+
+    // Mini Logo Icon
+    roundedRectPath(ctx, innerX, footerY - 14, 20, 20, 5);
+    const logoGrad = ctx.createLinearGradient(innerX, footerY - 14, innerX + 20, footerY + 6);
+    logoGrad.addColorStop(0, '#2563eb');
+    logoGrad.addColorStop(1, '#06b6d4');
+    ctx.fillStyle = logoGrad;
+    ctx.fill();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `800 10px ${font}`;
+    ctx.textAlign = 'center';
+    ctx.fillText('RF', innerX + 10, footerY);
+    ctx.textAlign = 'left';
+
+    ctx.fillStyle = ink;
+    ctx.font = `800 15px ${font}`;
+    ctx.fillText('RESEARCHFLOW', innerX + 28, footerY + 1);
+
+    ctx.fillStyle = subtle;
+    ctx.font = `600 12px ${font}`;
+    ctx.fillText('•  JOURNEY MAP', innerX + 175, footerY + 1);
+
+    ctx.fillStyle = subtle;
+    ctx.font = `500 13px ${font}`;
+    ctx.textAlign = 'right';
+    ctx.fillText(t('shareJourneyFooter'), innerRight, footerY + 1);
+    ctx.textAlign = 'left';
+  }
+
+  return { canvas, title };
+}
+
+function canvasToPngBlob(canvas) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('PNG encoding failed')), 'image/png', 0.96);
+  });
+}
+
+function safeShareFileName(title) {
+  const base = String(title || 'submission-journey')
+    .replace(/[<>:"/\\|?*\u0000-\u001f]/g, '')
+    .replace(/\s+/g, '-')
+    .slice(0, 72);
+  return `${base || 'submission-journey'}-journey.png`;
+}
+
+function downloadShareBlob(blob, fileName) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+async function openSubmissionSharePreview(submissionId, triggerButton) {
+  const submission = db.submissions.find(item => item.id === submissionId);
+  if (!submission) return;
+  if (triggerButton) {
+    triggerButton.disabled = true;
+    triggerButton.setAttribute('aria-busy', 'true');
+  }
+
+  try {
+    const stored = await chrome.storage.local.get([SHARE_PREFS_STORAGE_KEY]);
+    let visibility = normalizeShareVisibility(stored?.[SHARE_PREFS_STORAGE_KEY]);
+    let currentBlob = null;
+    let currentFileName = '';
+    let currentTitle = '';
+    let previewRenderId = 0;
+    const fields = [
+      ['title', 'shareFieldTitle'],
+      ['journal', 'shareFieldJournal'],
+      ['author', 'shareFieldAuthor'],
+      ['status', 'shareFieldStatus'],
+      ['duration', 'shareFieldDuration'],
+      ['dates', 'shareFieldDates'],
+      ['footer', 'shareFieldFooter']
+    ];
+    const visibilityControls = fields.map(([key, labelKey]) => `
+      <label class="share-visibility-chip">
+        <input type="checkbox" data-share-field="${key}" ${visibility[key] ? 'checked' : ''}>
+        <span class="share-visibility-check" aria-hidden="true">✓</span>
+        <span>${escapeHTML(t(labelKey))}</span>
+      </label>
+    `).join('');
+
+    openModal(`
+      <div class="share-preview-shell">
+        <div class="share-preview-header">
+          <div>
+            <span class="share-preview-kicker">ResearchFlow / Share Studio</span>
+            <h2>${escapeHTML(t('shareJourneyTitle'))}</h2>
+            <p>${escapeHTML(t('shareJourneyHelp'))}</p>
+          </div>
+          <button class="btn-icon share-preview-close" id="btn-close-modal" type="button" aria-label="${escapeHTML(t('close'))}">×</button>
+        </div>
+        <div class="share-preview-workbench">
+          <aside class="share-visibility-panel" aria-label="${escapeHTML(t('shareVisibilityTitle'))}">
+            <div class="share-visibility-heading">
+              <strong>${escapeHTML(t('shareVisibilityTitle'))}</strong>
+              <small>${escapeHTML(t('shareVisibilityHelp'))}</small>
+            </div>
+            <div class="share-visibility-list">${visibilityControls}</div>
+            <label class="share-size-control" for="share-image-size">
+              <span>${escapeHTML(t('shareSizeTitle'))}</span>
+              <select id="share-image-size">
+                <option value="portrait" ${visibility.size === 'portrait' ? 'selected' : ''}>${escapeHTML(t('shareSizePortrait'))}</option>
+                <option value="story" ${visibility.size === 'story' ? 'selected' : ''}>${escapeHTML(t('shareSizeStory'))}</option>
+                <option value="auto" ${visibility.size === 'auto' ? 'selected' : ''}>${escapeHTML(t('shareSizeAuto'))}</option>
+              </select>
+            </label>
+          </aside>
+          <div class="share-preview-frame" data-render-state="idle" aria-live="polite">
+            <div class="share-preview-loading" data-share-loading>${escapeHTML(t('shareJourneyReady'))}</div>
+            <img alt="${escapeHTML(t('shareJourneyTitle'))}">
+          </div>
+        </div>
+        <div class="share-preview-actions">
+          <span class="share-local-note">● ${escapeHTML(t('shareJourneyHelp'))}</span>
+          <button class="btn-primary" id="btn-share-system" type="button">${escapeHTML(t('shareJourneySystem'))}</button>
+          <button class="btn-secondary" id="btn-share-download" type="button">${escapeHTML(t('shareJourneyDownload'))}</button>
+          <button class="btn-secondary" id="btn-share-copy" type="button">${escapeHTML(t('shareJourneyCopy'))}</button>
+        </div>
+      </div>
+    `);
+
+    const image = modalContent.querySelector('.share-preview-frame img');
+    const previewFrame = modalContent.querySelector('.share-preview-frame');
+    const loading = modalContent.querySelector('[data-share-loading]');
+    const renderPreview = async () => {
+      const renderId = ++previewRenderId;
+      previewFrame.dataset.renderState = 'rendering';
+      previewFrame.dataset.shareSize = visibility.size;
+      loading.hidden = false;
+      image.classList.add('is-rendering');
+      const { canvas, title } = createSubmissionShareCanvas(submission, visibility);
+      const blob = await canvasToPngBlob(canvas);
+      const nextUrl = URL.createObjectURL(blob);
+      if (renderId !== previewRenderId) {
+        URL.revokeObjectURL(nextUrl);
+        return;
+      }
+      const previousUrl = activeSharePreviewUrl;
+      activeSharePreviewUrl = nextUrl;
+      currentBlob = blob;
+      currentTitle = title;
+      currentFileName = safeShareFileName(title);
+      await new Promise((resolve, reject) => {
+        image.onload = () => {
+          loading.hidden = true;
+          image.classList.remove('is-rendering');
+          previewFrame.dataset.renderState = 'ready';
+          previewFrame.scrollTo({ top: 0, left: 0 });
+          if (previousUrl) URL.revokeObjectURL(previousUrl);
+          resolve();
+        };
+        image.onerror = () => reject(new Error('Share image preview failed to load'));
+        image.src = nextUrl;
+      });
+    };
+
+    await renderPreview();
+    modalContent.querySelectorAll('[data-share-field]').forEach((control) => {
+      control.addEventListener('change', async () => {
+        previewFrame.dataset.renderState = 'pending';
+        loading.hidden = false;
+        image.classList.add('is-rendering');
+        visibility = normalizeShareVisibility({
+          ...visibility,
+          [control.dataset.shareField]: control.checked
+        });
+        await chrome.storage.local.set({ [SHARE_PREFS_STORAGE_KEY]: visibility });
+        await renderPreview();
+      });
+    });
+    document.getElementById('share-image-size')?.addEventListener('change', async (event) => {
+      previewFrame.dataset.renderState = 'pending';
+      loading.hidden = false;
+      image.classList.add('is-rendering');
+      visibility = normalizeShareVisibility({ ...visibility, size: event.target.value });
+      await chrome.storage.local.set({ [SHARE_PREFS_STORAGE_KEY]: visibility });
+      await renderPreview();
+    });
+
+    const systemButton = document.getElementById('btn-share-system');
+    const canSystemShare = Boolean(navigator.share && navigator.canShare);
+    if (!canSystemShare) systemButton.hidden = true;
+    systemButton?.addEventListener('click', async () => {
+      if (!currentBlob) return;
+      const file = new File([currentBlob], currentFileName, { type: 'image/png' });
+      if (!navigator.canShare?.({ files: [file] })) {
+        showGlobalToast(t('shareJourneyUnsupported'), 'warning');
+        return;
+      }
+      try {
+        await navigator.share({ files: [file], title: t('shareJourneyTitle'), text: currentTitle });
+      } catch (error) {
+        if (error?.name !== 'AbortError') showGlobalToast(t('shareJourneyUnsupported'), 'warning');
+      }
+    });
+    document.getElementById('btn-share-download')?.addEventListener('click', () => {
+      if (!currentBlob) return;
+      downloadShareBlob(currentBlob, currentFileName);
+      showGlobalToast(t('shareJourneyDownloaded'), 'success');
+    });
+    const copyButton = document.getElementById('btn-share-copy');
+    const canCopyImage = Boolean(window.ClipboardItem && navigator.clipboard?.write);
+    if (!canCopyImage) copyButton.hidden = true;
+    copyButton?.addEventListener('click', async () => {
+      if (!currentBlob) return;
+      try {
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': currentBlob })]);
+        showGlobalToast(t('shareJourneyCopied'), 'success');
+      } catch {
+        downloadShareBlob(currentBlob, currentFileName);
+        showGlobalToast(t('shareJourneyDownloaded'), 'success');
+      }
+    });
+    showGlobalToast(t('shareJourneyReady'), 'success');
+  } catch (error) {
+    console.error(error);
+    showGlobalToast(t('shareJourneyFailed'), 'error');
+  } finally {
+    if (triggerButton) {
+      triggerButton.disabled = false;
+      triggerButton.removeAttribute('aria-busy');
+    }
   }
 }
 
@@ -2526,6 +3296,10 @@ function renderDashboard() {
   const visibleSubmissions = db.submissions.filter(s => s.status !== 'rejected');
   let timelineChanged = false;
   visibleSubmissions.forEach(sub => {
+    if (!Array.isArray(sub.timelineNodes) || sub.timelineNodes.length === 0) {
+      sub.timelineNodes = buildDefaultSubmissionTimeline(sub);
+      timelineChanged = true;
+    }
     timelineChanged = normalizeSubmissionTimeline(sub) || timelineChanged;
   });
   if (timelineChanged) window.storage.saveAll(db).catch(console.error);
@@ -2576,21 +3350,6 @@ function renderDashboard() {
       const manTitle = man ? man.title : t('untitledManuscript');
       const journalName = getSubmissionJournalName(sub);
       const firstAuthor = getSubmissionFirstAuthor(sub, man);
-
-      // Auto initialize default standard nodes if not present
-      if (!sub.timelineNodes || sub.timelineNodes.length === 0) {
-        sub.timelineNodes = [
-          { id: `node_1_${sub.id}_${Date.now()}`, name: 'Experiments Completed', type: 'research', planDate: '', completeDate: '', dueDate: '', status: 'completed', notes: '' },
-          { id: `node_2_${sub.id}_${Date.now()}`, name: 'Data Organization', type: 'research', planDate: '', completeDate: '', dueDate: '', status: 'completed', notes: '' },
-          { id: `node_3_${sub.id}_${Date.now()}`, name: 'Draft Completed', type: 'writing', planDate: '', completeDate: '', dueDate: '', status: 'completed', notes: '' },
-          { id: `node_4_${sub.id}_${Date.now()}`, name: 'Manuscript Submitted', type: 'submission', planDate: '', completeDate: '', dueDate: '', status: 'active', notes: '' },
-          { id: `node_5_${sub.id}_${Date.now()}`, name: 'Review Comments R1', type: 'review', planDate: '', completeDate: '', dueDate: '', status: 'pending', notes: '' },
-          { id: `node_6_${sub.id}_${Date.now()}`, name: 'R1 Revision Submitted', type: 'revision', planDate: '', completeDate: '', dueDate: '', status: 'pending', notes: '' },
-          { id: `node_7_${sub.id}_${Date.now()}`, name: 'Accepted', type: 'publication', planDate: '', completeDate: '', dueDate: '', status: 'pending', notes: '' },
-          { id: `node_8_${sub.id}_${Date.now()}`, name: 'Online Publication', type: 'publication', planDate: '', completeDate: '', dueDate: '', status: 'pending', notes: '' }
-        ];
-        window.storage.saveAll(db).catch(console.error);
-      }
 
       // Analyze submission via the unified helper
       const a = analyzeSubmission(sub);
@@ -2678,6 +3437,10 @@ function renderDashboard() {
           <div class="pipeline-actions" style="margin-top: 12px; display: flex; gap: 8px;">
             <button class="btn-secondary btn-sm btn-pipeline-add" data-sub-id="${escapeHTML(sub.id)}">${t('addEvent')}</button>
             <button class="btn-secondary btn-sm btn-pipeline-manage" data-sub-id="${escapeHTML(sub.id)}">${t('manageEvents')}</button>
+            <button class="btn-secondary btn-sm btn-pipeline-share" data-sub-id="${escapeHTML(sub.id)}" title="${escapeHTML(t('shareJourney'))}" aria-label="${escapeHTML(t('shareJourney'))}: ${escapeHTML(manTitle)}">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 10.5 6.8-4M8.6 13.5l6.8 4"/></svg>
+              <span>${escapeHTML(t('shareJourney'))}</span>
+            </button>
           </div>
         </div>
 
@@ -2759,6 +3522,13 @@ function renderDashboard() {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         openTimelineEventManager(btn.getAttribute('data-sub-id'));
+      });
+    });
+
+    ganttBox.querySelectorAll('.btn-pipeline-share').forEach(btn => {
+      btn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        openSubmissionSharePreview(btn.getAttribute('data-sub-id'), btn);
       });
     });
 
@@ -5889,6 +6659,7 @@ function openModal(htmlContent) {
   }
   modalContent.innerHTML = htmlContent;
   modalContent.classList.toggle('stage-modal-wide', htmlContent.includes('stage-editor'));
+  modalContent.classList.toggle('share-preview-card', htmlContent.includes('share-preview-shell'));
   const isCaptureReview = htmlContent.includes('submission-capture-review')
     || htmlContent.includes('academic-capture-review')
     || htmlContent.includes('academic-capture-chooser');
@@ -5932,6 +6703,11 @@ function closeModal() {
   modal.setAttribute('aria-hidden', 'true');
   modalContent.classList.remove('submission-capture-card');
   modalContent.classList.remove('academic-capture-card');
+  modalContent.classList.remove('share-preview-card');
+  if (activeSharePreviewUrl) {
+    URL.revokeObjectURL(activeSharePreviewUrl);
+    activeSharePreviewUrl = null;
+  }
   document.body.classList.remove('submission-capture-mode');
   document.body.classList.remove('academic-capture-mode');
   pendingSubmissionCapture = null;
