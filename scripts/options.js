@@ -15,7 +15,7 @@ let acceptanceCelebrationCleanup = null;
 let previousModalFocus = null;
 let activeSharePreviewUrl = null;
 
-const RF_OPTIONS_RENDER_VERSION = '7.3.0';
+const RF_OPTIONS_RENDER_VERSION = '7.3.1';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
@@ -1485,20 +1485,25 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
   const firstAuthor = getSubmissionFirstAuthor(submission, manuscript);
   const analysis = analyzeSubmission(submission);
   const events = getSubmissionShareEvents(submission);
-  const eventRows = Math.max(events.length, 1);
+  const totalNodesCount = (submission.timelineNodes || []).length || events.length || 1;
+  const isZh = (typeof currentLanguage !== 'undefined' && currentLanguage === 'zh');
+
   const canvasWidth = 1080;
   const canvasHeight = visible.size === 'story'
     ? 1920
-    : (visible.size === 'auto' ? Math.max(1350, Math.round((1060 + eventRows * 112) * 0.9)) : 1350);
-  const width = 1200;
-  const scale = canvasWidth / width;
-  const height = canvasHeight / scale;
+    : (visible.size === 'auto' ? Math.max(1180, Math.round(720 + events.length * 96)) : 1350);
+  const width = canvasWidth;
+  const height = canvasHeight;
+
   const canvas = document.createElement('canvas');
   canvas.width = canvasWidth;
   canvas.height = canvasHeight;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas is unavailable');
-  ctx.scale(scale, scale);
+
+  // Crisp text rendering
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
 
   const ink = '#0f172a';
   const inkSecondary = '#334155';
@@ -1507,41 +1512,40 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
   const subtle = '#94a3b8';
   const paper = '#ffffff';
   const accent = analysis.accepted ? '#059669' : '#2563eb';
-  const cyan = '#0891b2';
-  const font = 'Bahnschrift, "Aptos Display", "Microsoft YaHei UI", sans-serif';
+  const font = '"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", "Segoe UI", -apple-system, sans-serif';
   const displayFont = font;
   const shareTypeColors = {
-    research: '#2563eb',
-    writing: '#7c3aed',
-    submission: '#0891b2',
-    review: '#d97706',
-    revision: '#ea580c',
-    publication: '#059669',
-    special: '#64748b'
+    research: { main: '#2563eb', bg: '#eff6ff', border: '#bfdbfe', label: isZh ? '研究' : 'Research' },
+    writing: { main: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe', label: isZh ? '写作' : 'Writing' },
+    submission: { main: '#0891b2', bg: '#ecfeff', border: '#a5f3fc', label: isZh ? '投稿' : 'Submission' },
+    review: { main: '#d97706', bg: '#fffbeb', border: '#fde68a', label: isZh ? '审稿' : 'Review' },
+    revision: { main: '#ea580c', bg: '#fff7ed', border: '#fed7aa', label: isZh ? '修回' : 'Revision' },
+    publication: { main: '#059669', bg: '#ecfdf5', border: '#a7f3d0', label: isZh ? '出版' : 'Publication' },
+    special: { main: '#64748b', bg: '#f8fafc', border: '#e2e8f0', label: isZh ? '节点' : 'Milestone' }
   };
 
-  // 1. Base Canvas Background (Outer Frame)
+  // 1. Outer Canvas Background
   const canvasGradient = ctx.createLinearGradient(0, 0, width, height);
   canvasGradient.addColorStop(0, '#ffffff');
-  canvasGradient.addColorStop(0.35, '#f8fafd');
+  canvasGradient.addColorStop(0.3, '#f8fafd');
   canvasGradient.addColorStop(1, canvasBg);
   ctx.fillStyle = canvasGradient;
   ctx.fillRect(0, 0, width, height);
 
-  // 2. Main Unified Poster Card
-  const cardX = 48;
-  const cardY = 44;
-  const cardW = width - 96; // 1104
-  const cardH = height - 88;
-  const innerX = 88;
-  const innerW = width - 176; // 1024
-  const innerRight = innerX + innerW; // 1112
+  // 2. Poster Container Card (Padded & Floating)
+  const cardX = 36;
+  const cardY = 32;
+  const cardW = width - 72; // 1008
+  const cardH = height - 64;
+  const innerX = 72;
+  const innerW = width - 144; // 936
+  const innerRight = innerX + innerW; // 1008
 
   ctx.save();
   ctx.shadowColor = 'rgba(15, 23, 42, 0.08)';
-  ctx.shadowBlur = 40;
-  ctx.shadowOffsetY = 14;
-  roundedRectPath(ctx, cardX, cardY, cardW, cardH, 28);
+  ctx.shadowBlur = 32;
+  ctx.shadowOffsetY = 12;
+  roundedRectPath(ctx, cardX, cardY, cardW, cardH, 22);
   ctx.fillStyle = paper;
   ctx.fill();
   ctx.strokeStyle = '#e2e8f0';
@@ -1549,184 +1553,225 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
   ctx.stroke();
   ctx.restore();
 
-  // Top Accent Gradient Stripe on the Card
+  // Top Accent Gradient Bar on Card
   ctx.save();
-  roundedRectPath(ctx, cardX, cardY, cardW, cardH, 28);
+  roundedRectPath(ctx, cardX, cardY, cardW, cardH, 22);
   ctx.clip();
   const signalGradient = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY);
   signalGradient.addColorStop(0, '#2563eb');
   signalGradient.addColorStop(0.5, '#06b6d4');
   signalGradient.addColorStop(1, '#10b981');
   ctx.fillStyle = signalGradient;
-  ctx.fillRect(cardX, cardY, cardW, 6);
+  ctx.fillRect(cardX, cardY, cardW, 5);
   ctx.restore();
 
-  // 3. Header Bar: RF / 01 Capsule & Date
-  const headerY = cardY + 28;
-  roundedRectPath(ctx, innerX, headerY, 88, 30, 8);
+  // 3. Top Header: RF / 01 Badge + Date
+  const headerY = cardY + 24;
+  roundedRectPath(ctx, innerX, headerY, 80, 26, 6);
   ctx.fillStyle = 'rgba(37, 99, 235, 0.08)';
   ctx.fill();
   ctx.strokeStyle = 'rgba(37, 99, 235, 0.2)';
-  ctx.lineWidth = 1.5;
+  ctx.lineWidth = 1;
   ctx.stroke();
 
   ctx.fillStyle = '#2563eb';
-  ctx.font = `800 13px ${font}`;
+  ctx.font = `800 12px ${font}`;
   ctx.textAlign = 'center';
-  ctx.fillText('RF / 01', innerX + 44, headerY + 20);
+  ctx.fillText('RF / 01', innerX + 40, headerY + 18);
   ctx.textAlign = 'left';
 
   ctx.textAlign = 'right';
   ctx.fillStyle = muted;
   ctx.font = `700 14px ${font}`;
-  ctx.fillText(formatShareDate(new Date()).toUpperCase(), innerRight, headerY + 20);
+  ctx.fillText(formatShareDate(new Date()), innerRight, headerY + 18);
   ctx.textAlign = 'left';
 
-  let cursorY = headerY + 48;
-  let hasHeroContent = false;
+  let cursorY = headerY + 40;
 
-  // 4. Hero Section: Journal Card, Manuscript Title, First Author
-  if (visible.journal && journal) {
-    hasHeroContent = true;
-    const journalCardH = 86;
-    roundedRectPath(ctx, innerX, cursorY, innerW, journalCardH, 16);
-    const journalBg = ctx.createLinearGradient(innerX, cursorY, innerRight, cursorY + journalCardH);
-    journalBg.addColorStop(0, '#0f172a');
-    journalBg.addColorStop(0.55, '#1e293b');
-    journalBg.addColorStop(1, '#1e3a8a');
-    ctx.fillStyle = journalBg;
-    ctx.fill();
+  // 4. Hero Section: Journal & Title
+  const showJournal = visible.journal && journal;
+  const showTitle = visible.title;
+  const showAuthor = visible.author && firstAuthor;
 
-    // Glowing accent stripe on the left edge
-    const accentGrad = ctx.createLinearGradient(innerX, cursorY, innerX, cursorY + journalCardH);
-    accentGrad.addColorStop(0, '#2dd4bf');
-    accentGrad.addColorStop(1, '#38bdf8');
-    ctx.fillStyle = accentGrad;
-    ctx.beginPath();
-    ctx.roundRect(innerX, cursorY, 8, journalCardH, [16, 0, 0, 16]);
-    ctx.fill();
-
-    ctx.fillStyle = 'rgba(186, 230, 253, 0.88)';
-    ctx.font = `800 12px ${font}`;
-    ctx.fillText(t('shareJournalLabel').toUpperCase(), innerX + 30, cursorY + 28);
-
-    ctx.fillStyle = '#ffffff';
-    ctx.font = `800 30px ${displayFont}`;
-    drawWrappedCanvasText(ctx, journal, innerX + 30, cursorY + 64, innerW - 60, 36, 1);
-    cursorY += journalCardH + 18;
-  }
-
-  if (visible.title) {
-    hasHeroContent = true;
-    ctx.fillStyle = ink;
-    ctx.font = `800 42px ${displayFont}`;
-    const titleLineCount = drawWrappedCanvasText(ctx, title, innerX, cursorY + 38, innerW, 54, 4);
-    cursorY += 38 + (titleLineCount - 1) * 54 + 20;
-  }
-
-  if (visible.author && firstAuthor) {
-    hasHeroContent = true;
-    ctx.font = `700 12px ${font}`;
-    const labelW = ctx.measureText(t('firstAuthorLabel')).width;
-    ctx.font = `600 15px ${font}`;
-    const authorW = ctx.measureText(firstAuthor).width;
-    const authorPillW = labelW + authorW + 36;
-
-    roundedRectPath(ctx, innerX, cursorY, authorPillW, 34, 8);
-    ctx.fillStyle = 'rgba(37, 99, 235, 0.06)';
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(37, 99, 235, 0.16)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    ctx.fillStyle = '#2563eb';
-    ctx.font = `700 12px ${font}`;
-    ctx.fillText(t('firstAuthorLabel'), innerX + 12, cursorY + 22);
-
-    ctx.fillStyle = inkSecondary;
-    ctx.font = `600 15px ${font}`;
-    ctx.fillText(firstAuthor, innerX + 12 + labelW + 12, cursorY + 22);
-
-    cursorY += 46;
-  }
-
-  if (hasHeroContent) {
-    ctx.fillStyle = '#f1f5f9';
-    ctx.fillRect(innerX, cursorY + 4, innerW, 1.5);
-    cursorY += 24;
-  }
-
-  // 5. Key Metrics Section (Duration & Status)
-  const duration = analysis.display?.value;
-  const showMetrics = visible.status || visible.duration;
-
-  if (showMetrics) {
-    const cardH = 118;
-    const both = visible.duration && visible.status;
-    const colW = both ? (innerW - 24) / 2 : innerW;
-
-    if (visible.duration) {
-      roundedRectPath(ctx, innerX, cursorY, colW, cardH, 16);
-      ctx.fillStyle = '#f8fafc';
+  if (showJournal || showTitle || showAuthor) {
+    if (showJournal && !showTitle) {
+      // Compact sleek Journal & Status Hero Banner
+      const heroCardH = 88;
+      roundedRectPath(ctx, innerX, cursorY, innerW, heroCardH, 14);
+      const journalBg = ctx.createLinearGradient(innerX, cursorY, innerRight, cursorY + heroCardH);
+      journalBg.addColorStop(0, '#0c192e');
+      journalBg.addColorStop(0.55, '#162a45');
+      journalBg.addColorStop(1, '#1e3a8a');
+      ctx.fillStyle = journalBg;
       ctx.fill();
-      ctx.strokeStyle = '#e2e8f0';
-      ctx.lineWidth = 1.5;
+
+      // Glowing left accent
+      ctx.fillStyle = '#2dd4bf';
+      ctx.beginPath();
+      ctx.roundRect(innerX, cursorY, 6, heroCardH, [14, 0, 0, 14]);
+      ctx.fill();
+
+      // Left info
+      ctx.fillStyle = 'rgba(186, 230, 253, 0.9)';
+      ctx.font = `800 11px ${font}`;
+      ctx.fillText(t('shareJournalLabel'), innerX + 24, cursorY + 28);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `800 28px ${displayFont}`;
+      drawWrappedCanvasText(ctx, journal, innerX + 24, cursorY + 64, innerW - 240, 32, 1);
+
+      // Right status pill in hero
+      const statusLabel = getSubmissionStatusLabel(submission.status);
+      ctx.font = `700 13px ${font}`;
+      const stW = ctx.measureText(statusLabel).width + 36;
+      const stX = innerRight - stW - 20;
+
+      roundedRectPath(ctx, stX, cursorY + 26, stW, 36, 18);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.lineWidth = 1;
       ctx.stroke();
 
-      ctx.fillStyle = muted;
-      ctx.font = `700 13px ${font}`;
-      ctx.fillText(t('shareJourneyDuration'), innerX + 28, cursorY + 34);
+      ctx.fillStyle = '#38bdf8';
+      ctx.beginPath();
+      ctx.arc(stX + 16, cursorY + 44, 4, 0, Math.PI * 2);
+      ctx.fill();
 
-      const durationStr = duration === null || duration === undefined ? '—' : String(duration);
-      ctx.fillStyle = ink;
-      ctx.font = `800 52px ${displayFont}`;
-      ctx.fillText(durationStr, innerX + 28, cursorY + 90);
-      const numW = ctx.measureText(durationStr).width;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(statusLabel, stX + 26, cursorY + 49);
 
-      if (duration !== null && duration !== undefined) {
-        ctx.fillStyle = accent;
-        ctx.font = `800 20px ${font}`;
-        ctx.fillText(t('days').toUpperCase(), innerX + 28 + numW + 10, cursorY + 84);
+      cursorY += heroCardH + 18;
+    } else {
+      // Full Hero with Title
+      if (showJournal) {
+        const journalCardH = 80;
+        roundedRectPath(ctx, innerX, cursorY, innerW, journalCardH, 12);
+        const journalBg = ctx.createLinearGradient(innerX, cursorY, innerRight, cursorY + journalCardH);
+        journalBg.addColorStop(0, '#0c192e');
+        journalBg.addColorStop(1, '#1e3a8a');
+        ctx.fillStyle = journalBg;
+        ctx.fill();
+
+        ctx.fillStyle = '#2dd4bf';
+        ctx.beginPath();
+        ctx.roundRect(innerX, cursorY, 5, journalCardH, [12, 0, 0, 12]);
+        ctx.fill();
+
+        ctx.fillStyle = 'rgba(186, 230, 253, 0.85)';
+        ctx.font = `800 11px ${font}`;
+        ctx.fillText(t('shareJournalLabel'), innerX + 22, cursorY + 25);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `800 28px ${displayFont}`;
+        drawWrappedCanvasText(ctx, journal, innerX + 22, cursorY + 58, innerW - 44, 32, 1);
+        cursorY += journalCardH + 14;
       }
 
-      if (!visible.status) {
-        // Active timeline tracking indicator on wide duration card
-        roundedRectPath(ctx, innerX + colW - 190, cursorY + 42, 162, 34, 17);
-        ctx.fillStyle = 'rgba(37, 99, 235, 0.08)';
+      if (showTitle) {
+        ctx.fillStyle = ink;
+        ctx.font = `800 32px ${displayFont}`;
+        const titleLineCount = drawWrappedCanvasText(ctx, title, innerX, cursorY + 32, innerW, 44, 3);
+        cursorY += 32 + (titleLineCount - 1) * 44 + 14;
+      }
+
+      if (showAuthor) {
+        ctx.font = `700 12px ${font}`;
+        const labelW = ctx.measureText(t('firstAuthorLabel')).width;
+        ctx.font = `600 14px ${font}`;
+        const authorW = ctx.measureText(firstAuthor).width;
+        const authorPillW = labelW + authorW + 30;
+
+        roundedRectPath(ctx, innerX, cursorY, authorPillW, 30, 8);
+        ctx.fillStyle = 'rgba(37, 99, 235, 0.06)';
         ctx.fill();
         ctx.strokeStyle = 'rgba(37, 99, 235, 0.16)';
         ctx.lineWidth = 1;
         ctx.stroke();
+
         ctx.fillStyle = '#2563eb';
-        ctx.beginPath();
-        ctx.arc(innerX + colW - 174, cursorY + 59, 4, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#1e40af';
         ctx.font = `700 12px ${font}`;
-        ctx.fillText(t('shareJourneyTimeline'), innerX + colW - 162, cursorY + 63);
+        ctx.fillText(t('firstAuthorLabel'), innerX + 10, cursorY + 20);
+
+        ctx.fillStyle = inkSecondary;
+        ctx.font = `600 14px ${font}`;
+        ctx.fillText(firstAuthor, innerX + 10 + labelW + 10, cursorY + 20);
+        cursorY += 40;
       }
     }
 
-    if (visible.status) {
-      const statusX = visible.duration ? innerX + colW + 24 : innerX;
-      roundedRectPath(ctx, statusX, cursorY, colW, cardH, 16);
+    ctx.fillStyle = '#f1f5f9';
+    ctx.fillRect(innerX, cursorY + 2, innerW, 1.5);
+    cursorY += 18;
+  }
+
+  // 5. Key Metrics: Dashboard Stat Cards
+  const duration = analysis.display?.value;
+  const showMetrics = visible.status || visible.duration;
+
+  if (showMetrics) {
+    const cardH = 96;
+    const both = visible.duration && visible.status;
+    const colW = both ? (innerW - 18) / 2 : innerW;
+
+    if (visible.duration) {
+      roundedRectPath(ctx, innerX, cursorY, colW, cardH, 12);
       ctx.fillStyle = '#f8fafc';
       ctx.fill();
       ctx.strokeStyle = '#e2e8f0';
       ctx.lineWidth = 1.5;
       ctx.stroke();
 
+      // Top mini accent indicator
+      ctx.fillStyle = '#2563eb';
+      ctx.fillRect(innerX + 22, cursorY, 36, 3);
+
       ctx.fillStyle = muted;
-      ctx.font = `700 13px ${font}`;
-      ctx.fillText(t('shareJourneyStatus'), statusX + 28, cursorY + 34);
+      ctx.font = `700 12px ${font}`;
+      ctx.fillText(t('shareJourneyDuration'), innerX + 22, cursorY + 28);
+
+      const durationStr = duration === null || duration === undefined ? '—' : String(duration);
+      ctx.fillStyle = ink;
+      ctx.font = `800 40px ${displayFont}`;
+      ctx.fillText(durationStr, innerX + 22, cursorY + 74);
+      const numW = ctx.measureText(durationStr).width;
+
+      if (duration !== null && duration !== undefined) {
+        ctx.fillStyle = accent;
+        ctx.font = `800 16px ${font}`;
+        ctx.fillText(t('days'), innerX + 22 + numW + 8, cursorY + 70);
+      }
+
+      ctx.textAlign = 'right';
+      ctx.fillStyle = subtle;
+      ctx.font = `600 12px ${font}`;
+      ctx.fillText(isZh ? '自启动至今' : 'Active tracking', innerX + colW - 22, cursorY + 70);
+      ctx.textAlign = 'left';
+    }
+
+    if (visible.status) {
+      const statusX = visible.duration ? innerX + colW + 18 : innerX;
+      roundedRectPath(ctx, statusX, cursorY, colW, cardH, 12);
+      ctx.fillStyle = '#f8fafc';
+      ctx.fill();
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      ctx.fillStyle = analysis.accepted ? '#059669' : '#0891b2';
+      ctx.fillRect(statusX + 22, cursorY, 36, 3);
+
+      ctx.fillStyle = muted;
+      ctx.font = `700 12px ${font}`;
+      ctx.fillText(t('shareJourneyStatus'), statusX + 22, cursorY + 28);
 
       const statusText = getSubmissionStatusLabel(submission.status);
-      ctx.font = `800 19px ${font}`;
+      ctx.font = `800 16px ${font}`;
       const stW = ctx.measureText(statusText).width;
-      const pillW = Math.min(colW - 56, stW + 44);
+      const pillW = Math.min(colW - 44, stW + 38);
 
-      roundedRectPath(ctx, statusX + 28, cursorY + 52, pillW, 40, 10);
-      ctx.fillStyle = analysis.accepted ? 'rgba(5, 150, 105, 0.1)' : 'rgba(37, 99, 235, 0.08)';
+      roundedRectPath(ctx, statusX + 22, cursorY + 42, pillW, 34, 8);
+      ctx.fillStyle = analysis.accepted ? '#ecfdf5' : '#eff6ff';
       ctx.fill();
       ctx.strokeStyle = analysis.accepted ? '#a7f3d0' : '#bfdbfe';
       ctx.lineWidth = 1;
@@ -1734,26 +1779,32 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
 
       ctx.fillStyle = accent;
       ctx.beginPath();
-      ctx.arc(statusX + 28 + 16, cursorY + 72, 4.5, 0, Math.PI * 2);
+      ctx.arc(statusX + 22 + 13, cursorY + 59, 3.5, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.fillStyle = analysis.accepted ? '#065f46' : '#1e40af';
-      ctx.font = `800 19px ${font}`;
-      ctx.fillText(statusText, statusX + 28 + 30, cursorY + 78);
+      ctx.font = `800 16px ${font}`;
+      ctx.fillText(statusText, statusX + 22 + 24, cursorY + 65);
+
+      ctx.textAlign = 'right';
+      ctx.fillStyle = subtle;
+      ctx.font = `600 12px ${font}`;
+      ctx.fillText(isZh ? '当前流程' : 'Current stage', statusX + colW - 22, cursorY + 70);
+      ctx.textAlign = 'left';
     }
 
     ctx.fillStyle = '#f1f5f9';
-    ctx.fillRect(innerX, cursorY + cardH + 20, innerW, 1.5);
-    cursorY += cardH + 42;
+    ctx.fillRect(innerX, cursorY + cardH + 14, innerW, 1.5);
+    cursorY += cardH + 30;
   }
 
   // 6. Timeline Milestones Section
   ctx.fillStyle = ink;
-  ctx.font = `800 20px ${font}`;
-  ctx.fillText(t('shareJourneyTimeline'), innerX, cursorY + 6);
+  ctx.font = `800 18px ${font}`;
+  ctx.fillText(t('shareJourneyTimeline'), innerX, cursorY + 4);
 
   // Progress Pill Badge
-  roundedRectPath(ctx, innerRight - 88, cursorY - 14, 88, 26, 13);
+  roundedRectPath(ctx, innerRight - 88, cursorY - 14, 88, 24, 12);
   ctx.fillStyle = '#f1f5f9';
   ctx.fill();
   ctx.strokeStyle = '#e2e8f0';
@@ -1761,128 +1812,207 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
   ctx.stroke();
 
   ctx.fillStyle = '#475569';
-  ctx.font = `700 12px ${font}`;
+  ctx.font = `700 11px ${font}`;
   ctx.textAlign = 'center';
-  ctx.fillText(`${String(events.length).padStart(2, '0')} / ${String((submission.timelineNodes || []).length).padStart(2, '0')}`, innerRight - 44, cursorY + 3);
+  ctx.fillText(`${String(events.length).padStart(2, '0')} / ${String(totalNodesCount).padStart(2, '0')}`, innerRight - 44, cursorY + 2);
   ctx.textAlign = 'left';
 
-  const railX = innerX + 36;
-  const firstY = cursorY + 54;
-  const timelineBottom = (cardY + cardH) - (visible.footer ? 72 : 32);
-  const maxRowGap = visible.size === 'story' ? 180 : (visible.size === 'auto' ? 104 : 116);
-  const rowGap = events.length > 1
-    ? Math.min(maxRowGap, Math.max(50, (timelineBottom - firstY) / (events.length - 1)))
-    : 0;
-  const compactTimeline = rowGap < 78;
-  const lastY = firstY + Math.max(0, eventRows - 1) * rowGap;
+  cursorY += 22;
 
-  ctx.strokeStyle = '#e2e8f0';
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.moveTo(railX, firstY);
-  ctx.lineTo(railX, lastY);
-  ctx.stroke();
+  const footerSpace = visible.footer ? 60 : 20;
+  const availableTimelineHeight = (cardY + cardH) - cursorY - footerSpace;
+
+  // Render bottom Journey Summary Card when there are fewer nodes
+  const shouldRenderSummaryCard = events.length <= 5 && availableTimelineHeight > (events.length * 72 + 130);
+  const summaryCardH = shouldRenderSummaryCard ? 104 : 0;
+  const timelineUsableHeight = availableTimelineHeight - summaryCardH - (shouldRenderSummaryCard ? 16 : 0);
+
+  const minRowGap = 64;
+  const maxRowGap = shouldRenderSummaryCard ? 100 : (visible.size === 'story' ? 200 : 160);
+  const rowGap = events.length > 1
+    ? Math.min(maxRowGap, Math.max(minRowGap, (timelineUsableHeight - 50) / (events.length - 1)))
+    : 72;
+  const compactTimeline = rowGap < 78;
+  const denseTimeline = events.length >= 7;
+
+  const railX = innerX + 28;
+  const firstY = cursorY + 28;
+  const lastY = firstY + Math.max(0, events.length - 1) * rowGap;
+
+  if (events.length > 1) {
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(railX, firstY);
+    ctx.lineTo(railX, lastY);
+    ctx.stroke();
+  }
 
   if (!events.length) {
-    ctx.fillStyle = accent;
-    ctx.beginPath();
-    ctx.arc(railX, firstY, 10, 0, Math.PI * 2);
+    roundedRectPath(ctx, innerX, cursorY + 16, innerW, 72, 10);
+    ctx.fillStyle = '#f8fafc';
     ctx.fill();
     ctx.fillStyle = muted;
-    ctx.font = `500 22px ${font}`;
-    ctx.fillText(t('shareJourneyNoEvents'), railX + 44, firstY + 8);
+    ctx.font = `600 15px ${font}`;
+    ctx.fillText(t('shareJourneyNoEvents'), innerX + 24, cursorY + 56);
   } else {
     events.forEach((event, index) => {
       const y = firstY + index * rowGap;
-      const meta = getTimelineTypeMeta(event.type);
-      const eventColor = shareTypeColors[event.type] || accent;
-      const contentX = railX + 44;
+      const typeStyle = shareTypeColors[event.type] || shareTypeColors.special;
+      const contentX = railX + 32;
+      const rowW = innerRight - contentX;
+      const rowCardH = denseTimeline ? 48 : (compactTimeline ? 50 : 58);
+      const rowCardY = y - rowCardH / 2;
+
+      // Soft Milestone Row Container Card
+      roundedRectPath(ctx, contentX, rowCardY, rowW, rowCardH, 10);
+      ctx.fillStyle = '#f8fafc';
+      ctx.fill();
+      ctx.strokeStyle = '#eef2f6';
+      ctx.lineWidth = 1;
+      ctx.stroke();
 
       // Outer Numbered Milestone Circle
       ctx.fillStyle = paper;
       ctx.beginPath();
-      ctx.arc(railX, y, compactTimeline ? 16 : 18, 0, Math.PI * 2);
+      ctx.arc(railX, y, 15, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = eventColor;
-      ctx.lineWidth = compactTimeline ? 3 : 3.5;
+      ctx.strokeStyle = typeStyle.main;
+      ctx.lineWidth = 3;
       ctx.stroke();
 
       ctx.fillStyle = ink;
-      ctx.font = `800 ${compactTimeline ? 11 : 12}px ${font}`;
+      ctx.font = `800 11px ${font}`;
       ctx.textAlign = 'center';
-      ctx.fillText(String(index + 1).padStart(2, '0'), railX, y + (compactTimeline ? 4 : 4.5));
+      ctx.fillText(String(index + 1).padStart(2, '0'), railX, y + 4);
       ctx.textAlign = 'left';
 
-      // Event Type Tag Pill
+      // Event Type Tag Pill inside row card
       ctx.font = `700 11px ${font}`;
-      const tagText = meta.label;
-      const tagW = ctx.measureText(tagText).width + 16;
-      const tagY = y - (compactTimeline ? 18 : 22);
-
-      roundedRectPath(ctx, contentX, tagY, tagW, 20, 5);
-      ctx.save();
-      ctx.globalAlpha = 0.12;
-      ctx.fillStyle = eventColor;
+      const tagText = typeStyle.label;
+      const tagW = ctx.measureText(tagText).width + 14;
+      roundedRectPath(ctx, contentX + 14, y - 11, tagW, 22, 5);
+      ctx.fillStyle = typeStyle.bg;
       ctx.fill();
-      ctx.restore();
+      ctx.strokeStyle = typeStyle.border;
+      ctx.lineWidth = 1;
+      ctx.stroke();
 
-      ctx.fillStyle = eventColor;
-      ctx.font = `700 11px ${font}`;
-      ctx.fillText(tagText, contentX + 8, tagY + 14);
+      ctx.fillStyle = typeStyle.main;
+      ctx.fillText(tagText, contentX + 21, y + 4);
 
       // Event Name
+      const nameX = contentX + 14 + tagW + 12;
+      const maxNameW = visible.dates ? rowW - tagW - 180 : rowW - tagW - 36;
       ctx.fillStyle = ink;
-      ctx.font = `700 ${compactTimeline ? 18 : 22}px ${font}`;
-      drawWrappedCanvasText(ctx, event.name, contentX, y + (compactTimeline ? 14 : 16), visible.dates ? 640 : 900, compactTimeline ? 24 : 28, compactTimeline ? 1 : 2);
+      ctx.font = `700 ${denseTimeline ? 15 : 16}px ${font}`;
+      drawWrappedCanvasText(ctx, event.name, nameX, y + 5, maxNameW, 18, 1);
 
-      // Event Date
+      // Event Date Badge on the Right
       if (visible.dates) {
-        ctx.fillStyle = muted;
-        ctx.font = `600 ${compactTimeline ? 15 : 17}px ${font}`;
-        ctx.textAlign = 'right';
-        ctx.fillText(formatShareDate(event.date), innerRight, y + (compactTimeline ? 14 : 16));
-        ctx.textAlign = 'left';
-      }
+        const dateText = formatShareDate(event.date);
+        ctx.font = `700 12px ${font}`;
+        const dateW = ctx.measureText(dateText).width + 20;
+        const dateX = innerRight - dateW - 12;
 
-      if (index < events.length - 1 && !compactTimeline) {
-        ctx.fillStyle = '#f1f5f9';
-        ctx.fillRect(contentX, y + rowGap / 2, innerRight - contentX, 1);
+        roundedRectPath(ctx, dateX, y - 12, dateW, 24, 6);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        ctx.fillStyle = muted;
+        ctx.fillText(dateText, dateX + 10, y + 4);
       }
     });
+
+    // Milestone Summary Insights Card at the Bottom
+    if (shouldRenderSummaryCard && events.length > 0) {
+      const sumY = lastY + 38;
+      const sumH = Math.min(104, (cardY + cardH) - sumY - footerSpace - 8);
+      if (sumH >= 80) {
+        roundedRectPath(ctx, innerX, sumY, innerW, sumH, 12);
+        ctx.fillStyle = '#f8fafc';
+        ctx.fill();
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        ctx.fillStyle = accent;
+        ctx.fillRect(innerX + 20, sumY, 32, 3);
+
+        ctx.fillStyle = ink;
+        ctx.font = `800 12px ${font}`;
+        ctx.fillText(isZh ? '科研里程碑阶段小结' : 'MILESTONE SUMMARY', innerX + 20, sumY + 24);
+
+        const colW = (innerW - 40) / 3;
+        const firstEvent = events[0];
+        const lastEvent = events[events.length - 1];
+
+        // Col 1: First Milestone
+        const c1X = innerX + 20;
+        ctx.fillStyle = muted;
+        ctx.font = `600 11px ${font}`;
+        ctx.fillText(isZh ? '起步节点' : 'Start Milestone', c1X, sumY + 46);
+        ctx.fillStyle = ink;
+        ctx.font = `700 13px ${font}`;
+        ctx.fillText(formatShareDate(firstEvent?.date), c1X, sumY + 68);
+
+        // Col 2: Latest Milestone
+        const c2X = c1X + colW;
+        ctx.fillStyle = muted;
+        ctx.font = `600 11px ${font}`;
+        ctx.fillText(isZh ? '当前进展' : 'Latest Milestone', c2X, sumY + 46);
+        ctx.fillStyle = ink;
+        ctx.font = `700 13px ${font}`;
+        drawWrappedCanvasText(ctx, lastEvent?.name || '—', c2X, sumY + 68, colW - 20, 16, 1);
+
+        // Col 3: Stage Span
+        const c3X = c2X + colW;
+        ctx.fillStyle = muted;
+        ctx.font = `600 11px ${font}`;
+        ctx.fillText(isZh ? '阶段历时' : 'Stage Span', c3X, sumY + 46);
+        const spanDays = getDaysDiff(firstEvent?.date, lastEvent?.date);
+        ctx.fillStyle = accent;
+        ctx.font = `800 16px ${font}`;
+        ctx.fillText(spanDays !== null ? `${spanDays} ${t('days')}` : '—', c3X, sumY + 68);
+      }
+    }
   }
 
   // 7. Footer Branding & Privacy Attribution
   if (visible.footer) {
-    const footerY = (cardY + cardH) - 34;
+    const footerY = (cardY + cardH) - 24;
     ctx.fillStyle = '#f1f5f9';
-    ctx.fillRect(innerX, footerY - 20, innerW, 1);
+    ctx.fillRect(innerX, footerY - 16, innerW, 1);
 
     // Mini Logo Icon
-    roundedRectPath(ctx, innerX, footerY - 14, 20, 20, 5);
-    const logoGrad = ctx.createLinearGradient(innerX, footerY - 14, innerX + 20, footerY + 6);
+    roundedRectPath(ctx, innerX, footerY - 11, 16, 16, 4);
+    const logoGrad = ctx.createLinearGradient(innerX, footerY - 11, innerX + 16, footerY + 5);
     logoGrad.addColorStop(0, '#2563eb');
     logoGrad.addColorStop(1, '#06b6d4');
     ctx.fillStyle = logoGrad;
     ctx.fill();
 
     ctx.fillStyle = '#ffffff';
-    ctx.font = `800 10px ${font}`;
+    ctx.font = `800 8px ${font}`;
     ctx.textAlign = 'center';
-    ctx.fillText('RF', innerX + 10, footerY);
+    ctx.fillText('RF', innerX + 8, footerY + 1);
     ctx.textAlign = 'left';
 
     ctx.fillStyle = ink;
-    ctx.font = `800 15px ${font}`;
-    ctx.fillText('RESEARCHFLOW', innerX + 28, footerY + 1);
+    ctx.font = `800 13px ${font}`;
+    ctx.fillText('RESEARCHFLOW', innerX + 24, footerY + 2);
 
     ctx.fillStyle = subtle;
-    ctx.font = `600 12px ${font}`;
-    ctx.fillText('•  JOURNEY MAP', innerX + 175, footerY + 1);
+    ctx.font = `600 11px ${font}`;
+    ctx.fillText('•  JOURNEY MAP', innerX + 150, footerY + 2);
 
     ctx.fillStyle = subtle;
-    ctx.font = `500 13px ${font}`;
+    ctx.font = `500 11px ${font}`;
     ctx.textAlign = 'right';
-    ctx.fillText(t('shareJourneyFooter'), innerRight, footerY + 1);
+    ctx.fillText(t('shareJourneyFooter'), innerRight, footerY + 2);
     ctx.textAlign = 'left';
   }
 
@@ -2019,7 +2149,19 @@ async function openSubmissionSharePreview(submissionId, triggerButton) {
       });
     };
 
-    await renderPreview();
+    const renderPreviewSafe = async () => {
+      try {
+        await renderPreview();
+      } catch (error) {
+        loading.hidden = true;
+        image.classList.remove('is-rendering');
+        previewFrame.dataset.renderState = 'error';
+        currentBlob = null;
+        showGlobalToast(t('shareJourneyFailed'), 'warning');
+      }
+    };
+
+    await renderPreviewSafe();
     modalContent.querySelectorAll('[data-share-field]').forEach((control) => {
       control.addEventListener('change', async () => {
         previewFrame.dataset.renderState = 'pending';
@@ -2030,7 +2172,7 @@ async function openSubmissionSharePreview(submissionId, triggerButton) {
           [control.dataset.shareField]: control.checked
         });
         await chrome.storage.local.set({ [SHARE_PREFS_STORAGE_KEY]: visibility });
-        await renderPreview();
+        await renderPreviewSafe();
       });
     });
     document.getElementById('share-image-size')?.addEventListener('change', async (event) => {
@@ -2039,7 +2181,7 @@ async function openSubmissionSharePreview(submissionId, triggerButton) {
       image.classList.add('is-rendering');
       visibility = normalizeShareVisibility({ ...visibility, size: event.target.value });
       await chrome.storage.local.set({ [SHARE_PREFS_STORAGE_KEY]: visibility });
-      await renderPreview();
+      await renderPreviewSafe();
     });
 
     const systemButton = document.getElementById('btn-share-system');
