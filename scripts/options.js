@@ -15,7 +15,7 @@ let acceptanceCelebrationCleanup = null;
 let previousModalFocus = null;
 let activeSharePreviewUrl = null;
 
-const RF_OPTIONS_RENDER_VERSION = '7.4.11';
+const RF_OPTIONS_RENDER_VERSION = '7.4.12';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
@@ -1567,13 +1567,14 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
   ctx.fillRect(0, 0, width, height);
 
   // 2. Poster Container Card (Padded & Floating)
-  const cardX = 30;
+  const cardX = 24;
   const cardY = 24;
-  const cardW = width - 36; // 684
+  const cardW = width - 48; // 672
   const cardH = height - 48;
-  const innerX = 32;
-  const innerW = width - 64; // 656
-  const innerRight = innerX + innerW; // 688
+  // Keep a calm 24px safety inset between the floating card and its content.
+  const innerX = 48;
+  const innerW = width - 96; // 624
+  const innerRight = innerX + innerW; // 672
 
   ctx.save();
   ctx.shadowColor = 'rgba(15, 23, 42, 0.08)';
@@ -1935,7 +1936,7 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
     events.forEach((event, index) => {
       const y = firstY + index * rowGap;
       const typeStyle = shareTypeColors[event.type] || shareTypeColors.special;
-      const contentX = railX + 32;
+      const contentX = railX + 36;
       const rowW = innerRight - contentX;
       const rowCardH = denseTimeline ? 56 : (compactTimeline ? 58 : 64);
       const rowCardY = y - rowCardH / 2;
@@ -1997,7 +1998,7 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
         const dateText = formatShareDate(event.date);
         ctx.font = `700 16px ${font}`;
         const dateW = ctx.measureText(dateText).width + 28;
-        const dateX = innerRight - dateW - 12;
+        const dateX = innerRight - dateW - 16;
 
         roundedRectPath(ctx, dateX, y - 15, dateW, 30, 8);
         ctx.fillStyle = typeStyle.bg;
