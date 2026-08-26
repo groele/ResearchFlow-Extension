@@ -15,7 +15,7 @@ let acceptanceCelebrationCleanup = null;
 let previousModalFocus = null;
 let activeSharePreviewUrl = null;
 
-const RF_OPTIONS_RENDER_VERSION = '7.4.16';
+const RF_OPTIONS_RENDER_VERSION = '7.4.17';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
@@ -2061,12 +2061,19 @@ function normalizeShareVisibility(value = {}) {
         ctx.lineWidth = 1.5;
         ctx.stroke();
 
+        const summaryAccent = ctx.createLinearGradient(innerX + 20, sumY, innerX + 180, sumY);
+        summaryAccent.addColorStop(0, accent);
+        summaryAccent.addColorStop(1, '#22d3ee');
+        ctx.fillStyle = summaryAccent;
+        ctx.fillRect(innerX + 20, sumY, 48, 3);
         ctx.fillStyle = accent;
-        ctx.fillRect(innerX + 20, sumY, 32, 3);
+        ctx.beginPath();
+        ctx.arc(innerX + 24, sumY + 22, 3, 0, Math.PI * 2);
+        ctx.fill();
 
         ctx.fillStyle = ink;
-        ctx.font = `800 12px ${font}`;
-        ctx.fillText(isZh ? '科研里程碑阶段小结' : 'MILESTONE SUMMARY', innerX + 20, sumY + 24);
+        ctx.font = `800 13px ${font}`;
+        ctx.fillText(isZh ? '科研里程碑阶段小结' : 'MILESTONE SUMMARY', innerX + 34, sumY + 26);
 
         const colW = (innerW - 56) / 3;
         const firstEvent = events[0];
@@ -2076,10 +2083,10 @@ function normalizeShareVisibility(value = {}) {
         const c1X = innerX + 20;
         ctx.fillStyle = muted;
         ctx.font = `600 12px ${font}`;
-        ctx.fillText(isZh ? '起步节点' : 'Start Milestone', c1X, sumY + 46);
+        ctx.fillText(isZh ? '起步节点' : 'Start Milestone', c1X, sumY + 48);
         ctx.fillStyle = ink;
         ctx.font = `700 16px ${font}`;
-        ctx.fillText(formatShareDate(firstEvent?.date), c1X, sumY + 68);
+        ctx.fillText(formatShareDate(firstEvent?.date), c1X, sumY + 72);
 
         // Col 2: Latest Milestone
         const c2X = c1X + colW + 8;
@@ -2091,10 +2098,10 @@ function normalizeShareVisibility(value = {}) {
         ctx.stroke();
         ctx.fillStyle = muted;
         ctx.font = `600 12px ${font}`;
-        ctx.fillText(isZh ? '当前进展' : 'Latest Milestone', c2X, sumY + 46);
+        ctx.fillText(isZh ? '当前进展' : 'Latest Milestone', c2X, sumY + 48);
         ctx.fillStyle = ink;
         ctx.font = `700 16px ${font}`;
-        drawWrappedCanvasText(ctx, lastEvent?.name || '—', c2X, sumY + 68, colW - 20, 16, 1);
+        drawWrappedCanvasText(ctx, lastEvent?.name || '—', c2X, sumY + 72, colW - 18, 18, 1);
 
         // Col 3: Stage Span
         const c3X = c2X + colW + 8;
@@ -2104,11 +2111,11 @@ function normalizeShareVisibility(value = {}) {
         ctx.stroke();
         ctx.fillStyle = muted;
         ctx.font = `600 12px ${font}`;
-        ctx.fillText(isZh ? '阶段历时' : 'Stage Span', c3X, sumY + 46);
+        ctx.fillText(isZh ? '阶段历时' : 'Stage Span', c3X, sumY + 48);
         const spanDays = getDaysDiff(firstEvent?.date, lastEvent?.date);
         ctx.fillStyle = accent;
         ctx.font = `800 18px ${font}`;
-        ctx.fillText(spanDays !== null ? `${spanDays} ${t('days')}` : '—', c3X, sumY + 68);
+        ctx.fillText(spanDays !== null ? `${spanDays} ${t('days')}` : '—', c3X, sumY + 72);
       }
     }
   }
