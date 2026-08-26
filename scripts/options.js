@@ -15,7 +15,7 @@ let acceptanceCelebrationCleanup = null;
 let previousModalFocus = null;
 let activeSharePreviewUrl = null;
 
-const RF_OPTIONS_RENDER_VERSION = '7.4.10';
+const RF_OPTIONS_RENDER_VERSION = '7.4.11';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
@@ -232,6 +232,7 @@ const I18N = {
     displayR1Caption: 'R1 returned; the active window now starts from the first decision.',
     displayReviewLabel: 'Submission → Today',
     displayReviewCaption: 'Not accepted yet; keep counting the waiting time after submission.',
+    milestoneExperimentStart: 'Experiments started',
     milestoneExperimentDone: 'Experiments done',
     milestoneSubmission: 'Submission',
     milestoneAcceptance: 'Acceptance',
@@ -246,6 +247,7 @@ const I18N = {
     stateNotSubmitted: 'Not submitted',
     stateSinceR1: '{count} d since R1',
     stateSinceSubmit: '{count} d since submit',
+    defaultExperimentsStarted: 'Experiments Started',
     defaultExperimentsCompleted: 'Experiments Completed',
     defaultDataOrganization: 'Data Organization',
     defaultDraftCompleted: 'Draft Completed',
@@ -298,6 +300,7 @@ const I18N = {
     delete: 'Delete',
     saveChanges: 'Save Changes',
     keyAuto: 'Auto detect',
+    keyExperimentsStarted: 'Key: Experiments started',
     keyExperimentsDone: 'Key: Experiments done',
     keyDraftDone: 'Key: Draft done',
     keySubmitted: 'Key: Submitted',
@@ -691,6 +694,7 @@ const I18N = {
     displayR1Caption: 'R1 意见已返回；活动窗口现在从第一次决定开始算起。',
     displayReviewLabel: '投稿 → 今天',
     displayReviewCaption: '尚未接收；继续计算投稿后的等待时长。',
+    milestoneExperimentStart: '实验开始',
     milestoneExperimentDone: '实验完成',
     milestoneSubmission: '投稿',
     milestoneAcceptance: '接收',
@@ -705,6 +709,7 @@ const I18N = {
     stateNotSubmitted: '未投稿',
     stateSinceR1: '距 R1 {count} 天',
     stateSinceSubmit: '距投稿 {count} 天',
+    defaultExperimentsStarted: '实验开始',
     defaultExperimentsCompleted: '实验完成',
     defaultDataOrganization: '数据整理',
     defaultDraftCompleted: '初稿完成',
@@ -757,6 +762,7 @@ const I18N = {
     delete: '删除',
     saveChanges: '保存更改',
     keyAuto: '自动识别',
+    keyExperimentsStarted: '关键：实验开始',
     keyExperimentsDone: '关键：实验完成',
     keyDraftDone: '关键：初稿完成',
     keySubmitted: '关键：已投稿',
@@ -1385,6 +1391,7 @@ function updatePipelineViewToggle() {
 function buildDefaultSubmissionTimeline(submission) {
   const stamp = Date.now();
   const definitions = [
+    ['Experiments Started', 'research', 'completed'],
     ['Experiments Completed', 'research', 'completed'],
     ['Data Organization', 'research', 'completed'],
     ['Draft Completed', 'writing', 'completed'],
@@ -2411,6 +2418,8 @@ function getTimelineTypeMeta(type) {
 }
 
 const defaultTimelineNameKeys = {
+  'Experiments Started': 'defaultExperimentsStarted',
+  '实验开始': 'defaultExperimentsStarted',
   'Experiments Completed': 'defaultExperimentsCompleted',
   '实验完成': 'defaultExperimentsCompleted',
   'Data Organization': 'defaultDataOrganization',
@@ -2669,6 +2678,7 @@ function getInlineEventPresets() {
     { key: 'accept', label: t('defaultAccepted'), name: 'Accepted', type: 'publication' },
     { key: 'online', label: t('defaultOnlinePublication'), name: 'Online Publication', type: 'publication' },
     { key: 'rejected', label: t('statusRejected'), name: 'Rejected', type: 'rejection' },
+    { key: 'experiment_start', label: t('defaultExperimentsStarted'), name: 'Experiments Started', type: 'research' },
     { key: 'experiment_done', label: t('defaultExperimentsCompleted'), name: 'Experiments Completed', type: 'research' },
     { key: 'draft_done', label: t('defaultDraftCompleted'), name: 'Draft Completed', type: 'writing' },
     { key: 'custom', label: t('customEvent'), name: '', type: 'review' }
@@ -2852,6 +2862,7 @@ function inferKey(node) {
   if (/r1|first|comment|decision|审稿意见|一审|returned/.test(t) || node.type === 'review' || node.type === 'revision') return 'r1_comments';
   if (/submit|submission|submitted|投稿/.test(t) || node.type === 'submission') return 'submit';
   if (/draft|manuscript|completed|finished|手稿/.test(t) || node.type === 'writing') return 'draft_done';
+  if (/experiment\s*(start|started|begin|began)|start(ed)?\s*(experiment|research)|实验(开始|启动)|研究开始/.test(t)) return 'experiment_start';
   if (/experiment|data|complete|completed|实验|数据/.test(t) || node.type === 'research') return 'experiment_done';
   return 'auto';
 }
@@ -2905,6 +2916,7 @@ function initializeSubmissionTimelineNodes(sub) {
   const decisionDate = normalizeDateString(sub.decisionDate);
 
   sub.timelineNodes = [
+    createTimelineNode(sub.id, { key: 'experiment_start', name: 'Experiments Started', type: 'research', status: 'completed' }),
     createTimelineNode(sub.id, { key: 'experiment_done', name: 'Experiments Completed', type: 'research', status: 'completed' }),
     createTimelineNode(sub.id, { key: 'draft_done', name: 'Draft Completed', type: 'writing', status: submitDate ? 'completed' : 'pending' }),
     createTimelineNode(sub.id, {
@@ -3051,6 +3063,7 @@ function analyzeSubmission(sub) {
   };
 
   const datedResearchEvent = events.find(e => e.type === 'research' && getNodeDate(e));
+  const experimentStartDate = getKeyEventDate('experiment_start');
   const experimentDate = getKeyEventDate('experiment_done') || (datedResearchEvent ? getNodeDate(datedResearchEvent) : null);
   const submitDate = getKeyEventDate('submit');
   const submitNode = events.find(e => inferKey(e) === 'submit');
@@ -3080,6 +3093,7 @@ function analyzeSubmission(sub) {
     caption: t('displayPrepareCaption'),
     pending: false,
     milestones: [
+      { name: t('milestoneExperimentStart'), date: experimentStartDate, color: '#0891b2', emphasis: true, node: events.find(e => inferKey(e) === 'experiment_start') },
       { name: t('milestoneExperimentDone'), date: experimentDate, color: "#2563eb", emphasis: true, node: events.find(e => inferKey(e) === 'experiment_done') },
       { name: t('milestoneSubmission'), date: submitDate, color: "#f97316", emphasis: true, node: events.find(e => inferKey(e) === 'submit') }
     ]
@@ -3159,7 +3173,7 @@ function analyzeSubmission(sub) {
   else if (r1Date) { stateLabel = t('stateAfterR1'); stateColor = "#dc2626"; stateNote = tf('stateSinceR1', { count: r1ToNow ?? "—" }); }
   else if (submitDate) { stateLabel = t('stateUnderReview'); stateColor = "#0891b2"; stateNote = tf('stateSinceSubmit', { count: submitToNow ?? "—" }); }
 
-  return { events, experimentDate, submitDate, submitDateSource, r1Date, acceptDate, onlineDate, latest, accepted, expToSubmit, submitToNow, r1ToNow, submitToAccept, acceptToOnline, display, stateLabel, stateColor, stateNote };
+  return { events, experimentStartDate, experimentDate, submitDate, submitDateSource, r1Date, acceptDate, onlineDate, latest, accepted, expToSubmit, submitToNow, r1ToNow, submitToAccept, acceptToOnline, display, stateLabel, stateColor, stateNote };
 }
 
 function isAcceptedSubmission(sub) {
@@ -4005,6 +4019,7 @@ function openStageDrawer(subId, nodeId) {
 
   const keyOptions = [
     { value: 'auto', label: t('keyAuto') },
+    { value: 'experiment_start', label: t('keyExperimentsStarted') },
     { value: 'experiment_done', label: t('keyExperimentsDone') },
     { value: 'draft_done', label: t('keyDraftDone') },
     { value: 'submit', label: t('keySubmitted') },
