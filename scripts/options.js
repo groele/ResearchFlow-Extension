@@ -15,7 +15,7 @@ let acceptanceCelebrationCleanup = null;
 let previousModalFocus = null;
 let activeSharePreviewUrl = null;
 
-const RF_OPTIONS_RENDER_VERSION = '7.4.2';
+const RF_OPTIONS_RENDER_VERSION = '7.4.3';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
@@ -1560,13 +1560,13 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
   ctx.fillRect(0, 0, width, height);
 
   // 2. Poster Container Card (Padded & Floating)
-  const cardX = 24;
+  const cardX = 30;
   const cardY = 24;
-  const cardW = width - 48; // 1032
+  const cardW = width - 60; // 1020
   const cardH = height - 48;
-  const innerX = 52;
-  const innerW = width - 104; // 976
-  const innerRight = innerX + innerW; // 1028
+  const innerX = 64;
+  const innerW = width - 128; // 952
+  const innerRight = innerX + innerW; // 1016
 
   ctx.save();
   ctx.shadowColor = 'rgba(15, 23, 42, 0.08)';
@@ -1777,7 +1777,7 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
     }
 
     if (visible.status) {
-      const statusX = visible.duration ? innerX + colW + 14 : innerX;
+      const statusX = visible.duration ? innerX + colW + 18 : innerX;
       roundedRectPath(ctx, statusX, cursorY, colW, cardH, 12);
       ctx.fillStyle = '#f8fafc';
       ctx.fill();
