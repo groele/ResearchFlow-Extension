@@ -15,7 +15,7 @@ let acceptanceCelebrationCleanup = null;
 let previousModalFocus = null;
 let activeSharePreviewUrl = null;
 
-const RF_OPTIONS_RENDER_VERSION = '7.3.1';
+const RF_OPTIONS_RENDER_VERSION = '7.3.2';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
@@ -1443,6 +1443,21 @@ function drawWrappedCanvasText(ctx, text, x, y, maxWidth, lineHeight, maxLines =
   return lines.length;
 }
 
+function drawEllipsizedCanvasText(ctx, text, x, y, maxWidth) {
+  const value = String(text || '').trim();
+  if (!value || maxWidth <= 0) return '';
+  if (ctx.measureText(value).width <= maxWidth) {
+    ctx.fillText(value, x, y);
+    return value;
+  }
+  let clipped = value;
+  const ellipsis = String.fromCharCode(8230);
+  while (clipped && ctx.measureText(clipped + ellipsis).width > maxWidth) clipped = clipped.slice(0, -1);
+  const result = clipped + ellipsis;
+  ctx.fillText(result, x, y);
+  return result;
+}
+
 function formatShareDate(value) {
   if (!value) return '—';
   const date = new Date(value);
@@ -1618,7 +1633,7 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
 
       ctx.fillStyle = '#ffffff';
       ctx.font = `800 28px ${displayFont}`;
-      drawWrappedCanvasText(ctx, journal, innerX + 24, cursorY + 64, innerW - 240, 32, 1);
+      drawEllipsizedCanvasText(ctx, journal, innerX + 24, cursorY + 64, innerW - 240);
 
       // Right status pill in hero
       const statusLabel = getSubmissionStatusLabel(submission.status);
@@ -1664,7 +1679,7 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
 
         ctx.fillStyle = '#ffffff';
         ctx.font = `800 28px ${displayFont}`;
-        drawWrappedCanvasText(ctx, journal, innerX + 22, cursorY + 58, innerW - 44, 32, 1);
+        drawEllipsizedCanvasText(ctx, journal, innerX + 22, cursorY + 58, innerW - 44);
         cursorY += journalCardH + 14;
       }
 
@@ -1906,7 +1921,7 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
       const maxNameW = visible.dates ? rowW - tagW - 180 : rowW - tagW - 36;
       ctx.fillStyle = ink;
       ctx.font = `700 ${denseTimeline ? 15 : 16}px ${font}`;
-      drawWrappedCanvasText(ctx, event.name, nameX, y + 5, maxNameW, 18, 1);
+      drawEllipsizedCanvasText(ctx, event.name, nameX, y + 5, maxNameW);
 
       // Event Date Badge on the Right
       if (visible.dates) {
@@ -2150,13 +2165,23 @@ async function openSubmissionSharePreview(submissionId, triggerButton) {
     };
 
     const renderPreviewSafe = async () => {
+      const requestedRenderId = previewRenderId + 1;
       try {
         await renderPreview();
       } catch (error) {
+        if (requestedRenderId !== previewRenderId) return;
         loading.hidden = true;
         image.classList.remove('is-rendering');
         previewFrame.dataset.renderState = 'error';
         currentBlob = null;
+        showGlobalToast(t('shareJourneyFailed'), 'warning');
+      }
+    };
+
+    const persistShareVisibility = async () => {
+      try {
+        await chrome.storage.local.set({ [SHARE_PREFS_STORAGE_KEY]: visibility });
+      } catch {
         showGlobalToast(t('shareJourneyFailed'), 'warning');
       }
     };
@@ -2171,7 +2196,7 @@ async function openSubmissionSharePreview(submissionId, triggerButton) {
           ...visibility,
           [control.dataset.shareField]: control.checked
         });
-        await chrome.storage.local.set({ [SHARE_PREFS_STORAGE_KEY]: visibility });
+        await persistShareVisibility();
         await renderPreviewSafe();
       });
     });
@@ -2180,7 +2205,7 @@ async function openSubmissionSharePreview(submissionId, triggerButton) {
       loading.hidden = false;
       image.classList.add('is-rendering');
       visibility = normalizeShareVisibility({ ...visibility, size: event.target.value });
-      await chrome.storage.local.set({ [SHARE_PREFS_STORAGE_KEY]: visibility });
+      await persistShareVisibility();
       await renderPreviewSafe();
     });
 
