@@ -15,7 +15,7 @@ let acceptanceCelebrationCleanup = null;
 let previousModalFocus = null;
 let activeSharePreviewUrl = null;
 
-const RF_OPTIONS_RENDER_VERSION = '7.4.12';
+const RF_OPTIONS_RENDER_VERSION = '7.4.13';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
@@ -76,6 +76,9 @@ const I18N = {
     shareJourneyFooter: 'Built locally from your ResearchFlow timeline',
     shareVisibilityTitle: 'Visible information',
     shareVisibilityHelp: 'Your choices are remembered for the next image.',
+    shareTimelineStart: 'Timeline starts at',
+    shareTimelineStartExperiment: 'Experiment start',
+    shareTimelineStartSubmission: 'Submission start',
     shareFieldTitle: 'Title',
     shareFieldJournal: 'Journal',
     shareFieldAuthor: 'First author',
@@ -538,6 +541,9 @@ const I18N = {
     shareJourneyFooter: '由 ResearchFlow 在本地根据你的时间线生成',
     shareVisibilityTitle: '显示内容',
     shareVisibilityHelp: '隐藏选择会自动保存，并沿用到下一张分享图。',
+    shareTimelineStart: '时间线起点',
+    shareTimelineStartExperiment: '实验开始',
+    shareTimelineStartSubmission: '投稿开始',
     shareFieldTitle: '题目',
     shareFieldJournal: '期刊',
     shareFieldAuthor: '第一作者',
@@ -1474,20 +1480,31 @@ function formatShareDate(value) {
   }).format(date);
 }
 
-function getSubmissionShareEvents(submission) {
-  return autoSortNodes(submission.timelineNodes || [])
+function getSubmissionShareEvents(submission, startMode = 'experiment') {
+  const events = autoSortNodes(submission.timelineNodes || [])
     .map(node => ({
       name: getTimelineNodeDisplayName(node),
       date: getNodeDate(node),
       type: node.type || 'special',
-      status: computeNodeStatus(node)
+      status: computeNodeStatus(node),
+      key: inferKey(node)
     }))
     .filter(event => event.date)
     .sort((a, b) => new Date(a.date) - new Date(b.date));
+  if (!events.length) return events;
+  const analysis = analyzeSubmission(submission);
+  const submissionStart = analysis.submitDate;
+  const experimentStart = analysis.experimentStartDate
+    || events.find(event => event.key === 'experiment_start')?.date
+    || events.find(event => event.type === 'research')?.date
+    || events[0].date;
+  const anchor = startMode === 'submission' ? (submissionStart || events[0].date) : experimentStart;
+  return events.filter(event => new Date(event.date) >= new Date(anchor));
 }
 
 function normalizeShareVisibility(value = {}) {
   const size = ['portrait', 'story', 'auto'].includes(value.size) ? value.size : 'portrait';
+  const timelineStart = value.timelineStart === 'submission' ? 'submission' : 'experiment';
   return {
     title: value.title !== false,
     journal: value.journal !== false,
@@ -1496,18 +1513,18 @@ function normalizeShareVisibility(value = {}) {
     duration: value.duration !== false,
     dates: value.dates !== false,
     footer: value.footer !== false,
-    size
+    size,
+    timelineStart
   };
-}
-function createSubmissionShareCanvas(submission, visibility = {}) {
+}function createSubmissionShareCanvas(submission, visibility = {}) {
   const visible = normalizeShareVisibility(visibility);
   const manuscript = db?.manuscripts?.find(item => item.id === submission.manuscriptId);
   const title = manuscript?.title || submission.title || t('untitledManuscript');
   const journal = getSubmissionJournalName(submission);
   const firstAuthor = getSubmissionFirstAuthor(submission, manuscript);
   const analysis = analyzeSubmission(submission);
-  const events = getSubmissionShareEvents(submission);
-  const totalNodesCount = (submission.timelineNodes || []).length || events.length || 1;
+  const events = getSubmissionShareEvents(submission, visible.timelineStart);
+  const totalNodesCount = events.length || (submission.timelineNodes || []).length || 1;
   const isZh = (typeof currentLanguage !== 'undefined' && currentLanguage === 'zh');
 
   const canvasWidth = 720;
@@ -2176,6 +2193,13 @@ async function openSubmissionSharePreview(submissionId, triggerButton) {
               <small>${escapeHTML(t('shareVisibilityHelp'))}</small>
             </div>
             <div class="share-visibility-list">${visibilityControls}</div>
+            <div class="share-timeline-start-control">
+              <span>${escapeHTML(t('shareTimelineStart'))}</span>
+              <div class="share-timeline-start-options" role="group" aria-label="${escapeHTML(t('shareTimelineStart'))}">
+                <label><input type="radio" name="share-timeline-start" value="experiment" ${visibility.timelineStart === 'experiment' ? 'checked' : ''}><span>${escapeHTML(t('shareTimelineStartExperiment'))}</span></label>
+                <label><input type="radio" name="share-timeline-start" value="submission" ${visibility.timelineStart === 'submission' ? 'checked' : ''}><span>${escapeHTML(t('shareTimelineStartSubmission'))}</span></label>
+              </div>
+            </div>
             <label class="share-size-control" for="share-image-size">
               <span>${escapeHTML(t('shareSizeTitle'))}</span>
               <select id="share-image-size">
@@ -2266,6 +2290,16 @@ async function openSubmissionSharePreview(submissionId, triggerButton) {
           ...visibility,
           [control.dataset.shareField]: control.checked
         });
+        await persistShareVisibility();
+        await renderPreviewSafe();
+      });
+    });
+    modalContent.querySelectorAll('input[name="share-timeline-start"]').forEach((control) => {
+      control.addEventListener('change', async () => {
+        previewFrame.dataset.renderState = 'pending';
+        loading.hidden = false;
+        image.classList.add('is-rendering');
+        visibility = normalizeShareVisibility({ ...visibility, timelineStart: control.value });
         await persistShareVisibility();
         await renderPreviewSafe();
       });
