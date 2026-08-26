@@ -15,7 +15,7 @@ let acceptanceCelebrationCleanup = null;
 let previousModalFocus = null;
 let activeSharePreviewUrl = null;
 
-const RF_OPTIONS_RENDER_VERSION = '7.4.18';
+const RF_OPTIONS_RENDER_VERSION = '7.4.19';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
@@ -1535,7 +1535,7 @@ function normalizeShareVisibility(value = {}) {
     + (visible.author ? 34 : 0)
     + (visible.status || visible.duration ? 110 : 0);
   const canvasHeight = visible.size === 'story'
-    ? Math.min(1920, Math.max(1100, portraitContentHeight + 150))
+    ? Math.min(1920, Math.max(980, portraitContentHeight + 60))
     : (visible.size === 'auto'
       ? Math.max(1080, Math.round(720 + events.length * 96))
       : Math.min(1350, Math.max(900, portraitContentHeight)));
