@@ -15,7 +15,7 @@ let acceptanceCelebrationCleanup = null;
 let previousModalFocus = null;
 let activeSharePreviewUrl = null;
 
-const RF_OPTIONS_RENDER_VERSION = '7.3.8';
+const RF_OPTIONS_RENDER_VERSION = '7.3.9';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
@@ -1893,14 +1893,18 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
 
       // Soft Milestone Row Container Card
       roundedRectPath(ctx, contentX, rowCardY, rowW, rowCardH, 10);
-      ctx.fillStyle = '#f8fafc';
+      ctx.fillStyle = index % 2 === 0 ? '#f8fafc' : '#ffffff';
       ctx.fill();
-      ctx.strokeStyle = '#eef2f6';
+      ctx.fillStyle = typeStyle.main;
+      ctx.globalAlpha = 0.9;
+      ctx.fillRect(contentX, rowCardY, 4, rowCardH);
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = '#e2e8f0';
       ctx.lineWidth = 1;
       ctx.stroke();
 
       // Outer Numbered Milestone Circle
-      ctx.fillStyle = paper;
+      ctx.fillStyle = typeStyle.bg;
       ctx.beginPath();
       ctx.arc(railX, y, 15, 0, Math.PI * 2);
       ctx.fill();
@@ -1915,7 +1919,7 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
       ctx.textAlign = 'left';
 
       // Event Type Tag Pill inside row card
-      ctx.font = `700 16px ${font}`;
+      ctx.font = `700 13px ${font}`;
       const tagText = typeStyle.label;
       const tagW = ctx.measureText(tagText).width + 14;
       roundedRectPath(ctx, contentX + 14, y - 11, tagW, 22, 5);
@@ -1943,14 +1947,15 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
         const dateX = innerRight - dateW - 12;
 
         roundedRectPath(ctx, dateX, y - 15, dateW, 30, 8);
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = typeStyle.bg;
         ctx.fill();
-        ctx.strokeStyle = '#cbd5e1';
+        ctx.strokeStyle = typeStyle.border;
         ctx.lineWidth = 1;
         ctx.stroke();
 
-        ctx.fillStyle = inkSecondary;
-        ctx.fillText(dateText, dateX + 14, y + 5);}
+        ctx.fillStyle = typeStyle.main;
+        ctx.fillText(dateText, dateX + 14, y + 5);
+      }
     });
 
     // Milestone Summary Insights Card at the Bottom
