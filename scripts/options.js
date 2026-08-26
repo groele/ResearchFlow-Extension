@@ -15,7 +15,7 @@ let acceptanceCelebrationCleanup = null;
 let previousModalFocus = null;
 let activeSharePreviewUrl = null;
 
-const RF_OPTIONS_RENDER_VERSION = '7.4.15';
+const RF_OPTIONS_RENDER_VERSION = '7.4.16';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
@@ -1531,7 +1531,7 @@ function normalizeShareVisibility(value = {}) {
   const portraitContentHeight = 420
     + events.length * 72
     + (visible.title ? 145 : 0)
-    + (visible.journal ? 66 : 0)
+    + (visible.journal ? 88 : 0)
     + (visible.author ? 34 : 0)
     + (visible.status || visible.duration ? 110 : 0);
   const canvasHeight = visible.size === 'story'
@@ -1648,7 +1648,7 @@ function normalizeShareVisibility(value = {}) {
   if (showJournal || showTitle || showAuthor) {
     if (showJournal && !showTitle) {
       // Compact sleek Journal & Status Hero Banner
-      const heroCardH = 94;
+      const heroCardH = 116;
       roundedRectPath(ctx, innerX, cursorY, innerW, heroCardH, 14);
       const journalBg = ctx.createLinearGradient(innerX, cursorY, innerRight, cursorY + heroCardH);
       journalBg.addColorStop(0, '#06152f');
@@ -1692,8 +1692,18 @@ function normalizeShareVisibility(value = {}) {
       ctx.fillText(t('shareJournalLabel'), innerX + 24, cursorY + 28);
 
       ctx.fillStyle = '#ffffff';
-      ctx.font = `800 32px ${displayFont}`;
-      drawEllipsizedCanvasText(ctx, journal, innerX + 24, cursorY + 64, innerW - 240);
+      const compactJournalMaxWidth = innerW - 240;
+      let compactJournalSize = 30;
+      let compactJournalLines = [];
+      while (compactJournalSize > 16) {
+        ctx.font = `800 ${compactJournalSize}px ${displayFont}`;
+        compactJournalLines = canvasTextLines(ctx, journal, compactJournalMaxWidth);
+        if (compactJournalLines.length <= 2) break;
+        compactJournalSize -= 1;
+      }
+      ctx.font = `800 ${compactJournalSize}px ${displayFont}`;
+      compactJournalLines = canvasTextLines(ctx, journal, compactJournalMaxWidth);
+      compactJournalLines.forEach((line, index) => ctx.fillText(line, innerX + 24, cursorY + 62 + index * Math.max(23, compactJournalSize + 3)));
 
       // Right status pill in hero
       const statusLabel = getSubmissionStatusLabel(submission.status);
