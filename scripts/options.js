@@ -15,7 +15,7 @@ let acceptanceCelebrationCleanup = null;
 let previousModalFocus = null;
 let activeSharePreviewUrl = null;
 
-const RF_OPTIONS_RENDER_VERSION = '7.4.8';
+const RF_OPTIONS_RENDER_VERSION = '7.4.9';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
@@ -1626,11 +1626,34 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
       const heroCardH = 94;
       roundedRectPath(ctx, innerX, cursorY, innerW, heroCardH, 14);
       const journalBg = ctx.createLinearGradient(innerX, cursorY, innerRight, cursorY + heroCardH);
-      journalBg.addColorStop(0, '#0c192e');
-      journalBg.addColorStop(0.55, '#162a45');
-      journalBg.addColorStop(1, '#1e3a8a');
+      journalBg.addColorStop(0, '#06152f');
+      journalBg.addColorStop(0.55, '#123b7a');
+      journalBg.addColorStop(1, '#1d4ed8');
       ctx.fillStyle = journalBg;
       ctx.fill();
+
+      ctx.save();
+      roundedRectPath(ctx, innerX, cursorY, innerW, heroCardH, 14);
+      ctx.clip();
+      const heroGlow = ctx.createRadialGradient(innerRight - 110, cursorY + 16, 0, innerRight - 110, cursorY + 16, 210);
+      heroGlow.addColorStop(0, 'rgba(34, 211, 238, 0.30)');
+      heroGlow.addColorStop(1, 'rgba(34, 211, 238, 0)');
+      ctx.fillStyle = heroGlow;
+      ctx.fillRect(innerX, cursorY, innerW, heroCardH);
+      ctx.strokeStyle = 'rgba(125, 211, 252, 0.16)';
+      ctx.lineWidth = 1;
+      for (let gridX = innerX + 18; gridX < innerRight; gridX += 34) {
+        ctx.beginPath();
+        ctx.moveTo(gridX, cursorY);
+        ctx.lineTo(gridX, cursorY + heroCardH);
+        ctx.stroke();
+      }
+      ctx.strokeStyle = 'rgba(196, 181, 253, 0.24)';
+      ctx.beginPath();
+      ctx.moveTo(innerX + innerW * 0.48, cursorY + heroCardH);
+      ctx.lineTo(innerX + innerW * 0.72, cursorY);
+      ctx.stroke();
+      ctx.restore();
 
       // Glowing left accent
       ctx.fillStyle = '#2dd4bf';
@@ -1675,10 +1698,29 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
         const journalCardH = 86;
         roundedRectPath(ctx, innerX, cursorY, innerW, journalCardH, 12);
         const journalBg = ctx.createLinearGradient(innerX, cursorY, innerRight, cursorY + journalCardH);
-        journalBg.addColorStop(0, '#0c192e');
-        journalBg.addColorStop(1, '#1e3a8a');
+        journalBg.addColorStop(0, '#071a3a');
+        journalBg.addColorStop(0.58, '#164e9b');
+        journalBg.addColorStop(1, '#2563eb');
         ctx.fillStyle = journalBg;
         ctx.fill();
+
+        ctx.save();
+        roundedRectPath(ctx, innerX, cursorY, innerW, journalCardH, 12);
+        ctx.clip();
+        const journalGlow = ctx.createRadialGradient(innerRight - 90, cursorY + 18, 0, innerRight - 90, cursorY + 18, 180);
+        journalGlow.addColorStop(0, 'rgba(34, 211, 238, 0.28)');
+        journalGlow.addColorStop(1, 'rgba(34, 211, 238, 0)');
+        ctx.fillStyle = journalGlow;
+        ctx.fillRect(innerX, cursorY, innerW, journalCardH);
+        ctx.strokeStyle = 'rgba(125, 211, 252, 0.14)';
+        ctx.lineWidth = 1;
+        for (let gridX = innerX + 18; gridX < innerRight; gridX += 34) {
+          ctx.beginPath();
+          ctx.moveTo(gridX, cursorY);
+          ctx.lineTo(gridX, cursorY + journalCardH);
+          ctx.stroke();
+        }
+        ctx.restore();
 
         ctx.fillStyle = '#2dd4bf';
         ctx.beginPath();
