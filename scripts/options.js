@@ -15,7 +15,7 @@ let acceptanceCelebrationCleanup = null;
 let previousModalFocus = null;
 let activeSharePreviewUrl = null;
 
-const RF_OPTIONS_RENDER_VERSION = '7.3.9';
+const RF_OPTIONS_RENDER_VERSION = '7.4.0';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
@@ -1895,10 +1895,14 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
       roundedRectPath(ctx, contentX, rowCardY, rowW, rowCardH, 10);
       ctx.fillStyle = index % 2 === 0 ? '#f8fafc' : '#ffffff';
       ctx.fill();
+      ctx.save();
+      roundedRectPath(ctx, contentX, rowCardY, rowW, rowCardH, 10);
+      ctx.clip();
       ctx.fillStyle = typeStyle.main;
       ctx.globalAlpha = 0.9;
       ctx.fillRect(contentX, rowCardY, 4, rowCardH);
       ctx.globalAlpha = 1;
+      ctx.restore();
       ctx.strokeStyle = '#e2e8f0';
       ctx.lineWidth = 1;
       ctx.stroke();
