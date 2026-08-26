@@ -48,8 +48,8 @@ assert(optionsJs.includes('function applyThemePreference'), 'appearance selectio
 assert(optionsJs.includes('autoSyncToggle.dataset.savedValue'), 'automatic cloud sync should retain its saved state across route changes');
 assert(optionsCss.includes('html[data-theme="dark"] #view-settings'), 'explicit dark appearance should override the system preference');
 assert(optionsJs.includes("mainContent.scrollTop = 0"), 'workspace navigation should reveal the beginning of each settings view');
-assert(optionsHtml.includes('v7.4.14 Companion'), 'workspace version label should match the current companion release');
-assert.equal(manifest.version, '7.4.14', 'manifest version should match the current companion release');
+assert(optionsHtml.includes('v7.4.15 Companion'), 'workspace version label should match the current companion release');
+assert.equal(manifest.version, '7.4.15', 'manifest version should match the current companion release');
 
 ['view-projects', 'view-library', 'metric-projects', 'metric-records', 'metric-evidence', 'recent-records'].forEach((removedSection) => {
   assert(!optionsHtml.includes(removedSection), `options page should not expose removed ${removedSection}`);
@@ -89,7 +89,7 @@ assert(optionsJs.includes('normalizeShareVisibility'), 'share-image visibility s
 });
 assert(optionsCss.includes('.share-visibility-chip'), 'share-image fields should use accessible visibility controls');
 assert(optionsJs.includes('id="share-image-size"'), 'share studio should expose optimized image-size presets');
-assert(optionsJs.includes("? 1920"), 'share studio should support a full-screen story export');
+assert(optionsJs.includes("visible.size === 'story'") && optionsJs.includes('Math.min(1920'), 'share studio should support an adaptive full-screen story export');
 assert(optionsJs.includes('canvasWidth = 720'), 'share images should use a compact mobile-first 720 px width');
 assert(optionsCss.includes('.share-size-control'), 'share image-size controls should match the scientific workspace');
 assert(optionsCss.includes('Share studio — modern scientific workspace'), 'share studio should retain the modern scientific visual system');

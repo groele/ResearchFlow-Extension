@@ -15,7 +15,7 @@ let acceptanceCelebrationCleanup = null;
 let previousModalFocus = null;
 let activeSharePreviewUrl = null;
 
-const RF_OPTIONS_RENDER_VERSION = '7.4.14';
+const RF_OPTIONS_RENDER_VERSION = '7.4.15';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
@@ -1535,7 +1535,7 @@ function normalizeShareVisibility(value = {}) {
     + (visible.author ? 34 : 0)
     + (visible.status || visible.duration ? 110 : 0);
   const canvasHeight = visible.size === 'story'
-    ? 1920
+    ? Math.min(1920, Math.max(1100, portraitContentHeight + 150))
     : (visible.size === 'auto'
       ? Math.max(1080, Math.round(720 + events.length * 96))
       : Math.min(1350, Math.max(900, portraitContentHeight)));
@@ -1720,7 +1720,7 @@ function normalizeShareVisibility(value = {}) {
     } else {
       // Full Hero with Title
       if (showJournal) {
-        const journalCardH = 104;
+        const journalCardH = 124;
         roundedRectPath(ctx, innerX, cursorY, innerW, journalCardH, 12);
         const journalBg = ctx.createLinearGradient(innerX, cursorY, innerRight, cursorY + journalCardH);
         journalBg.addColorStop(0, '#071a3a');
@@ -1759,13 +1759,16 @@ function normalizeShareVisibility(value = {}) {
         ctx.fillStyle = '#ffffff';
         const journalMaxWidth = innerW - 44;
         let journalSize = 30;
-        while (journalSize > 22) {
+        let journalLines = [];
+        while (journalSize > 16) {
           ctx.font = `800 ${journalSize}px ${displayFont}`;
-          if (ctx.measureText(journal).width <= journalMaxWidth) break;
+          journalLines = canvasTextLines(ctx, journal, journalMaxWidth);
+          if (journalLines.length <= 2) break;
           journalSize -= 1;
         }
         ctx.font = `800 ${journalSize}px ${displayFont}`;
-        drawWrappedCanvasText(ctx, journal, innerX + 22, cursorY + 62, journalMaxWidth, Math.max(26, journalSize + 3), 2);
+        journalLines = canvasTextLines(ctx, journal, journalMaxWidth);
+        journalLines.forEach((line, index) => ctx.fillText(line, innerX + 22, cursorY + 60 + index * Math.max(24, journalSize + 3)));
         cursorY += journalCardH + 8;
       }
 
