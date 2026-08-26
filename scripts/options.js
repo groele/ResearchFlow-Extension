@@ -15,7 +15,7 @@ let acceptanceCelebrationCleanup = null;
 let previousModalFocus = null;
 let activeSharePreviewUrl = null;
 
-const RF_OPTIONS_RENDER_VERSION = '7.3.3';
+const RF_OPTIONS_RENDER_VERSION = '7.3.4';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
@@ -1504,12 +1504,12 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
   const isZh = (typeof currentLanguage !== 'undefined' && currentLanguage === 'zh');
 
   const canvasWidth = 1080;
-  const portraitContentHeight = 620
-    + events.length * 72
-    + (visible.title ? 130 : 0)
-    + (visible.journal ? 44 : 0)
-    + (visible.author ? 30 : 0)
-    + (visible.status || visible.duration ? 112 : 0);
+  const portraitContentHeight = 640
+    + events.length * 76
+    + (visible.title ? 150 : 0)
+    + (visible.journal ? 48 : 0)
+    + (visible.author ? 34 : 0)
+    + (visible.status || visible.duration ? 120 : 0);
   const canvasHeight = visible.size === 'story'
     ? 1920
     : (visible.size === 'auto'
@@ -1619,7 +1619,7 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
   if (showJournal || showTitle || showAuthor) {
     if (showJournal && !showTitle) {
       // Compact sleek Journal & Status Hero Banner
-      const heroCardH = 88;
+      const heroCardH = 92;
       roundedRectPath(ctx, innerX, cursorY, innerW, heroCardH, 14);
       const journalBg = ctx.createLinearGradient(innerX, cursorY, innerRight, cursorY + heroCardH);
       journalBg.addColorStop(0, '#0c192e');
@@ -1636,11 +1636,11 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
 
       // Left info
       ctx.fillStyle = 'rgba(186, 230, 253, 0.9)';
-      ctx.font = `800 11px ${font}`;
+      ctx.font = `800 12px ${font}`;
       ctx.fillText(t('shareJournalLabel'), innerX + 24, cursorY + 28);
 
       ctx.fillStyle = '#ffffff';
-      ctx.font = `800 28px ${displayFont}`;
+      ctx.font = `800 30px ${displayFont}`;
       drawEllipsizedCanvasText(ctx, journal, innerX + 24, cursorY + 64, innerW - 240);
 
       // Right status pill in hero
@@ -1668,7 +1668,7 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
     } else {
       // Full Hero with Title
       if (showJournal) {
-        const journalCardH = 80;
+        const journalCardH = 84;
         roundedRectPath(ctx, innerX, cursorY, innerW, journalCardH, 12);
         const journalBg = ctx.createLinearGradient(innerX, cursorY, innerRight, cursorY + journalCardH);
         journalBg.addColorStop(0, '#0c192e');
@@ -1682,26 +1682,26 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
         ctx.fill();
 
         ctx.fillStyle = 'rgba(186, 230, 253, 0.85)';
-        ctx.font = `800 11px ${font}`;
+        ctx.font = `800 12px ${font}`;
         ctx.fillText(t('shareJournalLabel'), innerX + 22, cursorY + 25);
 
         ctx.fillStyle = '#ffffff';
-        ctx.font = `800 28px ${displayFont}`;
+        ctx.font = `800 30px ${displayFont}`;
         drawEllipsizedCanvasText(ctx, journal, innerX + 22, cursorY + 58, innerW - 44);
         cursorY += journalCardH + 14;
       }
 
       if (showTitle) {
         ctx.fillStyle = ink;
-        ctx.font = `800 32px ${displayFont}`;
-        const titleLineCount = drawWrappedCanvasText(ctx, title, innerX, cursorY + 32, innerW, 44, 3);
-        cursorY += 32 + (titleLineCount - 1) * 44 + 14;
+        ctx.font = `800 36px ${displayFont}`;
+        const titleLineCount = drawWrappedCanvasText(ctx, title, innerX, cursorY + 36, innerW, 46, 3);
+        cursorY += 36 + (titleLineCount - 1) * 46 + 16;
       }
 
       if (showAuthor) {
-        ctx.font = `700 12px ${font}`;
+        ctx.font = `700 13px ${font}`;
         const labelW = ctx.measureText(t('firstAuthorLabel')).width;
-        ctx.font = `600 14px ${font}`;
+        ctx.font = `600 15px ${font}`;
         const authorW = ctx.measureText(firstAuthor).width;
         const authorPillW = labelW + authorW + 30;
 
@@ -1713,11 +1713,11 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
         ctx.stroke();
 
         ctx.fillStyle = '#2563eb';
-        ctx.font = `700 12px ${font}`;
+        ctx.font = `700 13px ${font}`;
         ctx.fillText(t('firstAuthorLabel'), innerX + 10, cursorY + 20);
 
         ctx.fillStyle = inkSecondary;
-        ctx.font = `600 14px ${font}`;
+        ctx.font = `600 15px ${font}`;
         ctx.fillText(firstAuthor, innerX + 10 + labelW + 10, cursorY + 20);
         cursorY += 40;
       }
@@ -1733,7 +1733,7 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
   const showMetrics = visible.status || visible.duration;
 
   if (showMetrics) {
-    const cardH = 96;
+    const cardH = 100;
     const both = visible.duration && visible.status;
     const colW = both ? (innerW - 18) / 2 : innerW;
 
@@ -1750,12 +1750,12 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
       ctx.fillRect(innerX + 22, cursorY, 36, 3);
 
       ctx.fillStyle = muted;
-      ctx.font = `700 12px ${font}`;
+      ctx.font = `700 13px ${font}`;
       ctx.fillText(t('shareJourneyDuration'), innerX + 22, cursorY + 28);
 
       const durationStr = duration === null || duration === undefined ? '—' : String(duration);
       ctx.fillStyle = ink;
-      ctx.font = `800 40px ${displayFont}`;
+      ctx.font = `800 44px ${displayFont}`;
       ctx.fillText(durationStr, innerX + 22, cursorY + 74);
       const numW = ctx.measureText(durationStr).width;
 
@@ -1785,7 +1785,7 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
       ctx.fillRect(statusX + 22, cursorY, 36, 3);
 
       ctx.fillStyle = muted;
-      ctx.font = `700 12px ${font}`;
+      ctx.font = `700 13px ${font}`;
       ctx.fillText(t('shareJourneyStatus'), statusX + 22, cursorY + 28);
 
       const statusText = getSubmissionStatusLabel(submission.status);
@@ -1823,7 +1823,7 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
 
   // 6. Timeline Milestones Section
   ctx.fillStyle = ink;
-  ctx.font = `800 18px ${font}`;
+  ctx.font = `800 20px ${font}`;
   ctx.fillText(t('shareJourneyTimeline'), innerX, cursorY + 4);
 
   // Progress Pill Badge
@@ -1835,7 +1835,7 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
   ctx.stroke();
 
   ctx.fillStyle = '#475569';
-  ctx.font = `700 11px ${font}`;
+  ctx.font = `700 13px ${font}`;
   ctx.textAlign = 'center';
   ctx.fillText(`${String(events.length).padStart(2, '0')} / ${String(totalNodesCount).padStart(2, '0')}`, innerRight - 44, cursorY + 2);
   ctx.textAlign = 'left';
@@ -1884,7 +1884,7 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
       const typeStyle = shareTypeColors[event.type] || shareTypeColors.special;
       const contentX = railX + 32;
       const rowW = innerRight - contentX;
-      const rowCardH = denseTimeline ? 48 : (compactTimeline ? 50 : 58);
+      const rowCardH = denseTimeline ? 54 : (compactTimeline ? 56 : 64);
       const rowCardY = y - rowCardH / 2;
 
       // Soft Milestone Row Container Card
@@ -1905,13 +1905,13 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
       ctx.stroke();
 
       ctx.fillStyle = ink;
-      ctx.font = `800 11px ${font}`;
+      ctx.font = `800 12px ${font}`;
       ctx.textAlign = 'center';
       ctx.fillText(String(index + 1).padStart(2, '0'), railX, y + 4);
       ctx.textAlign = 'left';
 
       // Event Type Tag Pill inside row card
-      ctx.font = `700 11px ${font}`;
+      ctx.font = `700 13px ${font}`;
       const tagText = typeStyle.label;
       const tagW = ctx.measureText(tagText).width + 14;
       roundedRectPath(ctx, contentX + 14, y - 11, tagW, 22, 5);
@@ -1928,13 +1928,13 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
       const nameX = contentX + 14 + tagW + 12;
       const maxNameW = visible.dates ? rowW - tagW - 180 : rowW - tagW - 36;
       ctx.fillStyle = ink;
-      ctx.font = `700 ${denseTimeline ? 15 : 16}px ${font}`;
+      ctx.font = `700 ${denseTimeline ? 16 : 18}px ${font}`;
       drawEllipsizedCanvasText(ctx, event.name, nameX, y + 5, maxNameW);
 
       // Event Date Badge on the Right
       if (visible.dates) {
         const dateText = formatShareDate(event.date);
-        ctx.font = `700 12px ${font}`;
+        ctx.font = `700 13px ${font}`;
         const dateW = ctx.measureText(dateText).width + 20;
         const dateX = innerRight - dateW - 12;
 

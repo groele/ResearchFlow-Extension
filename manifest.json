@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ResearchFlow Companion",
-  "version": "7.3.3",
+  "version": "7.3.4",
   "description": "A focused, local-first companion for manuscript pipelines, journal submissions, peer review, and secure metadata synchronization.",
   "icons": {
     "16": "assets/icons/icon-16.png",
