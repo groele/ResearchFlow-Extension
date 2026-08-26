@@ -15,7 +15,7 @@ let acceptanceCelebrationCleanup = null;
 let previousModalFocus = null;
 let activeSharePreviewUrl = null;
 
-const RF_OPTIONS_RENDER_VERSION = '7.4.13';
+const RF_OPTIONS_RENDER_VERSION = '7.4.14';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
@@ -1531,7 +1531,7 @@ function normalizeShareVisibility(value = {}) {
   const portraitContentHeight = 420
     + events.length * 72
     + (visible.title ? 145 : 0)
-    + (visible.journal ? 48 : 0)
+    + (visible.journal ? 66 : 0)
     + (visible.author ? 34 : 0)
     + (visible.status || visible.duration ? 110 : 0);
   const canvasHeight = visible.size === 'story'
@@ -1720,7 +1720,7 @@ function normalizeShareVisibility(value = {}) {
     } else {
       // Full Hero with Title
       if (showJournal) {
-        const journalCardH = 86;
+        const journalCardH = 104;
         roundedRectPath(ctx, innerX, cursorY, innerW, journalCardH, 12);
         const journalBg = ctx.createLinearGradient(innerX, cursorY, innerRight, cursorY + journalCardH);
         journalBg.addColorStop(0, '#071a3a');
@@ -1757,8 +1757,15 @@ function normalizeShareVisibility(value = {}) {
         ctx.fillText(t('shareJournalLabel'), innerX + 22, cursorY + 25);
 
         ctx.fillStyle = '#ffffff';
-        ctx.font = `800 32px ${displayFont}`;
-        drawEllipsizedCanvasText(ctx, journal, innerX + 22, cursorY + 58, innerW - 44);
+        const journalMaxWidth = innerW - 44;
+        let journalSize = 30;
+        while (journalSize > 22) {
+          ctx.font = `800 ${journalSize}px ${displayFont}`;
+          if (ctx.measureText(journal).width <= journalMaxWidth) break;
+          journalSize -= 1;
+        }
+        ctx.font = `800 ${journalSize}px ${displayFont}`;
+        drawWrappedCanvasText(ctx, journal, innerX + 22, cursorY + 62, journalMaxWidth, Math.max(26, journalSize + 3), 2);
         cursorY += journalCardH + 8;
       }
 
@@ -1918,7 +1925,7 @@ function normalizeShareVisibility(value = {}) {
 
   // Render bottom Journey Summary Card when there are fewer nodes
   const shouldRenderSummaryCard = events.length <= 5 && availableTimelineHeight > (events.length * 72 + 130);
-  const summaryCardH = shouldRenderSummaryCard ? 96 : 0;
+  const summaryCardH = shouldRenderSummaryCard ? 92 : 0;
   const timelineUsableHeight = availableTimelineHeight - summaryCardH - (shouldRenderSummaryCard ? 16 : 0);
 
   const minRowGap = 60;
@@ -2048,7 +2055,7 @@ function normalizeShareVisibility(value = {}) {
         ctx.font = `800 12px ${font}`;
         ctx.fillText(isZh ? '科研里程碑阶段小结' : 'MILESTONE SUMMARY', innerX + 20, sumY + 24);
 
-        const colW = (innerW - 40) / 3;
+        const colW = (innerW - 56) / 3;
         const firstEvent = events[0];
         const lastEvent = events[events.length - 1];
 
@@ -2062,7 +2069,13 @@ function normalizeShareVisibility(value = {}) {
         ctx.fillText(formatShareDate(firstEvent?.date), c1X, sumY + 68);
 
         // Col 2: Latest Milestone
-        const c2X = c1X + colW;
+        const c2X = c1X + colW + 8;
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(c2X - 8, sumY + 36);
+        ctx.lineTo(c2X - 8, sumY + sumH - 14);
+        ctx.stroke();
         ctx.fillStyle = muted;
         ctx.font = `600 12px ${font}`;
         ctx.fillText(isZh ? '当前进展' : 'Latest Milestone', c2X, sumY + 46);
@@ -2071,7 +2084,11 @@ function normalizeShareVisibility(value = {}) {
         drawWrappedCanvasText(ctx, lastEvent?.name || '—', c2X, sumY + 68, colW - 20, 16, 1);
 
         // Col 3: Stage Span
-        const c3X = c2X + colW;
+        const c3X = c2X + colW + 8;
+        ctx.beginPath();
+        ctx.moveTo(c3X - 8, sumY + 36);
+        ctx.lineTo(c3X - 8, sumY + sumH - 14);
+        ctx.stroke();
         ctx.fillStyle = muted;
         ctx.font = `600 12px ${font}`;
         ctx.fillText(isZh ? '阶段历时' : 'Stage Span', c3X, sumY + 46);
