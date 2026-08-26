@@ -15,7 +15,7 @@ let acceptanceCelebrationCleanup = null;
 let previousModalFocus = null;
 let activeSharePreviewUrl = null;
 
-const RF_OPTIONS_RENDER_VERSION = '7.4.1';
+const RF_OPTIONS_RENDER_VERSION = '7.4.2';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
@@ -1504,17 +1504,17 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
   const isZh = (typeof currentLanguage !== 'undefined' && currentLanguage === 'zh');
 
   const canvasWidth = 1080;
-  const portraitContentHeight = 600
-    + events.length * 74
-    + (visible.title ? 160 : 0)
-    + (visible.journal ? 52 : 0)
+  const portraitContentHeight = 520
+    + events.length * 68
+    + (visible.title ? 145 : 0)
+    + (visible.journal ? 48 : 0)
     + (visible.author ? 34 : 0)
-    + (visible.status || visible.duration ? 118 : 0);
+    + (visible.status || visible.duration ? 110 : 0);
   const canvasHeight = visible.size === 'story'
     ? 1920
     : (visible.size === 'auto'
       ? Math.max(1080, Math.round(720 + events.length * 96))
-      : Math.min(1350, Math.max(980, portraitContentHeight)));
+      : Math.min(1350, Math.max(900, portraitContentHeight)));
   const width = canvasWidth;
   const height = canvasHeight;
   const renderScale = 2;
@@ -1560,13 +1560,13 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
   ctx.fillRect(0, 0, width, height);
 
   // 2. Poster Container Card (Padded & Floating)
-  const cardX = 36;
-  const cardY = 32;
-  const cardW = width - 72; // 1008
-  const cardH = height - 64;
-  const innerX = 72;
-  const innerW = width - 144; // 936
-  const innerRight = innerX + innerW; // 1008
+  const cardX = 24;
+  const cardY = 24;
+  const cardW = width - 48; // 1032
+  const cardH = height - 48;
+  const innerX = 52;
+  const innerW = width - 104; // 976
+  const innerRight = innerX + innerW; // 1028
 
   ctx.save();
   ctx.shadowColor = 'rgba(15, 23, 42, 0.08)';
@@ -1593,7 +1593,7 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
   ctx.restore();
 
   // 3. Top Header: RF / 01 Badge + Date
-  const headerY = cardY + 24;
+  const headerY = cardY + 18;
   roundedRectPath(ctx, innerX, headerY, 80, 26, 6);
   ctx.fillStyle = 'rgba(37, 99, 235, 0.08)';
   ctx.fill();
@@ -1613,7 +1613,7 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
   ctx.fillText(formatShareDate(new Date()), innerRight, headerY + 18);
   ctx.textAlign = 'left';
 
-  let cursorY = headerY + 40;
+  let cursorY = headerY + 34;
 
   // 4. Hero Section: Journal & Title
   const showJournal = visible.journal && journal;
@@ -1668,7 +1668,7 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
       ctx.fillStyle = '#ffffff';
       ctx.fillText(statusLabel, stX + 26, cursorY + 49);
 
-      cursorY += heroCardH + 14;
+      cursorY += heroCardH + 10;
     } else {
       // Full Hero with Title
       if (showJournal) {
@@ -1692,7 +1692,7 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
         ctx.fillStyle = '#ffffff';
         ctx.font = `800 32px ${displayFont}`;
         drawEllipsizedCanvasText(ctx, journal, innerX + 22, cursorY + 58, innerW - 44);
-        cursorY += journalCardH + 10;
+        cursorY += journalCardH + 8;
       }
 
       if (showTitle) {
@@ -1777,7 +1777,7 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
     }
 
     if (visible.status) {
-      const statusX = visible.duration ? innerX + colW + 18 : innerX;
+      const statusX = visible.duration ? innerX + colW + 14 : innerX;
       roundedRectPath(ctx, statusX, cursorY, colW, cardH, 12);
       ctx.fillStyle = '#f8fafc';
       ctx.fill();
@@ -1822,7 +1822,7 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
 
     ctx.fillStyle = '#f1f5f9';
     ctx.fillRect(innerX, cursorY + cardH + 10, innerW, 1.5);
-    cursorY += cardH + 24;
+    cursorY += cardH + 18;
   }
 
   // 6. Timeline Milestones Section
@@ -1846,16 +1846,16 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
 
   cursorY += 18;
 
-  const footerSpace = visible.footer ? 60 : 20;
+  const footerSpace = visible.footer ? 52 : 18;
   const availableTimelineHeight = (cardY + cardH) - cursorY - footerSpace;
 
   // Render bottom Journey Summary Card when there are fewer nodes
   const shouldRenderSummaryCard = events.length <= 5 && availableTimelineHeight > (events.length * 72 + 130);
-  const summaryCardH = shouldRenderSummaryCard ? 104 : 0;
+  const summaryCardH = shouldRenderSummaryCard ? 96 : 0;
   const timelineUsableHeight = availableTimelineHeight - summaryCardH - (shouldRenderSummaryCard ? 16 : 0);
 
-  const minRowGap = 64;
-  const maxRowGap = shouldRenderSummaryCard ? 90 : (visible.size === 'story' ? 190 : 150);
+  const minRowGap = 58;
+  const maxRowGap = shouldRenderSummaryCard ? 82 : (visible.size === 'story' ? 180 : 140);
   const rowGap = events.length > 1
     ? Math.min(maxRowGap, Math.max(minRowGap, (timelineUsableHeight - 50) / (events.length - 1)))
     : 72;
@@ -1863,7 +1863,7 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
   const denseTimeline = events.length >= 7;
 
   const railX = innerX + 28;
-  const firstY = cursorY + 26;
+  const firstY = cursorY + 22;
   const lastY = firstY + Math.max(0, events.length - 1) * rowGap;
 
   if (events.length > 1) {
@@ -1888,7 +1888,7 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
       const typeStyle = shareTypeColors[event.type] || shareTypeColors.special;
       const contentX = railX + 32;
       const rowW = innerRight - contentX;
-      const rowCardH = denseTimeline ? 60 : (compactTimeline ? 62 : 68);
+      const rowCardH = denseTimeline ? 56 : (compactTimeline ? 58 : 64);
       const rowCardY = y - rowCardH / 2;
 
       // Soft Milestone Row Container Card
