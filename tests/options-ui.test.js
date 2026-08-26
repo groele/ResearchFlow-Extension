@@ -48,8 +48,8 @@ assert(optionsJs.includes('function applyThemePreference'), 'appearance selectio
 assert(optionsJs.includes('autoSyncToggle.dataset.savedValue'), 'automatic cloud sync should retain its saved state across route changes');
 assert(optionsCss.includes('html[data-theme="dark"] #view-settings'), 'explicit dark appearance should override the system preference');
 assert(optionsJs.includes("mainContent.scrollTop = 0"), 'workspace navigation should reveal the beginning of each settings view');
-assert(optionsHtml.includes('v7.3.4 Companion'), 'workspace version label should match the current companion release');
-assert.equal(manifest.version, '7.3.4', 'manifest version should match the current companion release');
+assert(optionsHtml.includes('v7.3.5 Companion'), 'workspace version label should match the current companion release');
+assert.equal(manifest.version, '7.3.5', 'manifest version should match the current companion release');
 
 ['view-projects', 'view-library', 'metric-projects', 'metric-records', 'metric-evidence', 'recent-records'].forEach((removedSection) => {
   assert(!optionsHtml.includes(removedSection), `options page should not expose removed ${removedSection}`);
@@ -76,6 +76,7 @@ assert(optionsJs.includes('sub-edit-first-author'), 'submission editor should ex
 assert(optionsJs.includes('pipeline-first-author'), 'dashboard pipeline cards should render first-author information');
 assert(optionsJs.includes('btn-pipeline-share'), 'dashboard pipeline cards should expose a one-click share-image action');
 assert(optionsJs.includes('createSubmissionShareCanvas'), 'submission journeys should be rendered into a local canvas image');
+assert(optionsJs.includes('const renderScale = 2'), 'share cards should render at high pixel density');
 assert(optionsJs.includes('canvas.toBlob'), 'share images should be encoded as PNG blobs without remote services');
 assert(optionsJs.includes("navigator.canShare?.({ files: [file] })"), 'share previews should use native file sharing only when supported');
 assert(optionsJs.includes('navigator.clipboard.write([new ClipboardItem'), 'share previews should support copying the generated PNG');

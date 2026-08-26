@@ -15,7 +15,7 @@ let acceptanceCelebrationCleanup = null;
 let previousModalFocus = null;
 let activeSharePreviewUrl = null;
 
-const RF_OPTIONS_RENDER_VERSION = '7.3.4';
+const RF_OPTIONS_RENDER_VERSION = '7.3.5';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
@@ -1517,12 +1517,16 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
       : Math.min(1350, Math.max(980, portraitContentHeight)));
   const width = canvasWidth;
   const height = canvasHeight;
+  const renderScale = 2;
 
   const canvas = document.createElement('canvas');
-  canvas.width = canvasWidth;
-  canvas.height = canvasHeight;
+  canvas.width = canvasWidth * renderScale;
+  canvas.height = canvasHeight * renderScale;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas is unavailable');
+
+  // Render at 2x density while preserving logical layout coordinates.
+  ctx.scale(renderScale, renderScale);
 
   // Crisp text rendering
   ctx.imageSmoothingEnabled = true;
