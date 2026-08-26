@@ -15,7 +15,7 @@ let acceptanceCelebrationCleanup = null;
 let previousModalFocus = null;
 let activeSharePreviewUrl = null;
 
-const RF_OPTIONS_RENDER_VERSION = '7.4.3';
+const RF_OPTIONS_RENDER_VERSION = '7.4.4';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
@@ -84,8 +84,8 @@ const I18N = {
     shareFieldDates: 'Milestone dates',
     shareFieldFooter: 'ResearchFlow footer',
     shareSizeTitle: 'Image size',
-    shareSizePortrait: 'Mobile portrait · adaptive 1080 × 980–1350',
-    shareSizeStory: 'Story · 1080 × 1920',
+    shareSizePortrait: 'Mobile portrait · adaptive 960 × 900–1350',
+    shareSizeStory: 'Story · 960 × 1920',
     shareSizeAuto: 'Adaptive long image',
     noEventYet: 'No event yet',
     addEventStart: 'Add an event to start tracking',
@@ -543,8 +543,8 @@ const I18N = {
     shareFieldDates: '节点日期',
     shareFieldFooter: 'ResearchFlow 页脚',
     shareSizeTitle: '图片尺寸',
-    shareSizePortrait: '移动竖版 · 自适应 1080 × 980–1350',
-    shareSizeStory: '全屏 · 1080 × 1920',
+    shareSizePortrait: '移动竖版 · 自适应 960 × 900–1350',
+    shareSizeStory: '全屏 · 960 × 1920',
     shareSizeAuto: '自适应长图',
     noEventYet: '暂无事件',
     addEventStart: '添加事件开始跟踪',
@@ -1503,7 +1503,7 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
   const totalNodesCount = (submission.timelineNodes || []).length || events.length || 1;
   const isZh = (typeof currentLanguage !== 'undefined' && currentLanguage === 'zh');
 
-  const canvasWidth = 1080;
+  const canvasWidth = 960;
   const portraitContentHeight = 520
     + events.length * 68
     + (visible.title ? 145 : 0)
@@ -1562,11 +1562,11 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
   // 2. Poster Container Card (Padded & Floating)
   const cardX = 30;
   const cardY = 24;
-  const cardW = width - 60; // 1020
+  const cardW = width - 48; // 912
   const cardH = height - 48;
-  const innerX = 64;
-  const innerW = width - 128; // 952
-  const innerRight = innerX + innerW; // 1016
+  const innerX = 48;
+  const innerW = width - 96; // 864
+  const innerRight = innerX + innerW; // 912
 
   ctx.save();
   ctx.shadowColor = 'rgba(15, 23, 42, 0.08)';
