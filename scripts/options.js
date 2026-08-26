@@ -15,7 +15,7 @@ let acceptanceCelebrationCleanup = null;
 let previousModalFocus = null;
 let activeSharePreviewUrl = null;
 
-const RF_OPTIONS_RENDER_VERSION = '7.4.17';
+const RF_OPTIONS_RENDER_VERSION = '7.4.18';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
@@ -2051,7 +2051,7 @@ function normalizeShareVisibility(value = {}) {
 
     // Milestone Summary Insights Card at the Bottom
     if (shouldRenderSummaryCard && events.length > 0) {
-      const sumY = lastY + 38;
+      const sumY = lastY + 56;
       const sumH = Math.min(104, (cardY + cardH) - sumY - footerSpace - 8);
       if (sumH >= 80) {
         roundedRectPath(ctx, innerX, sumY, innerW, sumH, 12);
