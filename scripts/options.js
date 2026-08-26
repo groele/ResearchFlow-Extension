@@ -15,7 +15,7 @@ let acceptanceCelebrationCleanup = null;
 let previousModalFocus = null;
 let activeSharePreviewUrl = null;
 
-const RF_OPTIONS_RENDER_VERSION = '7.4.7';
+const RF_OPTIONS_RENDER_VERSION = '7.4.8';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
@@ -1504,8 +1504,8 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
   const isZh = (typeof currentLanguage !== 'undefined' && currentLanguage === 'zh');
 
   const canvasWidth = 720;
-  const portraitContentHeight = 520
-    + events.length * 68
+  const portraitContentHeight = 420
+    + events.length * 72
     + (visible.title ? 145 : 0)
     + (visible.journal ? 48 : 0)
     + (visible.author ? 34 : 0)
@@ -1854,8 +1854,8 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
   const summaryCardH = shouldRenderSummaryCard ? 96 : 0;
   const timelineUsableHeight = availableTimelineHeight - summaryCardH - (shouldRenderSummaryCard ? 16 : 0);
 
-  const minRowGap = 58;
-  const maxRowGap = shouldRenderSummaryCard ? 82 : (visible.size === 'story' ? 180 : 140);
+  const minRowGap = 60;
+  const maxRowGap = shouldRenderSummaryCard ? 82 : (visible.size === 'story' ? 150 : 88);
   const rowGap = events.length > 1
     ? Math.min(maxRowGap, Math.max(minRowGap, (timelineUsableHeight - 50) / (events.length - 1)))
     : 72;
