@@ -15,7 +15,7 @@ let acceptanceCelebrationCleanup = null;
 let previousModalFocus = null;
 let activeSharePreviewUrl = null;
 
-const RF_OPTIONS_RENDER_VERSION = '7.4.9';
+const RF_OPTIONS_RENDER_VERSION = '7.4.10';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
@@ -2695,16 +2695,16 @@ function buildInlineStageEditor(subId) {
   return `
     <div class="inline-stage-editor" data-sub-id="${escapeHTML(subId)}" hidden>
       <div class="inline-stage-head">
-        <span>${t('inlineAddTimelineEvent')}</span>
+        <span class="inline-stage-title"><span class="inline-stage-title-mark" aria-hidden="true">+</span>${t('inlineAddTimelineEvent')}</span>
         <button class="btn-secondary btn-sm btn-inline-stage-cancel" type="button">${t('cancel')}</button>
       </div>
-      <div class="inline-stage-fields">
-        <select class="inline-stage-key" title="${escapeHTML(t('keyEventPreset'))}">${buildOptions(keyOptions, 'submit')}</select>
-        <input type="text" class="inline-stage-name" value="${escapeHTML(t('defaultManuscriptSubmitted'))}" placeholder="${escapeHTML(t('eventPlaceholder'))}">
-        <input type="date" class="inline-stage-date" value="${todayString()}">
-        <select class="inline-stage-type">${buildOptions(typeOptions, 'submission')}</select>
-        <input type="text" class="inline-stage-notes" placeholder="${escapeHTML(t('eventNotesShort'))}">
-        <button class="btn-primary btn-sm btn-inline-stage-save" type="button">${t('addEvent').replace('+ ', '')}</button>
+      <div class="inline-stage-fields" role="group" aria-label="${escapeHTML(t('inlineAddTimelineEvent'))}">
+        <select class="inline-stage-key" aria-label="${escapeHTML(t('keyEventPreset'))}" title="${escapeHTML(t('keyEventPreset'))}">${buildOptions(keyOptions, 'submit')}</select>
+        <input type="text" class="inline-stage-name" aria-label="${escapeHTML(t('eventName'))}" value="${escapeHTML(t('defaultManuscriptSubmitted'))}" placeholder="${escapeHTML(t('eventPlaceholder'))}" maxlength="160">
+        <input type="date" class="inline-stage-date" aria-label="${escapeHTML(t('eventDate'))}" value="${todayString()}">
+        <select class="inline-stage-type" aria-label="${escapeHTML(t('eventTypeSpecial'))}">${buildOptions(typeOptions, 'submission')}</select>
+        <input type="text" class="inline-stage-notes" aria-label="${escapeHTML(t('eventNotesShort'))}" placeholder="${escapeHTML(t('eventNotesShort'))}" maxlength="500">
+        <button class="btn-primary btn-sm btn-inline-stage-save" type="button">${t('addEvent').replace('+ ', '')}</button><span class="inline-stage-status" data-inline-stage-status role="status" aria-live="polite"></span>
       </div>
     </div>
   `;
@@ -2760,6 +2760,16 @@ function applyInlineEventToSubmission(sub, key, eventDate, note = '') {
   } else if (key === 'rejected') {
     markSubmissionRejected(sub, eventDate, note);
   }
+}
+
+function setInlineStageBusy(editor, busy, message = '') {
+  const button = editor?.querySelector('.btn-inline-stage-save');
+  const status = editor?.querySelector('[data-inline-stage-status]');
+  if (button) {
+    button.disabled = busy;
+    button.setAttribute('aria-busy', String(busy));
+  }
+  if (status) status.textContent = message;
 }
 
 async function saveInlineStageEvent(editor) {
@@ -3770,7 +3780,26 @@ function renderDashboard() {
     ganttBox.querySelectorAll('.btn-inline-stage-save').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
-        await saveInlineStageEvent(btn.closest('.inline-stage-editor'));
+        const editor = btn.closest('.inline-stage-editor');
+        if (!editor || btn.disabled) return;
+        setInlineStageBusy(editor, true);
+        let errorMessage = '';
+        try {
+          await saveInlineStageEvent(editor);
+        } catch (error) {
+          errorMessage = error?.message || t('autoSaveFailed');
+          showGlobalToast(errorMessage, 'error');
+        } finally {
+          if (editor.isConnected) setInlineStageBusy(editor, false, errorMessage);
+        }
+      });
+    });
+
+    ganttBox.querySelectorAll('.inline-stage-fields input').forEach(input => {
+      input.addEventListener('keydown', event => {
+        if (event.key !== 'Enter' || event.isComposing) return;
+        event.preventDefault();
+        input.closest('.inline-stage-editor')?.querySelector('.btn-inline-stage-save')?.click();
       });
     });
   }
