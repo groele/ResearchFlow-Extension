@@ -97,6 +97,8 @@ assert(!backgroundJs.includes('CACHE_SCRAPE_RESULT'), 'background should not ret
 
 const contentJs = read('scripts/content.js');
 assert(contentJs.includes('maybeOfferSubmissionCapture'), 'content script should offer quick submission entry');
+assert(contentJs.includes('safeExtensionStorageGet'), 'content storage reads should degrade when extension context is invalidated');
+assert(contentJs.includes('safeExtensionSendMessage'), 'content message sends should degrade when extension context is invalidated');
 assert(contentJs.includes('Do not show on this site'), 'portal prompt should support per-site dismissal');
 assert(contentJs.includes('collectSubmissionPageSignals'), 'portal capture should collect reviewable workflow fields');
 assert(contentJs.includes('Capture information'), 'portal prompt should expose one-click information capture');

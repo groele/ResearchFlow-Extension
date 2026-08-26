@@ -95,26 +95,88 @@ function showPageToast(message, type = 'success') {
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const SUBMISSION_ASSIST_SNOOZE_MS = 12 * 60 * 60 * 1000;
 
-function readSubmissionAssistState() {
+function extensionContextIsValid() {
+  return typeof chrome !== 'undefined' && Boolean(chrome.runtime?.id) && Boolean(chrome.storage?.local);
+}
+
+function safeExtensionStorageGet(keys, fallback = {}) {
   return new Promise(resolve => {
-    chrome.storage.local.get([SUBMISSION_ASSIST_STORAGE_KEY], result => {
-      const stored = result?.[SUBMISSION_ASSIST_STORAGE_KEY] || {};
-      resolve({
-        enabled: stored.enabled !== false,
-        captureDetailsEnabled: stored.captureDetailsEnabled !== false,
-        disabledOrigins: Array.isArray(stored.disabledOrigins) ? stored.disabledOrigins : [],
-        snoozedUntil: stored.snoozedUntil && typeof stored.snoozedUntil === 'object'
-          ? stored.snoozedUntil
-          : {}
+    let settled = false;
+    const finish = value => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeoutId);
+      resolve(value);
+    };
+    const timeoutId = window.setTimeout(() => finish(fallback), 1500);
+    if (!extensionContextIsValid()) {
+      finish(fallback);
+      return;
+    }
+    try {
+      chrome.storage.local.get(keys, result => {
+        if (chrome.runtime.lastError) {
+          finish(fallback);
+          return;
+        }
+        finish(result || fallback);
       });
-    });
+    } catch {
+      finish(fallback);
+    }
   });
+}
+
+function safeExtensionStorageSet(payload) {
+  return new Promise(resolve => {
+    let settled = false;
+    const finish = value => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeoutId);
+      resolve(value);
+    };
+    const timeoutId = window.setTimeout(() => finish(false), 1500);
+    if (!extensionContextIsValid()) {
+      finish(false);
+      return;
+    }
+    try {
+      chrome.storage.local.set(payload, () => finish(!chrome.runtime.lastError));
+    } catch {
+      finish(false);
+    }
+  });
+}
+
+
+function safeExtensionSendMessage(message, callback) {
+  if (!extensionContextIsValid()) return false;
+  try {
+    chrome.runtime.sendMessage(message, response => callback(response, chrome.runtime.lastError));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function readSubmissionAssistState() {
+  const result = await safeExtensionStorageGet([SUBMISSION_ASSIST_STORAGE_KEY]);
+  const stored = result?.[SUBMISSION_ASSIST_STORAGE_KEY] || {};
+  return {
+    enabled: stored.enabled !== false,
+    captureDetailsEnabled: stored.captureDetailsEnabled !== false,
+    disabledOrigins: Array.isArray(stored.disabledOrigins) ? stored.disabledOrigins : [],
+    snoozedUntil: stored.snoozedUntil && typeof stored.snoozedUntil === 'object'
+      ? stored.snoozedUntil
+      : {}
+  };
 }
 
 async function updateSubmissionAssistState(mutator) {
   const state = await readSubmissionAssistState();
   const nextState = mutator(state) || state;
-  await chrome.storage.local.set({ [SUBMISSION_ASSIST_STORAGE_KEY]: nextState });
+  await safeExtensionStorageSet({ [SUBMISSION_ASSIST_STORAGE_KEY]: nextState });
   return nextState;
 }
 
@@ -508,11 +570,16 @@ function renderSubmissionAssist(portal, captureDetailsEnabled = true) {
       : portal;
     captureButton.disabled = true;
     captureButton.textContent = copy.opening;
-    chrome.runtime.sendMessage({
+    const sent = safeExtensionSendMessage({
       action: 'OPEN_SUBMISSION_CAPTURE',
       capture: currentCapture
-    }, response => {
-      const runtimeError = chrome.runtime.lastError;
+    }, (response, runtimeError) => {
+      if (!sent) {
+        captureButton.disabled = false;
+        captureButton.textContent = copy.capture;
+        removeCard();
+        return;
+      }
       if (runtimeError || !response?.success) {
         captureButton.disabled = false;
         captureButton.textContent = copy.capture;
