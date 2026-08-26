@@ -15,7 +15,7 @@ let acceptanceCelebrationCleanup = null;
 let previousModalFocus = null;
 let activeSharePreviewUrl = null;
 
-const RF_OPTIONS_RENDER_VERSION = '7.3.2';
+const RF_OPTIONS_RENDER_VERSION = '7.3.3';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
@@ -84,7 +84,7 @@ const I18N = {
     shareFieldDates: 'Milestone dates',
     shareFieldFooter: 'ResearchFlow footer',
     shareSizeTitle: 'Image size',
-    shareSizePortrait: 'Mobile portrait · 1080 × 1350',
+    shareSizePortrait: 'Mobile portrait · adaptive 1080 × 980–1350',
     shareSizeStory: 'Story · 1080 × 1920',
     shareSizeAuto: 'Adaptive long image',
     noEventYet: 'No event yet',
@@ -543,7 +543,7 @@ const I18N = {
     shareFieldDates: '节点日期',
     shareFieldFooter: 'ResearchFlow 页脚',
     shareSizeTitle: '图片尺寸',
-    shareSizePortrait: '移动竖版 · 1080 × 1350',
+    shareSizePortrait: '移动竖版 · 自适应 1080 × 980–1350',
     shareSizeStory: '全屏 · 1080 × 1920',
     shareSizeAuto: '自适应长图',
     noEventYet: '暂无事件',
@@ -1504,9 +1504,17 @@ function createSubmissionShareCanvas(submission, visibility = {}) {
   const isZh = (typeof currentLanguage !== 'undefined' && currentLanguage === 'zh');
 
   const canvasWidth = 1080;
+  const portraitContentHeight = 620
+    + events.length * 72
+    + (visible.title ? 130 : 0)
+    + (visible.journal ? 44 : 0)
+    + (visible.author ? 30 : 0)
+    + (visible.status || visible.duration ? 112 : 0);
   const canvasHeight = visible.size === 'story'
     ? 1920
-    : (visible.size === 'auto' ? Math.max(1180, Math.round(720 + events.length * 96)) : 1350);
+    : (visible.size === 'auto'
+      ? Math.max(1080, Math.round(720 + events.length * 96))
+      : Math.min(1350, Math.max(980, portraitContentHeight)));
   const width = canvasWidth;
   const height = canvasHeight;
 
