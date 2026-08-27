@@ -496,7 +496,8 @@ ResearchFlow-Extension/
 │  ├─ journal-portals.js        # Portal rules, status inference and confidence scoring
 │  ├─ scholar-mirrors.js        # Scholar/mirror fingerprints and metadata extraction
 │  ├─ options.js                # Dashboard, Kanban, submissions, review and settings UI
-│  ├─ research-core.js          # Shared research-domain helpers
+│  ├─ core/
+│  │  └─ research-core.js       # Shared research-domain helpers
 │  ├─ storage.js                # Schema, local persistence, merge and cloud providers
 │  ├─ ui-utils.js               # Shared UI and timeline utilities
 │  └─ modules/                  # Focused UI/domain modules

@@ -1516,7 +1516,9 @@ function normalizeShareVisibility(value = {}) {
     size,
     timelineStart
   };
-}function createSubmissionShareCanvas(submission, visibility = {}) {
+}
+
+function createSubmissionShareCanvas(submission, visibility = {}) {
   const visible = normalizeShareVisibility(visibility);
   const manuscript = db?.manuscripts?.find(item => item.id === submission.manuscriptId);
   const title = manuscript?.title || submission.title || t('untitledManuscript');
