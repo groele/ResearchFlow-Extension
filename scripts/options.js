@@ -36,7 +36,7 @@ const I18N = {
     dashboardSubtitle: "A bird's eye view of your scientific progress and pipelines.",
     acceptedPublished: '🎉 Accepted & Published',
     activeReview: '🕒 Active In-Review',
-    totalSubmissions: '📊 Total Submissions',
+    totalSubmissions: '📊 Total Submission Attempts',
     clickToFilter: 'Click to filter',
     timelineTitle: '📅 Manuscript Pipeline Timelines',
     timelineSubtitle: 'Track experiments, writing, submission, revision, acceptance, and publication through visual manuscript pipelines.',
@@ -501,7 +501,7 @@ const I18N = {
     dashboardSubtitle: '集中查看科研进展、投稿状态和关键时间线。',
     acceptedPublished: '🎉 已接收 / 已发表',
     activeReview: '🕒 审稿中',
-    totalSubmissions: '📊 投稿总数',
+    totalSubmissions: '📊 投稿尝试总数',
     clickToFilter: '点击筛选',
     timelineTitle: '📅 手稿流水线时间线',
     timelineSubtitle: '通过可视化手稿流水线跟踪实验、写作、投稿、修改、接收和发表。',
@@ -3239,13 +3239,23 @@ function analyzeSubmission(sub) {
     }
   }
 
-  let stateLabel = t('statePreparing');
-  let stateColor = "#64748b";
-  let stateNote = submitDate ? t('stateSubmitted') : t('stateNotSubmitted');
-  if (onlineDate) { stateLabel = t('stateOnline'); stateColor = "#15803d"; stateNote = formatShortDate(onlineDate); }
-  else if (acceptDate) { stateLabel = t('stateAccepted'); stateColor = "#16a34a"; stateNote = formatShortDate(acceptDate); }
-  else if (r1Date) { stateLabel = t('stateAfterR1'); stateColor = "#dc2626"; stateNote = tf('stateSinceR1', { count: r1ToNow ?? "—" }); }
-  else if (submitDate) { stateLabel = t('stateUnderReview'); stateColor = "#0891b2"; stateNote = tf('stateSinceSubmit', { count: submitToNow ?? "—" }); }
+  // The editable submission status is the source of truth. Timeline dates add
+  // context, but must never promote a submitted record to "under review".
+  const explicitStatus = normalizeSubmissionStatus(sub.status || 'submitted');
+  const statusPresentation = {
+    submitted: { label: t('stateSubmitted'), color: '#64748b' },
+    under_review: { label: t('stateUnderReview'), color: '#0891b2' },
+    revision: { label: getSubmissionStatusLabel('revision'), color: '#d97706' },
+    accepted: { label: t('stateAccepted'), color: '#16a34a' },
+    published: { label: t('stateOnline'), color: '#15803d' },
+    rejected: { label: getSubmissionStatusLabel('rejected'), color: '#dc2626' }
+  }[explicitStatus] || { label: t('statePreparing'), color: '#64748b' };
+  let stateLabel = statusPresentation.label;
+  let stateColor = statusPresentation.color;
+  let stateNote = submitDate ? tf('stateSinceSubmit', { count: submitToNow ?? "—" }) : t('stateNotSubmitted');
+  if (explicitStatus === 'revision' && r1Date) stateNote = tf('stateSinceR1', { count: r1ToNow ?? "—" });
+  if (explicitStatus === 'accepted' && acceptDate) stateNote = formatShortDate(acceptDate);
+  if (explicitStatus === 'published' && onlineDate) stateNote = formatShortDate(onlineDate);
 
   return { events, experimentStartDate, experimentDate, submitDate, submitDateSource, r1Date, acceptDate, onlineDate, latest, accepted, expToSubmit, submitToNow, r1ToNow, submitToAccept, acceptToOnline, display, stateLabel, stateColor, stateNote };
 }
@@ -3620,7 +3630,8 @@ function getSubmissionBadgeClass(sub) {
 // --- VIEW 1: DASHBOARD OVERVIEW ---
 function renderDashboard() {
   // Calculate interactive stats counts
-  const visibleSubmissions = db.submissions.filter(s => s.status !== 'rejected');
+  const allSubmissions = db.submissions;
+  const visibleSubmissions = allSubmissions.filter(s => s.status !== 'rejected');
   let timelineChanged = false;
   visibleSubmissions.forEach(sub => {
     if (!Array.isArray(sub.timelineNodes) || sub.timelineNodes.length === 0) {
@@ -3632,7 +3643,7 @@ function renderDashboard() {
   if (timelineChanged) window.storage.saveAll(db).catch(console.error);
   const acceptedCount = visibleSubmissions.filter(isAcceptedSubmission).length;
   const activeCount = visibleSubmissions.filter(s => !isAcceptedSubmission(s)).length;
-  const totalCount = visibleSubmissions.length;
+  const totalCount = allSubmissions.length;
 
   document.getElementById('stat-accepted-submissions').textContent = acceptedCount;
   document.getElementById('stat-active-submissions').textContent = activeCount;
@@ -6909,10 +6920,32 @@ function setupSettingsListeners() {
               revisionDueDate: sub.revisionDueDate || sub.revisionDeadline || null,
               notes: sub.notes || null,
               complianceChecklist: compliance,
+              complianceChecklistKeys: Array.isArray(sub.complianceChecklistKeys)
+                ? sub.complianceChecklistKeys
+                  .filter(item => item && typeof item === 'object')
+                  .map(item => ({
+                    key: String(item.key || '').trim(),
+                    label: String(item.label || item.key || '').trim()
+                  }))
+                  .filter(item => item.key && item.label)
+                : undefined,
               reviewMatrix: Array.isArray(sub.reviewMatrix)
                 ? sub.reviewMatrix
                 : (Array.isArray(sub.reviewRounds) ? sub.reviewRounds : []),
               timelineNodes: Array.isArray(sub.timelineNodes) ? sub.timelineNodes : [],
+              previousSubmissionId: sub.previousSubmissionId || null,
+              previousJournal: sub.previousJournal || null,
+              roundIndex: Number.isFinite(Number(sub.roundIndex)) && Number(sub.roundIndex) > 0
+                ? Number(sub.roundIndex)
+                : 1,
+              rejectedAt: sub.rejectedAt || null,
+              rejectionNote: sub.rejectionNote || null,
+              acceptedAt: sub.acceptedAt || null,
+              publishedAt: sub.publishedAt || null,
+              externalManuscriptId: sub.externalManuscriptId || null,
+              customFields: sub.customFields && typeof sub.customFields === 'object' && !Array.isArray(sub.customFields)
+                ? sub.customFields
+                : {},
               createdAt: sub.createdAt,
               updatedAt: sub.updatedAt
             };
