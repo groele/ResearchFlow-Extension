@@ -130,6 +130,11 @@ assert(
 );
 assert(optionsJs.includes('openAcademicCaptureChooser'), 'multiple Scholar results should require an explicit selection');
 assert(optionsJs.includes('academicCaptureProvenance: man.academicCaptureProvenance'), 'database import should preserve Scholar provenance');
+assert(optionsJs.includes('previousSubmissionId: sub.previousSubmissionId'), 'database import should preserve transfer lineage');
+assert(optionsJs.includes('roundIndex: Number.isFinite(Number(sub.roundIndex))'), 'database import should preserve the submission round');
+assert(optionsJs.includes('complianceChecklistKeys: Array.isArray(sub.complianceChecklistKeys)'), 'database import should preserve custom checklist definitions');
+assert(optionsJs.includes('const allSubmissions = db.submissions;'), 'dashboard totals should include completed and rejected submission attempts');
+assert(optionsJs.includes("const explicitStatus = normalizeSubmissionStatus(sub.status || 'submitted');"), 'dashboard state labels should use the explicit submission status');
 assert(optionsHtml.includes('id="card-filter-all" aria-pressed="true"'), 'dashboard filters should expose keyboard-accessible button state');
 assert(optionsJs.includes("window.addEventListener('pagehide', flushPendingSave)"), 'pending editor changes should flush when the page closes');
 assert(optionsJs.includes('findExistingCapturedSubmission'), 'captured submissions should be checked for duplicates');
