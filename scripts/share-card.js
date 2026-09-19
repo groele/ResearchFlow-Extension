@@ -6,7 +6,10 @@
     paper: { background: '#e9efed', paper: '#ffffff', ink: '#193039', muted: '#60767c', line: '#dce6e2', accent: '#167660', wash: '#f0f6f3' },
     blueprint: { background: '#e5edf8', paper: '#f9fbff', ink: '#183b63', muted: '#556f8e', line: '#cad8e9', accent: '#235fbc', wash: '#edf3fb' },
     minimal: { background: '#ffffff', paper: '#ffffff', ink: '#222222', muted: '#666666', line: '#e3e3e3', accent: '#292929', wash: '#f6f6f6' },
-    ink: { background: '#07131b', paper: '#10232d', ink: '#eef6f2', muted: '#a0b7bd', line: '#304951', accent: '#8bd8bc', wash: '#192f39' }
+    ink: { background: '#07131b', paper: '#10232d', ink: '#eef6f2', muted: '#a0b7bd', line: '#304951', accent: '#8bd8bc', wash: '#192f39' },
+    cyber: { background: '#050b17', paper: '#0b1426', ink: '#e9f7ff', muted: '#8ca6bf', line: '#27415e', accent: '#4de8ff', accent2: '#b26cff', wash: '#10233a', gradient: ['#071329', '#120a25'], paperGradient: ['#0d1a31', '#0a1223'], grid: true },
+    aurora: { background: '#071421', paper: '#0e2030', ink: '#e6fff7', muted: '#86b8af', line: '#28574f', accent: '#63f5c7', accent2: '#8b7cff', wash: '#11382f', gradient: ['#071b2a', '#1c1030'], paperGradient: ['#102a38', '#0c1c2b'], grid: true },
+    terminal: { background: '#06110b', paper: '#0a1d12', ink: '#d9ffe4', muted: '#79ad8a', line: '#245337', accent: '#8dff6a', accent2: '#e2ff58', wash: '#102b1a', gradient: ['#07180d', '#101b08'], paperGradient: ['#0d2517', '#09190f'], grid: true }
   };
   const segmenter = typeof Intl.Segmenter === 'function' ? new Intl.Segmenter(undefined, { granularity: 'grapheme' }) : null;
   const glyphs = text => segmenter ? Array.from(segmenter.segment(text), item => item.segment) : Array.from(text);
@@ -42,10 +45,12 @@
     const zh = model.language === 'zh';
     const minimal = v.appearance === 'minimal';
     const blueprint = v.appearance === 'blueprint';
+    const tech = ['cyber', 'aurora', 'terminal'].includes(v.appearance);
     const width = 720;
     const left = 48;
     const right = 672;
     const blocks = [];
+    if (tech) blocks.push({ kind: 'grid', color: palette.line, accent: palette.accent2 });
     const text = (role, value, x, y, maxWidth, size, weight = 400, color = palette.ink, maxLines = 1, display = false) => {
       const font = `${weight} ${size}px ${display ? DISPLAY : FONT}`;
       ctx.font = font;
@@ -161,17 +166,40 @@
     canvas.height = layout.height * renderScale;
     ctx = canvas.getContext('2d');
     ctx.scale(renderScale, renderScale);
-    ctx.fillStyle = layout.palette.background;
+    if (layout.palette.gradient) {
+      const gradient = ctx.createLinearGradient(0, 0, layout.width, layout.height);
+      gradient.addColorStop(0, layout.palette.gradient[0]);
+      gradient.addColorStop(1, layout.palette.gradient[1]);
+      ctx.fillStyle = gradient;
+    } else ctx.fillStyle = layout.palette.background;
     ctx.fillRect(0, 0, layout.width, layout.height);
     ctx.beginPath();
     ctx.roundRect(16, 16, layout.width - 32, layout.height - 32, layout.appearance === 'minimal' ? 0 : 16);
-    ctx.fillStyle = layout.palette.paper;
+    if (layout.palette.paperGradient) {
+      const paperGradient = ctx.createLinearGradient(0, 16, layout.width, layout.height);
+      paperGradient.addColorStop(0, layout.palette.paperGradient[0]);
+      paperGradient.addColorStop(1, layout.palette.paperGradient[1]);
+      ctx.fillStyle = paperGradient;
+    } else ctx.fillStyle = layout.palette.paper;
     ctx.fill();
     ctx.textBaseline = 'top';
     for (const block of layout.blocks) {
       ctx.fillStyle = block.color;
       ctx.strokeStyle = block.color;
       ctx.lineWidth = 1;
+      if (block.kind === 'grid') {
+        ctx.save();
+        ctx.globalAlpha = .22;
+        ctx.strokeStyle = block.color;
+        ctx.lineWidth = .5;
+        for (let x = 48; x <= layout.width - 48; x += 32) { ctx.beginPath(); ctx.moveTo(x, 48); ctx.lineTo(x, layout.height - 48); ctx.stroke(); }
+        for (let y = 48; y <= layout.height - 48; y += 32) { ctx.beginPath(); ctx.moveTo(48, y); ctx.lineTo(layout.width - 48, y); ctx.stroke(); }
+        ctx.globalAlpha = .8;
+        ctx.strokeStyle = block.accent;
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(48, 48); ctx.lineTo(82, 48); ctx.moveTo(48, 48); ctx.lineTo(48, 82); ctx.stroke();
+        ctx.restore();
+      }
       if (block.kind === 'text') { ctx.font = block.font; ctx.fillText(block.text, block.x, block.y); }
       if (block.kind === 'line') { ctx.beginPath(); ctx.moveTo(block.x, block.y); ctx.lineTo(block.x2, block.y2); ctx.stroke(); }
       if (block.kind === 'rect') {
