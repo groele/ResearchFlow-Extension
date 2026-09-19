@@ -36,6 +36,11 @@ fs.mkdirSync(out, { recursive: true });
         };
         const layout = RFShareCard.buildLayout(ctx, model, { appearance, size: 'auto' });
         if (layout.height > 10000) throw new Error('Unbounded image height');
+        const brandLines = layout.blocks.filter(b => ['brand-wordmark', 'brand-motto'].includes(b.role));
+        for (const b of brandLines) {
+          if (Math.abs(b.x + b.width / 2 - 606) > .1) throw new Error('Brand lines must share the seal center');
+        }
+        if (brandLines[0].y + brandLines[0].height > brandLines[1].y - 3) throw new Error('Brand line spacing is too tight');
         for (const block of layout.blocks.filter(b => b.kind === 'text')) {
           if (block.y < 180 && block.x < 520 && block.x + block.width > 508) throw new Error(`Brand collision: ${block.role}`);
           ctx.font = block.font;

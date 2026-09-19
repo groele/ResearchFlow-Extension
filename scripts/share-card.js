@@ -2,6 +2,7 @@
 (function (root) {
   const FONT = '"Microsoft YaHei UI", "PingFang SC", "Segoe UI", sans-serif';
   const DISPLAY = 'Georgia, "Songti SC", "Microsoft YaHei", serif';
+  const BRAND_FONT = '"Segoe UI", "Microsoft YaHei UI", "PingFang SC", sans-serif';
   const THEMES = {
     estuary: { background: '#b3cfd5', paper: '#e4f2ef', ink: '#153d4a', muted: '#456773', line: '#9fbdc4', accent: '#186d7c', wash: '#d4e8ea', gradient: ['#8fb6cc', '#b3d2c5'], paperGradient: ['#cee0f5', '#e4f2ef', '#b8dccc'] },
     iris: { background: '#b7b3d2', paper: '#eee5ef', ink: '#323354', muted: '#62617a', line: '#bdb2cf', accent: '#665397', wash: '#e0daec', gradient: ['#aab8d4', '#d3b5c7'], paperGradient: ['#cfdcf5', '#eee5ef', '#dec0d0'] },
@@ -73,9 +74,20 @@
     };
     const rule = y => blocks.push({ kind: 'line', x: left, y, x2: right, y2: y, color: palette.line });
     if (v.footer) {
-      blocks.push({ kind: 'brand-seal', role: 'brand-seal', x: 606, y: 90, color: palette.accent, secondary: palette.accent2 || palette.muted });
-      text('brand-wordmark', 'RESEARCHFLOW', 542, 143, 130, 11, 700, palette.ink);
-      text('brand-motto', zh ? '探索 · 求证 · 记录' : 'EXPLORE / VERIFY / RECORD', 542, 161, 130, zh ? 10 : 8, 500, palette.muted);
+      const center = 606;
+      blocks.push({ kind: 'brand-seal', role: 'brand-seal', x: center, y: 86, color: palette.accent, secondary: palette.accent2 || palette.muted });
+      // Store actual centered bounds so drawing, wrapping and collision checks agree.
+      const brandText = (role, value, top, size, weight, color) => {
+        let font = `${weight} ${size}px ${BRAND_FONT}`;
+        ctx.font = font;
+        while (ctx.measureText(value).width > 130 && size > 7) {
+          size -= .25; font = `${weight} ${size}px ${BRAND_FONT}`; ctx.font = font;
+        }
+        const width = ctx.measureText(value).width;
+        blocks.push({kind: 'text', role, text: value, x: center - width / 2, y: top, width, height: Math.ceil(size * 1.4), font, color});
+      };
+      brandText('brand-wordmark', 'ResearchFlow', 132, 14, 600, palette.ink);
+      brandText('brand-motto', zh ? '探索 · 求证 · 记录' : 'Explore · Verify · Record', 155, zh ? 9.5 : 9, 400, palette.muted);
     }
     const allEvents = Array.isArray(model.events) ? model.events : [];
     const events = allEvents.length > 64 ? [allEvents[0], ...allEvents.slice(-63)] : allEvents;
@@ -216,23 +228,27 @@
       if (block.kind === 'brand-seal') {
         ctx.save(); ctx.translate(block.x, block.y);
         ctx.strokeStyle = block.color; ctx.lineWidth = 1;
-        ctx.globalAlpha = .25;
-        ctx.beginPath(); ctx.arc(0, 0, 45, 0, Math.PI * 2); ctx.stroke();
-        for (let i = 0; i < 24; i++) {
-          const a = i * Math.PI / 12, inner = i % 6 === 0 ? 39 : 42;
+        ctx.globalAlpha = .35;
+        ctx.beginPath(); ctx.arc(0, 0, 36, 0, Math.PI * 2); ctx.stroke();
+        for (let i = 0; i < 12; i++) {
+          const a = i * Math.PI / 6, inner = i % 3 === 0 ? 32 : 34;
           ctx.beginPath(); ctx.moveTo(Math.cos(a) * inner, Math.sin(a) * inner);
-          ctx.lineTo(Math.cos(a) * 45, Math.sin(a) * 45); ctx.stroke();
+          ctx.lineTo(Math.cos(a) * 36, Math.sin(a) * 36); ctx.stroke();
         }
         ctx.globalAlpha = .7;
-        ctx.beginPath(); ctx.ellipse(0, 0, 55, 18, -Math.PI / 5, 0, Math.PI * 2); ctx.stroke();
+        ctx.save();
+        ctx.beginPath(); ctx.rect(-52, -52, 104, 104); ctx.rect(-20, -15, 40, 30); ctx.clip('evenodd');
+        ctx.beginPath(); ctx.ellipse(0, 0, 46, 17, -Math.PI / 5, 0, Math.PI * 2); ctx.stroke();
+        ctx.restore();
         ctx.strokeStyle = block.secondary;
-        ctx.beginPath(); ctx.arc(0, 0, 34, -Math.PI / 2, Math.PI * .8); ctx.stroke();
+        ctx.beginPath(); ctx.arc(0, 0, 28, -Math.PI / 2, Math.PI * .8); ctx.stroke();
         ctx.globalAlpha = 1; ctx.fillStyle = block.color;
         for (const a of [-Math.PI / 2, Math.PI / 6, Math.PI * .8]) {
-          ctx.beginPath(); ctx.arc(Math.cos(a) * 34, Math.sin(a) * 34, 2.8, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.arc(Math.cos(a) * 28, Math.sin(a) * 28, 2.4, 0, Math.PI * 2); ctx.fill();
         }
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = `600 24px ${DISPLAY}`;
-        ctx.fillText('RF', 0, 1);
+        ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.font = `600 23px ${BRAND_FONT}`;
+        const mark = ctx.measureText('RF');
+        ctx.fillText('RF', 0, (mark.actualBoundingBoxAscent - mark.actualBoundingBoxDescent) / 2);
         ctx.restore();
       }
       if (block.kind === 'grid') {
