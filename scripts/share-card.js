@@ -56,6 +56,7 @@
     const archive = v.appearance === 'archive';
     const tech = ['cyber', 'aurora', 'terminal'].includes(v.appearance);
     const width = 720;
+    const brand = ({ compact: { scale: .84, name: 13, motto: 9.5 }, balanced: { scale: 1.06, name: 15, motto: 10.5 }, bold: { scale: 1.26, name: 17, motto: 11.5 } })[v.brandSize] || { scale: 1.06, name: 15, motto: 10.5 };
     const left = 48;
     const right = 672;
     const blocks = [];
@@ -76,19 +77,20 @@
     const rule = y => blocks.push({ kind: 'line', x: left, y, x2: right, y2: y, color: palette.line });
     if (v.footer) {
       const center = 592;
-      blocks.push({ kind: 'brand-seal', role: 'brand-seal', x: center, y: 86, scale: 1.06, color: palette.accent, secondary: palette.accent2 || palette.muted });
+      blocks.push({ kind: 'brand-seal', role: 'brand-seal', x: center, y: 86, scale: brand.scale, color: palette.accent, secondary: palette.accent2 || palette.muted });
       // Store actual centered bounds so drawing, wrapping and collision checks agree.
       const brandText = (role, value, top, size, weight, color) => {
         let font = `${weight} ${size}px ${BRAND_FONT}`;
         ctx.font = font;
-        while (ctx.measureText(value).width > 130 && size > 7) {
+        while (ctx.measureText(value).width > 144 && size > 7) {
           size -= .25; font = `${weight} ${size}px ${BRAND_FONT}`; ctx.font = font;
         }
         const width = ctx.measureText(value).width;
         blocks.push({kind: 'text', role, text: value, x: center - width / 2, y: top, width, height: Math.ceil(size * 1.4), font, color});
       };
-      brandText('brand-wordmark', 'ResearchFlow', 128, 15, 600, palette.ink);
-      brandText('brand-motto', zh ? '探索 · 求证 · 记录' : 'Explore · Verify · Record', 152, zh ? 10.5 : 10, 400, palette.muted);
+      const wordmarkY = 86 + 36 * brand.scale + 10;
+      brandText('brand-wordmark', 'ResearchFlow', wordmarkY, brand.name, 600, palette.ink);
+      brandText('brand-motto', zh ? '探索 · 求证 · 记录' : 'Explore · Verify · Record', wordmarkY + Math.ceil(brand.name * 1.4) + 5, zh ? brand.motto : brand.motto - .5, 400, palette.muted);
     }
     const allEvents = Array.isArray(model.events) ? model.events : [];
     const events = allEvents.length > 64 ? [allEvents[0], ...allEvents.slice(-63)] : allEvents;
@@ -119,16 +121,18 @@
     if (v.author && model.author) {
       y += text('author', `${zh ? '第一作者' : 'First author'}  /  ${model.author}`, left, y, 624, 15, 400, palette.muted, 2) + 16;
     }
-    const headerBottom = Math.max(y + 8, v.footer ? 216 : 0);
+    const brandBlocks = blocks.filter(b => ['brand-seal', 'brand-wordmark', 'brand-motto'].includes(b.role));
+    const brandTop = 86 - 36 * brand.scale;
+    const brandBottom = v.footer ? brandBlocks.at(-1).y + brandBlocks.at(-1).height : 0;
+    const brandHeight = brandBottom - brandTop;
+    const headerBottom = Math.max(y + 8, v.footer ? 72 + brandHeight + 24 : 0);
     if (v.footer) {
       // Balance the signature against the first headline, not the page's top edge.
       // Cap its travel on long titles and preserve clearance above the section rule.
       const headline = blocks.find(b => b.role === 'journal' || b.role === 'title');
       const target = headline ? headline.y + headline.height / 2 - 8 : 132;
-      const centerY = Math.max(124, Math.min(target, 170, headerBottom - 80));
-      const offset = centerY - 108;
-      blocks.filter(b => ['brand-seal', 'brand-wordmark', 'brand-motto'].includes(b.role))
-        .forEach(b => { b.y += offset; });
+      const top = Math.max(72, Math.min(target - brandHeight / 2, 112, headerBottom - 24 - brandHeight));
+      brandBlocks.forEach(b => { b.y += top - brandTop; });
     }
     masthead = false;
     rule(headerBottom);
@@ -213,9 +217,11 @@
     let ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas is unavailable');
     const layout = buildLayout(ctx, model, preferences);
-    const renderScale = 2;
-    canvas.width = layout.width * renderScale;
-    canvas.height = layout.height * renderScale;
+    const requestedScale = [1, 2, 3].includes(Number(preferences.resolution)) ? Number(preferences.resolution) : 2;
+    // Bound the bitmap allocation for long timelines before creating the export buffer.
+    const renderScale = Math.min(requestedScale, Math.sqrt(24000000 / (layout.width * layout.height)), 16384 / layout.height);
+    canvas.width = Math.floor(layout.width * renderScale);
+    canvas.height = Math.floor(layout.height * renderScale);
     ctx = canvas.getContext('2d');
     ctx.scale(renderScale, renderScale);
     if (layout.palette.gradient) {
@@ -290,9 +296,10 @@
         ctx.fill(); ctx.lineWidth = 2; ctx.stroke();
       }
     }
-    return { canvas, layout };
+    return { canvas, layout, resolutionLimited: renderScale < requestedScale };
   }
-  const api = { wrapText, buildLayout, render };
+  const getAppearances = () => Object.entries(THEMES).map(([id, colors]) => ({ id, ...colors }));
+  const api = { wrapText, buildLayout, render, getAppearances };
   root.RFShareCard = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : window);

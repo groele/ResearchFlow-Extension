@@ -16,8 +16,9 @@ let acceptanceCelebrationCleanup = null;
 let previousModalFocus = null;
 let activeSharePreviewUrl = null;
 let activeSharePreviewCleanup = null;
+let sharePreferenceWrites = Promise.resolve();
 
-const RF_OPTIONS_RENDER_VERSION = '8.5.3';
+const RF_OPTIONS_RENDER_VERSION = '9.0.0';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
@@ -32,6 +33,15 @@ const I18N = {
     shareZoom: 'Enlarge preview',
     shareFit: 'Fit image',
     shareAppearance: 'Card appearance',
+    shareGallery: 'Explore styles',
+    shareBrandSize: 'Brand presence',
+    shareBrandCompact: 'Subtle', shareBrandBalanced: 'Balanced', shareBrandBold: 'Prominent',
+    shareResolution: 'Export quality', shareResolutionStandard: 'Standard · 720 px wide', shareResolutionHigh: 'High · 1440 px wide', shareResolutionUltra: 'Ultra · 2160 px wide',
+    shareResolutionLimited: 'Resolution adjusted for a long image',
+    shareOmitted: '{count} earlier milestones are summarized in the card',
+    shareRetry: 'Retry preview', sharePreviewError: 'Preview could not be generated. Try again or choose a lower export quality.',
+    shareStyleReset: 'Reset design', shareStyleResetHelp: 'Resets the style and export settings. Hidden information stays hidden.',
+    sharePrefsFailed: 'The image is ready to use, but these settings could not be saved.',
     shareEstuary: 'Estuary · blue to jade',
     shareIris: 'Iris · blue to rose',
     shareAmber: 'Amber · sand to sage',
@@ -518,6 +528,15 @@ const I18N = {
     shareZoom: '放大预览',
     shareFit: '适应窗口',
     shareAppearance: '卡片风格',
+    shareGallery: '浏览风格',
+    shareBrandSize: '品牌视觉大小',
+    shareBrandCompact: '精致', shareBrandBalanced: '均衡', shareBrandBold: '醒目',
+    shareResolution: '导出清晰度', shareResolutionStandard: '标准 · 宽 720 像素', shareResolutionHigh: '高清 · 宽 1440 像素', shareResolutionUltra: '超清 · 宽 2160 像素',
+    shareResolutionLimited: '长图已自动调整分辨率',
+    shareOmitted: '另有 {count} 个较早节点在图中以提示概括',
+    shareRetry: '重新生成', sharePreviewError: '预览生成失败，请重试或降低导出清晰度。',
+    shareStyleReset: '重置设计', shareStyleResetHelp: '恢复风格与导出设置，已隐藏的信息仍保持隐藏。',
+    sharePrefsFailed: '图片可以正常使用，但此次设置未能保存。',
     shareEstuary: '江湾 · 雾蓝青玉渐变',
     shareIris: '鸢尾 · 蓝紫蔷薇渐变',
     shareAmber: '琥珀 · 暖砂青灰渐变',
@@ -1510,6 +1529,7 @@ function getSubmissionShareEvents(submission, startMode = 'experiment') {
 }
 
 function normalizeShareVisibility(value = {}) {
+  value = value && typeof value === 'object' ? value : {};
   const size = ['portrait', 'story', 'auto'].includes(value.size) ? value.size : 'portrait';
   const timelineStart = value.timelineStart === 'submission' ? 'submission' : 'experiment';
   return {
@@ -1520,6 +1540,8 @@ function normalizeShareVisibility(value = {}) {
     duration: value.duration !== false,
     dates: value.dates !== false,
     footer: value.footer !== false,
+    brandSize: ['compact', 'balanced', 'bold'].includes(value.brandSize) ? value.brandSize : 'balanced',
+    resolution: [1, 2, 3].includes(Number(value.resolution)) ? Number(value.resolution) : 2,
     appearance: ['paper', 'ink', 'blueprint', 'minimal', 'cyber', 'aurora', 'terminal', 'journal', 'conference', 'archive', 'estuary', 'iris', 'amber'].includes(value.appearance) ? value.appearance : 'paper',
     size,
     timelineStart
@@ -1603,6 +1625,7 @@ async function openSubmissionSharePreview(submissionId, triggerButton) {
   }
 
   try {
+    await sharePreferenceWrites.catch(() => {});
     const stored = await chrome.storage.local.get([SHARE_PREFS_STORAGE_KEY]);
     let visibility = normalizeShareVisibility(stored?.[SHARE_PREFS_STORAGE_KEY]);
     let currentBlob = null;
@@ -1625,6 +1648,11 @@ async function openSubmissionSharePreview(submissionId, triggerButton) {
         <span>${escapeHTML(t(labelKey))}</span>
       </label>
     `).join('');
+    const styleGallery = window.RFShareCard.getAppearances().map(style => {
+      const name = t(`share${style.id[0].toUpperCase()}${style.id.slice(1)}`);
+      const background = style.paperGradient ? `linear-gradient(135deg, ${style.paperGradient.join(', ')})` : style.paper;
+      return `<button type="button" class="share-style-tile" data-share-style="${style.id}" aria-pressed="${visibility.appearance === style.id}" title="${escapeHTML(name)}"><span class="share-style-sample" aria-hidden="true" style="--sample-bg:${background};--sample-ink:${style.ink};--sample-accent:${style.accent}"><i></i><b>Aa</b><em></em></span><span>${escapeHTML(name.split(' · ')[0])}</span></button>`;
+    }).join('');
 
     openModal(`
       <div class="share-preview-shell">
@@ -1643,7 +1671,9 @@ async function openSubmissionSharePreview(submissionId, triggerButton) {
               <small>${escapeHTML(t('shareVisibilityHelp'))}</small>
             </div>
             <label class="share-size-control" for="share-appearance"><span>${escapeHTML(t('shareAppearance'))}</span><select id="share-appearance"><option value="paper" ${visibility.appearance === 'paper' ? 'selected' : ''}>${escapeHTML(t('sharePaper'))}</option><option value="ink" ${visibility.appearance === 'ink' ? 'selected' : ''}>${escapeHTML(t('shareInk'))}</option><option value="blueprint" ${visibility.appearance === 'blueprint' ? 'selected' : ''}>${escapeHTML(t('shareBlueprint'))}</option><option value="minimal" ${visibility.appearance === 'minimal' ? 'selected' : ''}>${escapeHTML(t('shareMinimal'))}</option><option value="cyber" ${visibility.appearance === 'cyber' ? 'selected' : ''}>${escapeHTML(t('shareCyber'))}</option><option value="aurora" ${visibility.appearance === 'aurora' ? 'selected' : ''}>${escapeHTML(t('shareAurora'))}</option><option value="terminal" ${visibility.appearance === 'terminal' ? 'selected' : ''}>${escapeHTML(t('shareTerminal'))}</option><option value="journal" ${visibility.appearance === 'journal' ? 'selected' : ''}>${escapeHTML(t('shareJournal'))}</option><option value="conference" ${visibility.appearance === 'conference' ? 'selected' : ''}>${escapeHTML(t('shareConference'))}</option><option value="archive" ${visibility.appearance === 'archive' ? 'selected' : ''}>${escapeHTML(t('shareArchive'))}</option><option value="estuary" ${visibility.appearance === 'estuary' ? 'selected' : ''}>${escapeHTML(t('shareEstuary'))}</option><option value="iris" ${visibility.appearance === 'iris' ? 'selected' : ''}>${escapeHTML(t('shareIris'))}</option><option value="amber" ${visibility.appearance === 'amber' ? 'selected' : ''}>${escapeHTML(t('shareAmber'))}</option></select></label>
+            <details class="share-style-browser" open><summary>${escapeHTML(t('shareGallery'))}</summary><div class="share-style-gallery" role="group" aria-label="${escapeHTML(t('shareAppearance'))}">${styleGallery}</div></details>
             <div class="share-visibility-list">${visibilityControls}</div>
+            <label class="share-size-control" for="share-brand-size"><span>${escapeHTML(t('shareBrandSize'))}</span><select id="share-brand-size" ${visibility.footer ? '' : 'disabled'}>${['compact','balanced','bold'].map(key => `<option value="${key}" ${visibility.brandSize === key ? 'selected' : ''}>${escapeHTML(t(`shareBrand${key[0].toUpperCase()}${key.slice(1)}`))}</option>`).join('')}</select></label>
             <div class="share-timeline-start-control">
               <span>${escapeHTML(t('shareTimelineStart'))}</span>
               <div class="share-timeline-start-options" role="group" aria-label="${escapeHTML(t('shareTimelineStart'))}">
@@ -1659,9 +1689,13 @@ async function openSubmissionSharePreview(submissionId, triggerButton) {
                 <option value="auto" ${visibility.size === 'auto' ? 'selected' : ''}>${escapeHTML(t('shareSizeAuto'))}</option>
               </select>
             </label>
+            <label class="share-size-control" for="share-resolution"><span>${escapeHTML(t('shareResolution'))}</span><select id="share-resolution">${[[1,'shareResolutionStandard'],[2,'shareResolutionHigh'],[3,'shareResolutionUltra']].map(([value,key]) => `<option value="${value}" ${visibility.resolution === value ? 'selected' : ''}>${escapeHTML(t(key))}</option>`).join('')}</select></label>
+            <button type="button" class="btn-secondary share-design-reset" id="btn-share-reset" title="${escapeHTML(t('shareStyleResetHelp'))}">${escapeHTML(t('shareStyleReset'))}</button>
+            <small class="share-reset-help">${escapeHTML(t('shareStyleResetHelp'))}</small>
           </aside>
           <div class="share-preview-frame" data-render-state="idle" aria-live="polite">
             <div class="share-preview-loading" data-share-loading>${escapeHTML(t('shareRendering'))}</div>
+            <div class="share-preview-error" data-share-error hidden role="alert"><p>${escapeHTML(t('sharePreviewError'))}</p><button type="button" class="btn-secondary" id="btn-share-retry">${escapeHTML(t('shareRetry'))}</button></div>
             <img alt="${escapeHTML(t('shareJourneyTitle'))}">
           </div>
         </div>
@@ -1678,6 +1712,7 @@ async function openSubmissionSharePreview(submissionId, triggerButton) {
     const image = modalContent.querySelector('.share-preview-frame img');
     const previewFrame = modalContent.querySelector('.share-preview-frame');
     const loading = modalContent.querySelector('[data-share-loading]');
+    const errorPanel = modalContent.querySelector('[data-share-error]');
     document.getElementById('btn-share-zoom').addEventListener('click', event => {
       const zoomed = previewFrame.classList.toggle('is-zoomed');
       event.currentTarget.setAttribute('aria-pressed', String(zoomed));
@@ -1686,7 +1721,6 @@ async function openSubmissionSharePreview(submissionId, triggerButton) {
     });
     let closed = false;
     let renderTimer = null;
-    let preferenceWrites = Promise.resolve();
     const pendingUrls = new Set();
     const actionButtons = modalContent.querySelectorAll('#btn-share-system, #btn-share-download, #btn-share-copy');
     const setBusy = () => {
@@ -1695,6 +1729,9 @@ async function openSubmissionSharePreview(submissionId, triggerButton) {
       previewFrame.dataset.renderState = 'rendering';
       previewFrame.setAttribute('aria-busy', 'true');
       loading.hidden = false;
+      document.getElementById('share-output-details').textContent = t('shareRendering');
+      errorPanel.hidden = true;
+      image.hidden = true;
       image.classList.add('is-rendering');
     };
     activeSharePreviewCleanup = () => {
@@ -1711,8 +1748,11 @@ async function openSubmissionSharePreview(submissionId, triggerButton) {
       try {
         if (closed || renderId !== previewRenderId) return;
         const chosen = { ...visibility };
-        const { canvas, title } = createSubmissionShareCanvas(submission, chosen);
-        const blob = await canvasToPngBlob(canvas);
+        const { canvas, title, layout, resolutionLimited } = createSubmissionShareCanvas(submission, chosen);
+        const exportWidth = canvas.width, exportHeight = canvas.height;
+        let blob;
+        try { blob = await canvasToPngBlob(canvas); }
+        finally { canvas.width = canvas.height = 1; }
         if (closed || renderId !== previewRenderId) return;
         nextUrl = URL.createObjectURL(blob);
         pendingUrls.add(nextUrl);
@@ -1734,17 +1774,20 @@ async function openSubmissionSharePreview(submissionId, triggerButton) {
         previewFrame.dataset.renderState = 'ready';
         previewFrame.setAttribute('aria-busy', 'false');
         image.classList.remove('is-rendering');
+        image.hidden = false;
         loading.hidden = true;
         actionButtons.forEach(button => { button.disabled = false; });
-        document.getElementById('share-output-details').textContent = `${canvas.width} × ${canvas.height} · PNG · ${Math.ceil(blob.size / 1024)} KB`;
+        document.getElementById('share-output-details').textContent = `${exportWidth} × ${exportHeight} · PNG · ${Math.ceil(blob.size / 1024)} KB${resolutionLimited ? ` · ${t('shareResolutionLimited')}` : ''}${layout.omitted ? ` · ${t('shareOmitted').replace('{count}', layout.omitted)}` : ''}`;
         if (previousUrl) URL.revokeObjectURL(previousUrl);
       } catch (error) {
         if (closed || renderId !== previewRenderId) return;
         loading.hidden = true;
+        errorPanel.hidden = false;
+        image.hidden = true;
         image.classList.remove('is-rendering');
         previewFrame.dataset.renderState = 'error';
         previewFrame.setAttribute('aria-busy', 'false');
-        showGlobalToast(t('shareJourneyFailed'), 'warning');
+        document.getElementById('share-output-details').textContent = t('shareJourneyFailed');
       } finally {
         if (nextUrl && pendingUrls.has(nextUrl)) {
           URL.revokeObjectURL(nextUrl);
@@ -1755,8 +1798,14 @@ async function openSubmissionSharePreview(submissionId, triggerButton) {
     const updatePreview = patch => {
       visibility = normalizeShareVisibility({ ...visibility, ...patch });
       const snapshot = { ...visibility };
-      preferenceWrites = preferenceWrites.catch(() => {}).then(() => chrome.storage.local.set({ [SHARE_PREFS_STORAGE_KEY]: snapshot }));
-      preferenceWrites.catch(() => { if (!closed) showGlobalToast(t('shareJourneyFailed'), 'warning'); });
+      sharePreferenceWrites = sharePreferenceWrites.catch(() => {}).then(() => chrome.storage.local.set({ [SHARE_PREFS_STORAGE_KEY]: snapshot }));
+      sharePreferenceWrites.catch(() => { if (!closed) showGlobalToast(t('sharePrefsFailed'), 'warning'); });
+      modalContent.querySelectorAll('[data-share-style]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.shareStyle === visibility.appearance)));
+      document.getElementById('share-appearance').value = visibility.appearance;
+      document.getElementById('share-brand-size').value = visibility.brandSize;
+      document.getElementById('share-brand-size').disabled = !visibility.footer;
+      document.getElementById('share-resolution').value = String(visibility.resolution);
+      document.getElementById('share-image-size').value = visibility.size;
       // Invalidate the downloadable image synchronously before the first async yield.
       const renderId = ++previewRenderId;
       setBusy();
@@ -1771,6 +1820,11 @@ async function openSubmissionSharePreview(submissionId, triggerButton) {
     });
     document.getElementById('share-image-size')?.addEventListener('change', event => updatePreview({ size: event.target.value }));
     document.getElementById('share-appearance')?.addEventListener('change', event => updatePreview({ appearance: event.target.value }));
+    modalContent.querySelectorAll('[data-share-style]').forEach(button => button.addEventListener('click', () => updatePreview({ appearance: button.dataset.shareStyle })));
+    document.getElementById('share-brand-size').addEventListener('change', event => updatePreview({ brandSize: event.target.value }));
+    document.getElementById('share-resolution').addEventListener('change', event => updatePreview({ resolution: event.target.value }));
+    document.getElementById('btn-share-reset').addEventListener('click', () => updatePreview({ appearance: 'paper', size: 'portrait', brandSize: 'balanced', resolution: 2 }));
+    document.getElementById('btn-share-retry').addEventListener('click', () => { setBusy(); renderPreviewSafe(++previewRenderId); });
     setBusy();
     await renderPreviewSafe(++previewRenderId);
     if (closed) return;
@@ -1809,7 +1863,6 @@ async function openSubmissionSharePreview(submissionId, triggerButton) {
         showGlobalToast(t('shareJourneyDownloaded'), 'success');
       }
     });
-    showGlobalToast(t('shareJourneyReady'), 'success');
   } catch (error) {
     console.error(error);
     showGlobalToast(t('shareJourneyFailed'), 'error');
