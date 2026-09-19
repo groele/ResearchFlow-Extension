@@ -3,6 +3,9 @@
   const FONT = '"Microsoft YaHei UI", "PingFang SC", "Segoe UI", sans-serif';
   const DISPLAY = 'Georgia, "Songti SC", "Microsoft YaHei", serif';
   const THEMES = {
+    journal: { background: '#dce5ed', paper: '#fafbfc', ink: '#18344c', muted: '#536779', line: '#cbd7e0', accent: '#27628e', wash: '#e9f0f6', gradient: ['#cbddea', '#ebe7f1'], paperGradient: ['#ffffff', '#edf3f8'] },
+    conference: { background: '#103e48', paper: '#f4fbfa', ink: '#133d44', muted: '#486e71', line: '#b9d7d6', accent: '#087c82', wash: '#dceeed', gradient: ['#174659', '#23786c'], paperGradient: ['#ffffff', '#e0f2ee'] },
+    archive: { background: '#ddd6c8', paper: '#fffaf0', ink: '#383c34', muted: '#666c5e', line: '#d6d6c5', accent: '#607046', wash: '#efefe1', gradient: ['#e7dfcf', '#cbd7c8'], paperGradient: ['#fffdf6', '#f0f0e3'] },
     paper: { background: '#e9efed', paper: '#ffffff', ink: '#193039', muted: '#60767c', line: '#dce6e2', accent: '#167660', wash: '#f0f6f3' },
     blueprint: { background: '#e5edf8', paper: '#f9fbff', ink: '#183b63', muted: '#556f8e', line: '#cad8e9', accent: '#235fbc', wash: '#edf3fb' },
     minimal: { background: '#ffffff', paper: '#ffffff', ink: '#222222', muted: '#666666', line: '#e3e3e3', accent: '#292929', wash: '#f6f6f6' },
@@ -43,13 +46,17 @@
     const v = { title: true, journal: true, author: true, status: true, duration: true, dates: true, footer: true, ...preferences };
     const palette = THEMES[v.appearance] || THEMES.paper;
     const zh = model.language === 'zh';
-    const minimal = v.appearance === 'minimal';
-    const blueprint = v.appearance === 'blueprint';
+    const minimal = ['minimal', 'journal', 'conference'].includes(v.appearance);
+    const blueprint = ['blueprint', 'conference', 'archive'].includes(v.appearance);
+    const cover = v.appearance === 'journal';
+    const archive = v.appearance === 'archive';
     const tech = ['cyber', 'aurora', 'terminal'].includes(v.appearance);
     const width = 720;
     const left = 48;
     const right = 672;
     const blocks = [];
+    if (cover) blocks.push({ kind: 'rect', x: 16, y: 16, width: 688, height: 12, color: palette.accent });
+    if (v.appearance === 'conference') blocks.push({ kind: 'rect', x: 24, y: 40, width: 6, height: 190, color: palette.accent });
     if (tech) blocks.push({ kind: 'grid', color: palette.line, accent: palette.accent2 });
     const text = (role, value, x, y, maxWidth, size, weight = 400, color = palette.ink, maxLines = 1, display = false) => {
       const font = `${weight} ${size}px ${display ? DISPLAY : FONT}`;
@@ -68,7 +75,7 @@
     text('eyebrow', zh ? '科研手记 / 投稿历程' : 'FIELD NOTES / SUBMISSION JOURNEY', left + 40, y - 5, 580, 13, 600, palette.muted);
     y += 47;
     if (minimal && v.title && model.title) {
-      y += text('title', model.title, left, y, 624, 32, 600, palette.ink, 6) + 24;
+      y += text('title', model.title, left, y, 624, cover ? 36 : 32, cover ? 400 : 600, palette.ink, 6, cover && !zh) + 24;
     }
     if (v.journal && model.journal) {
       text('journal-label', zh ? '投稿期刊' : 'THE JOURNAL', left, y, 624, 11, 700, palette.accent);
@@ -126,6 +133,8 @@
     const contentX = railX + 30;
     const rowCenters = [];
     events.forEach((event, index) => {
+      const rowBackground = archive ? { kind: 'rect', x: left - 12, y: y - 8, width: 648, height: 76, color: index % 2 === 0 ? palette.wash : palette.paper, radius: 4 } : null;
+      if (rowBackground) blocks.push(rowBackground);
       if (omitted && index === 1) {
         text('omitted', zh ? `另有 ${omitted} 个节点未展示` : `${omitted} earlier milestones not shown`, contentX, y, right - contentX, 13, 500, palette.muted, 2);
         y += 48;
@@ -134,6 +143,7 @@
       const meta = [event.typeLabel, event.dateKindLabel].filter(Boolean).join(' · ');
       const metaHeight = text('event-meta', meta, contentX, y + nameHeight + 6, right - contentX, 12, 500, palette.muted, 2);
       const rowHeight = Math.max(minimal ? 64 : 76, nameHeight + metaHeight + (minimal ? 20 : 28));
+      if (rowBackground) rowBackground.height = rowHeight - 8;
       if (v.dates) {
         text('event-date', event.dateLabel || '—', left, y + 1, 122, 17, 600, palette.ink, 2);
         text('event-year', event.yearLabel || '', left, y + 49, 122, 12, 400, palette.muted);

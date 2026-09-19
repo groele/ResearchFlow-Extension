@@ -27,7 +27,7 @@ fs.mkdirSync(out, { recursive: true });
     const measurements = await page.evaluate(() => {
       const ctx = document.createElement('canvas').getContext('2d');
       const results = [];
-      for (const language of ['en', 'zh']) for (const appearance of ['paper', 'ink', 'blueprint', 'minimal', 'cyber', 'aurora', 'terminal']) for (const count of [0, 1, 4, 8, 30, 100]) {
+      for (const language of ['en', 'zh']) for (const appearance of ['paper', 'ink', 'blueprint', 'minimal', 'cyber', 'aurora', 'terminal', 'journal', 'conference', 'archive']) for (const count of [0, 1, 4, 8, 30, 100]) {
         const model = {
           language, title: (language === 'zh' ? '铁电界面中激子动力学的超长标题与中文混合ABC ' : 'LongManuscriptIdentifierWithoutSpaces'.repeat(3) + ' Multiword research title ') .repeat(4),
           journal: 'International Journal of Long Journal Names and Multidisciplinary Research', author: 'First author with an unusually long affiliation-like name '.repeat(4),
@@ -65,7 +65,7 @@ fs.mkdirSync(out, { recursive: true });
     };
     await saveImage('share-paper-v8.png');
     await page.screenshot({ path: path.join(out, 'share-studio-v8.png') });
-    for (const appearance of ['ink', 'blueprint', 'minimal', 'cyber', 'aurora', 'terminal']) {
+    for (const appearance of ['ink', 'blueprint', 'minimal', 'cyber', 'aurora', 'terminal', 'journal', 'conference', 'archive']) {
       await page.locator('#share-appearance').selectOption(appearance);
       await page.waitForFunction(expected => document.querySelector('.share-preview-frame')?.dataset.renderState === 'ready' && document.querySelector('.share-preview-frame').dataset.appearance === expected, appearance);
       await saveImage(`share-${appearance}-v8-1.png`);
@@ -96,6 +96,6 @@ fs.mkdirSync(out, { recursive: true });
     await page.locator('#btn-close-modal').click();
     assert.equal(await page.evaluate(() => __shareUrls.size), 0);
     assert.deepEqual(errors, []);
-    console.log('Share card browser smoke passed: 84 layout cases, seven card styles, field privacy, real PNG download, zoom, mobile and blob cleanup.');
+    console.log('Share card browser smoke passed: 120 layout cases, ten card styles, field privacy, real PNG download, zoom, mobile and blob cleanup.');
   } finally { await context.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

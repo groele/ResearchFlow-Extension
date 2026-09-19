@@ -17,7 +17,7 @@ let previousModalFocus = null;
 let activeSharePreviewUrl = null;
 let activeSharePreviewCleanup = null;
 
-const RF_OPTIONS_RENDER_VERSION = '8.2.1';
+const RF_OPTIONS_RENDER_VERSION = '8.3.0';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
@@ -32,6 +32,9 @@ const I18N = {
     shareZoom: 'Enlarge preview',
     shareFit: 'Fit image',
     shareAppearance: 'Card appearance',
+    shareJournal: 'Journal cover · editorial',
+    shareConference: 'Conference poster · teal',
+    shareArchive: 'Lab archive · ledger',
     sharePaper: 'Paper · calm & clear',
     shareInk: 'Ink · after hours',
     shareBlueprint: 'Blueprint · structured',
@@ -512,6 +515,9 @@ const I18N = {
     shareZoom: '放大预览',
     shareFit: '适应窗口',
     shareAppearance: '卡片风格',
+    shareJournal: '期刊封面 · 学术蓝',
+    shareConference: '会议海报 · 青绿渐变',
+    shareArchive: '实验档案 · 暖纸记录',
     sharePaper: '清纸 · 简洁明亮',
     shareInk: '墨夜 · 深色质感',
     shareBlueprint: '蓝图 · 理性结构',
@@ -1508,7 +1514,7 @@ function normalizeShareVisibility(value = {}) {
     duration: value.duration !== false,
     dates: value.dates !== false,
     footer: value.footer !== false,
-    appearance: ['paper', 'ink', 'blueprint', 'minimal', 'cyber', 'aurora', 'terminal'].includes(value.appearance) ? value.appearance : 'paper',
+    appearance: ['paper', 'ink', 'blueprint', 'minimal', 'cyber', 'aurora', 'terminal', 'journal', 'conference', 'archive'].includes(value.appearance) ? value.appearance : 'paper',
     size,
     timelineStart
   };
@@ -1630,7 +1636,7 @@ async function openSubmissionSharePreview(submissionId, triggerButton) {
               <strong>${escapeHTML(t('shareVisibilityTitle'))}</strong>
               <small>${escapeHTML(t('shareVisibilityHelp'))}</small>
             </div>
-            <label class="share-size-control" for="share-appearance"><span>${escapeHTML(t('shareAppearance'))}</span><select id="share-appearance"><option value="paper" ${visibility.appearance === 'paper' ? 'selected' : ''}>${escapeHTML(t('sharePaper'))}</option><option value="ink" ${visibility.appearance === 'ink' ? 'selected' : ''}>${escapeHTML(t('shareInk'))}</option><option value="blueprint" ${visibility.appearance === 'blueprint' ? 'selected' : ''}>${escapeHTML(t('shareBlueprint'))}</option><option value="minimal" ${visibility.appearance === 'minimal' ? 'selected' : ''}>${escapeHTML(t('shareMinimal'))}</option><option value="cyber" ${visibility.appearance === 'cyber' ? 'selected' : ''}>${escapeHTML(t('shareCyber'))}</option><option value="aurora" ${visibility.appearance === 'aurora' ? 'selected' : ''}>${escapeHTML(t('shareAurora'))}</option><option value="terminal" ${visibility.appearance === 'terminal' ? 'selected' : ''}>${escapeHTML(t('shareTerminal'))}</option></select></label>
+            <label class="share-size-control" for="share-appearance"><span>${escapeHTML(t('shareAppearance'))}</span><select id="share-appearance"><option value="paper" ${visibility.appearance === 'paper' ? 'selected' : ''}>${escapeHTML(t('sharePaper'))}</option><option value="ink" ${visibility.appearance === 'ink' ? 'selected' : ''}>${escapeHTML(t('shareInk'))}</option><option value="blueprint" ${visibility.appearance === 'blueprint' ? 'selected' : ''}>${escapeHTML(t('shareBlueprint'))}</option><option value="minimal" ${visibility.appearance === 'minimal' ? 'selected' : ''}>${escapeHTML(t('shareMinimal'))}</option><option value="cyber" ${visibility.appearance === 'cyber' ? 'selected' : ''}>${escapeHTML(t('shareCyber'))}</option><option value="aurora" ${visibility.appearance === 'aurora' ? 'selected' : ''}>${escapeHTML(t('shareAurora'))}</option><option value="terminal" ${visibility.appearance === 'terminal' ? 'selected' : ''}>${escapeHTML(t('shareTerminal'))}</option><option value="journal" ${visibility.appearance === 'journal' ? 'selected' : ''}>${escapeHTML(t('shareJournal'))}</option><option value="conference" ${visibility.appearance === 'conference' ? 'selected' : ''}>${escapeHTML(t('shareConference'))}</option><option value="archive" ${visibility.appearance === 'archive' ? 'selected' : ''}>${escapeHTML(t('shareArchive'))}</option></select></label>
             <div class="share-visibility-list">${visibilityControls}</div>
             <div class="share-timeline-start-control">
               <span>${escapeHTML(t('shareTimelineStart'))}</span>
