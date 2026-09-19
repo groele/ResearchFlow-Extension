@@ -37,14 +37,15 @@ fs.mkdirSync(out, { recursive: true });
         const layout = RFShareCard.buildLayout(ctx, model, { appearance, size: 'auto' });
         if (layout.height > 10000) throw new Error('Unbounded image height');
         for (const block of layout.blocks.filter(b => b.kind === 'text')) {
+          if (block.y < 180 && block.x < 520 && block.x + block.width > 508) throw new Error(`Brand collision: ${block.role}`);
           ctx.font = block.font;
           if (ctx.measureText(block.text).width > block.width + 1) throw new Error(`Text overflow: ${block.role}`);
           if (block.y + block.height > layout.height - 16) throw new Error(`Bottom clipping: ${block.role}`);
         }
         if (layout.eventCount !== Math.min(count, 64)) throw new Error('Missing milestones');
-        const hidden = RFShareCard.buildLayout(ctx, model, { dates: false, title: false, author: false, journal: false, status: false, duration: false, footer: false });
+        const hidden = RFShareCard.buildLayout(ctx, model, { appearance, dates: false, title: false, author: false, journal: false, status: false, duration: false, footer: false });
         const roles = new Set(hidden.blocks.map(block => block.role));
-        for (const role of ['event-date', 'event-year', 'title', 'author', 'journal', 'status', 'duration', 'footer-brand']) {
+        for (const role of ['event-date', 'event-year', 'title', 'author', 'journal', 'status', 'duration', 'footer-brand', 'brand-seal', 'brand-wordmark', 'brand-motto']) {
           if (roles.has(role)) throw new Error(`Hidden field leaked: ${role}`);
         }
         results.push({ language, appearance, count, height: layout.height });

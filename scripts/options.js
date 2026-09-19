@@ -17,7 +17,7 @@ let previousModalFocus = null;
 let activeSharePreviewUrl = null;
 let activeSharePreviewCleanup = null;
 
-const RF_OPTIONS_RENDER_VERSION = '8.4.0';
+const RF_OPTIONS_RENDER_VERSION = '8.5.0';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
@@ -108,7 +108,7 @@ const I18N = {
     shareFieldStatus: 'Status',
     shareFieldDuration: 'Journey days',
     shareFieldDates: 'Milestone dates',
-    shareFieldFooter: 'ResearchFlow footer',
+    shareFieldFooter: 'ResearchFlow branding',
     shareSizeTitle: 'Image size',
     shareSizePortrait: 'Portrait · expands to fit',
     shareSizeStory: 'Story · taller composition',
@@ -594,7 +594,7 @@ const I18N = {
     shareFieldStatus: '当前状态',
     shareFieldDuration: '历程天数',
     shareFieldDates: '节点日期',
-    shareFieldFooter: 'ResearchFlow 页脚',
+    shareFieldFooter: 'ResearchFlow 品牌标识',
     shareSizeTitle: '图片尺寸',
     shareSizePortrait: '竖版海报 · 随内容延展',
     shareSizeStory: '故事长幅 · 更高的构图',

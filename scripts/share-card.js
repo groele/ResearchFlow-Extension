@@ -62,6 +62,8 @@
     if (v.appearance === 'conference') blocks.push({ kind: 'rect', x: 24, y: 40, width: 6, height: 190, color: palette.accent });
     if (tech) blocks.push({ kind: 'grid', color: palette.line, accent: palette.accent2 });
     const text = (role, value, x, y, maxWidth, size, weight = 400, color = palette.ink, maxLines = 1, display = false) => {
+      // Reserve the masthead's right column for the brand seal, including long titles.
+      if (v.footer && y < 180 && x < 520) maxWidth = Math.min(maxWidth, 508 - x);
       const font = `${weight} ${size}px ${display ? DISPLAY : FONT}`;
       ctx.font = font;
       const lines = wrapText(ctx, value, maxWidth, maxLines);
@@ -70,6 +72,11 @@
       return lines.length * lineHeight;
     };
     const rule = y => blocks.push({ kind: 'line', x: left, y, x2: right, y2: y, color: palette.line });
+    if (v.footer) {
+      blocks.push({ kind: 'brand-seal', role: 'brand-seal', x: 606, y: 90, color: palette.accent, secondary: palette.accent2 || palette.muted });
+      text('brand-wordmark', 'RESEARCHFLOW', 542, 143, 130, 11, 700, palette.ink);
+      text('brand-motto', zh ? '探索 · 求证 · 记录' : 'EXPLORE / VERIFY / RECORD', 542, 161, 130, zh ? 10 : 8, 500, palette.muted);
+    }
     const allEvents = Array.isArray(model.events) ? model.events : [];
     const events = allEvents.length > 64 ? [allEvents[0], ...allEvents.slice(-63)] : allEvents;
     const omitted = allEvents.length - events.length;
@@ -99,7 +106,7 @@
     if (v.author && model.author) {
       y += text('author', `${zh ? '第一作者' : 'First author'}  /  ${model.author}`, left, y, 624, 15, 400, palette.muted, 2) + 16;
     }
-    const headerBottom = y + 8;
+    const headerBottom = Math.max(y + 8, v.footer ? 192 : 0);
     rule(headerBottom);
     y = headerBottom + 26;
     if (v.duration || v.status) {
@@ -206,6 +213,28 @@
       ctx.fillStyle = block.color;
       ctx.strokeStyle = block.color;
       ctx.lineWidth = 1;
+      if (block.kind === 'brand-seal') {
+        ctx.save(); ctx.translate(block.x, block.y);
+        ctx.strokeStyle = block.color; ctx.lineWidth = 1;
+        ctx.globalAlpha = .25;
+        ctx.beginPath(); ctx.arc(0, 0, 45, 0, Math.PI * 2); ctx.stroke();
+        for (let i = 0; i < 24; i++) {
+          const a = i * Math.PI / 12, inner = i % 6 === 0 ? 39 : 42;
+          ctx.beginPath(); ctx.moveTo(Math.cos(a) * inner, Math.sin(a) * inner);
+          ctx.lineTo(Math.cos(a) * 45, Math.sin(a) * 45); ctx.stroke();
+        }
+        ctx.globalAlpha = .7;
+        ctx.beginPath(); ctx.ellipse(0, 0, 55, 18, -Math.PI / 5, 0, Math.PI * 2); ctx.stroke();
+        ctx.strokeStyle = block.secondary;
+        ctx.beginPath(); ctx.arc(0, 0, 34, -Math.PI / 2, Math.PI * .8); ctx.stroke();
+        ctx.globalAlpha = 1; ctx.fillStyle = block.color;
+        for (const a of [-Math.PI / 2, Math.PI / 6, Math.PI * .8]) {
+          ctx.beginPath(); ctx.arc(Math.cos(a) * 34, Math.sin(a) * 34, 2.8, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = `600 24px ${DISPLAY}`;
+        ctx.fillText('RF', 0, 1);
+        ctx.restore();
+      }
       if (block.kind === 'grid') {
         ctx.save();
         ctx.globalAlpha = .22;
