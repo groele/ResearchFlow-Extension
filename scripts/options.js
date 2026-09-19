@@ -17,7 +17,7 @@ let previousModalFocus = null;
 let activeSharePreviewUrl = null;
 let activeSharePreviewCleanup = null;
 
-const RF_OPTIONS_RENDER_VERSION = '8.2.0';
+const RF_OPTIONS_RENDER_VERSION = '8.2.1';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
@@ -39,10 +39,6 @@ const I18N = {
     shareCyber: 'Cyber Neon · signal glow',
     shareAurora: 'Aurora Lab · spectral',
     shareTerminal: 'Terminal Grid · precise',
-    shareCobalt: 'Cobalt Paper · journal',
-    shareViolet: 'Violet Index · editorial',
-    shareSage: 'Sage Archive · calm',
-    shareSand: 'Sandstone · field notes',
     shareRendering: 'Preparing your image…',
     submissionSearch: 'Find a submission',
     submissionSearchPlaceholder: 'Title, journal, author or ID',
@@ -523,10 +519,6 @@ const I18N = {
     shareCyber: '赛博霓虹 · 信号光晕',
     shareAurora: '极光实验室 · 光谱感',
     shareTerminal: '终端网格 · 精密感',
-    shareCobalt: '钴蓝论文 · 期刊感',
-    shareViolet: '紫藤索引 · 编辑感',
-    shareSage: '鼠尾草档案 · 沉静感',
-    shareSand: '砂岩手记 · 温润感',
     shareRendering: '正在生成分享图…',
     submissionSearch: '查找投稿',
     submissionSearchPlaceholder: '搜索标题、期刊、作者或编号',
@@ -1516,7 +1508,7 @@ function normalizeShareVisibility(value = {}) {
     duration: value.duration !== false,
     dates: value.dates !== false,
     footer: value.footer !== false,
-    appearance: ['paper', 'ink', 'blueprint', 'minimal', 'cyber', 'aurora', 'terminal', 'cobalt', 'violet', 'sage', 'sand'].includes(value.appearance) ? value.appearance : 'paper',
+    appearance: ['paper', 'ink', 'blueprint', 'minimal', 'cyber', 'aurora', 'terminal'].includes(value.appearance) ? value.appearance : 'paper',
     size,
     timelineStart
   };
@@ -1638,7 +1630,7 @@ async function openSubmissionSharePreview(submissionId, triggerButton) {
               <strong>${escapeHTML(t('shareVisibilityTitle'))}</strong>
               <small>${escapeHTML(t('shareVisibilityHelp'))}</small>
             </div>
-            <label class="share-size-control" for="share-appearance"><span>${escapeHTML(t('shareAppearance'))}</span><select id="share-appearance"><option value="paper" ${visibility.appearance === 'paper' ? 'selected' : ''}>${escapeHTML(t('sharePaper'))}</option><option value="ink" ${visibility.appearance === 'ink' ? 'selected' : ''}>${escapeHTML(t('shareInk'))}</option><option value="blueprint" ${visibility.appearance === 'blueprint' ? 'selected' : ''}>${escapeHTML(t('shareBlueprint'))}</option><option value="minimal" ${visibility.appearance === 'minimal' ? 'selected' : ''}>${escapeHTML(t('shareMinimal'))}</option><option value="cyber" ${visibility.appearance === 'cyber' ? 'selected' : ''}>${escapeHTML(t('shareCyber'))}</option><option value="aurora" ${visibility.appearance === 'aurora' ? 'selected' : ''}>${escapeHTML(t('shareAurora'))}</option><option value="terminal" ${visibility.appearance === 'terminal' ? 'selected' : ''}>${escapeHTML(t('shareTerminal'))}</option><option value="cobalt" ${visibility.appearance === 'cobalt' ? 'selected' : ''}>${escapeHTML(t('shareCobalt'))}</option><option value="violet" ${visibility.appearance === 'violet' ? 'selected' : ''}>${escapeHTML(t('shareViolet'))}</option><option value="sage" ${visibility.appearance === 'sage' ? 'selected' : ''}>${escapeHTML(t('shareSage'))}</option><option value="sand" ${visibility.appearance === 'sand' ? 'selected' : ''}>${escapeHTML(t('shareSand'))}</option></select></label>
+            <label class="share-size-control" for="share-appearance"><span>${escapeHTML(t('shareAppearance'))}</span><select id="share-appearance"><option value="paper" ${visibility.appearance === 'paper' ? 'selected' : ''}>${escapeHTML(t('sharePaper'))}</option><option value="ink" ${visibility.appearance === 'ink' ? 'selected' : ''}>${escapeHTML(t('shareInk'))}</option><option value="blueprint" ${visibility.appearance === 'blueprint' ? 'selected' : ''}>${escapeHTML(t('shareBlueprint'))}</option><option value="minimal" ${visibility.appearance === 'minimal' ? 'selected' : ''}>${escapeHTML(t('shareMinimal'))}</option><option value="cyber" ${visibility.appearance === 'cyber' ? 'selected' : ''}>${escapeHTML(t('shareCyber'))}</option><option value="aurora" ${visibility.appearance === 'aurora' ? 'selected' : ''}>${escapeHTML(t('shareAurora'))}</option><option value="terminal" ${visibility.appearance === 'terminal' ? 'selected' : ''}>${escapeHTML(t('shareTerminal'))}</option></select></label>
             <div class="share-visibility-list">${visibilityControls}</div>
             <div class="share-timeline-start-control">
               <span>${escapeHTML(t('shareTimelineStart'))}</span>

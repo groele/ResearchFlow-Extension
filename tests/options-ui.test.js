@@ -49,8 +49,8 @@ assert(optionsJs.includes('function applyThemePreference'), 'appearance selectio
 assert(optionsJs.includes('autoSyncToggle.dataset.savedValue'), 'automatic cloud sync should retain its saved state across route changes');
 assert(optionsCss.includes('hsl(var(--card-bg))'), 'explicit dark appearance should override the system preference');
 assert(optionsJs.includes("mainContent.scrollTop = 0"), 'workspace navigation should reveal the beginning of each settings view');
-assert(optionsHtml.includes('v8.2.0 Companion'), 'workspace version label should match the current companion release');
-assert.equal(manifest.version, '8.2.0', 'manifest version should match the current companion release');
+assert(optionsHtml.includes('v8.2.1 Companion'), 'workspace version label should match the current companion release');
+assert.equal(manifest.version, '8.2.1', 'manifest version should match the current companion release');
 
 ['view-projects', 'view-library', 'metric-projects', 'metric-records', 'metric-evidence', 'recent-records'].forEach((removedSection) => {
   assert(!optionsHtml.includes(removedSection), `options page should not expose removed ${removedSection}`);
@@ -93,7 +93,7 @@ assert(optionsJs.includes('id="share-image-size"'), 'share studio should expose 
 assert(shareRenderer.includes("v.size === 'story'"), 'share renderer should support a taller story composition');
 assert(optionsHtml.indexOf('../scripts/share-card.js') < optionsHtml.indexOf('../scripts/options.js'), 'renderer must load before the workspace');
 assert(optionsJs.includes('id="share-appearance"'), 'share studio exposes card appearance');
-for (const appearanceKey of ['shareCyber', 'shareAurora', 'shareTerminal', 'shareCobalt', 'shareViolet', 'shareSage', 'shareSand']) assert(optionsJs.includes(appearanceKey), `${appearanceKey} should be available in Share Studio`);
+for (const appearanceKey of ['shareCyber', 'shareAurora', 'shareTerminal']) assert(optionsJs.includes(appearanceKey), `${appearanceKey} should be available in Share Studio`);
 assert(optionsJs.includes('activeSharePreviewCleanup'), 'share generation must be cancelled when the modal closes');
 assert(!optionsJs.includes('pipeline-first-author-index'), 'dashboard first-author typography should not use a competing number badge');
 assert(
