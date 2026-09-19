@@ -9,7 +9,11 @@
     ink: { background: '#07131b', paper: '#10232d', ink: '#eef6f2', muted: '#a0b7bd', line: '#304951', accent: '#8bd8bc', wash: '#192f39' },
     cyber: { background: '#050b17', paper: '#0b1426', ink: '#e9f7ff', muted: '#8ca6bf', line: '#27415e', accent: '#4de8ff', accent2: '#b26cff', wash: '#10233a', gradient: ['#071329', '#120a25'], paperGradient: ['#0d1a31', '#0a1223'], grid: true },
     aurora: { background: '#071421', paper: '#0e2030', ink: '#e6fff7', muted: '#86b8af', line: '#28574f', accent: '#63f5c7', accent2: '#8b7cff', wash: '#11382f', gradient: ['#071b2a', '#1c1030'], paperGradient: ['#102a38', '#0c1c2b'], grid: true },
-    terminal: { background: '#06110b', paper: '#0a1d12', ink: '#d9ffe4', muted: '#79ad8a', line: '#245337', accent: '#8dff6a', accent2: '#e2ff58', wash: '#102b1a', gradient: ['#07180d', '#101b08'], paperGradient: ['#0d2517', '#09190f'], grid: true }
+    terminal: { background: '#06110b', paper: '#0a1d12', ink: '#d9ffe4', muted: '#79ad8a', line: '#245337', accent: '#8dff6a', accent2: '#e2ff58', wash: '#102b1a', gradient: ['#07180d', '#101b08'], paperGradient: ['#0d2517', '#09190f'], grid: true },
+    cobalt: { background: '#dce8f7', paper: '#f7fbff', ink: '#143354', muted: '#52708f', line: '#c8d9ec', accent: '#2b6cb0', wash: '#edf5ff', gradient: ['#d6e5f7', '#eef4fb'], paperGradient: ['#fbfdff', '#e6f1ff'] },
+    violet: { background: '#e8e7f6', paper: '#fbfaff', ink: '#28315c', muted: '#626b94', line: '#d7d7ed', accent: '#6b5bd2', wash: '#f1efff', gradient: ['#e4e3f5', '#f4eff8'], paperGradient: ['#ffffff', '#efedff'] },
+    sage: { background: '#e3eee8', paper: '#fbfffd', ink: '#183b31', muted: '#58766b', line: '#cfe0d7', accent: '#2b8a6e', wash: '#edf7f1', gradient: ['#dcebe4', '#eef5f0'], paperGradient: ['#ffffff', '#e5f2eb'] },
+    sand: { background: '#f1e8dc', paper: '#fffdf9', ink: '#403329', muted: '#786b5d', line: '#e2d5c4', accent: '#a86a2a', wash: '#f8efe4', gradient: ['#efe4d6', '#faf4ea'], paperGradient: ['#fffefa', '#f3eadc'] }
   };
   const segmenter = typeof Intl.Segmenter === 'function' ? new Intl.Segmenter(undefined, { granularity: 'grapheme' }) : null;
   const glyphs = text => segmenter ? Array.from(segmenter.segment(text), item => item.segment) : Array.from(text);
