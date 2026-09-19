@@ -6,7 +6,8 @@ const root = path.resolve(__dirname, '..');
 const read = (relativePath) => fs.readFileSync(path.join(root, relativePath), 'utf8');
 const optionsHtml = read('pages/options.html');
 const optionsJs = read('scripts/options.js');
-const optionsCss = read('styles/options.css');
+const shareRenderer = read('scripts/share-card.js');
+const optionsCss = read('styles/options.css') + read('styles/settings.css') + read('styles/workspace.css');
 const manifest = JSON.parse(read('manifest.json'));
 
 assert(optionsJs.includes('consumePendingAcademicDraft'), 'main workspace should consume captured Scholar metadata');
@@ -23,33 +24,33 @@ assert(optionsJs.includes('academicCaptureProvenance'), 'confirmed Scholar captu
   assert(optionsHtml.includes(`id="${id}"`), `submission recognition settings should include ${id}`);
 });
 assert(optionsHtml.includes('settings-switch-track'), 'submission recognition should use the shared custom switch treatment');
-['settings-workbench', 'settings-primary-column', 'settings-secondary-column', 'settings-trust-strip', 'settings-route-savebar', 'settings-backup-actions'].forEach((className) => {
+['settings-workbench', 'settings-primary-column', 'settings-secondary-column', 'settings-route-savebar', 'settings-backup-actions'].forEach((className) => {
   assert(optionsHtml.includes(`class="${className}`) || optionsHtml.includes(` ${className}`), `settings redesign should include ${className}`);
 });
-assert(optionsHtml.includes('class="settings-hero-index"'), 'settings console should expose a restrained workspace index');
-['settings-kicker', 'settings-route-privacy-note', 'settings-credential-note', 'settings-backup-note'].forEach((id) => {
+assert(!optionsHtml.includes('class="settings-hero-index"'), 'settings should use the shared page header without a decorative index');
+['settings-route-privacy-note', 'settings-credential-note', 'settings-backup-note'].forEach((id) => {
   assert(optionsHtml.includes(`id="${id}"`), `settings redesign should expose localized ${id}`);
 });
-['settings-security-title', 'settings-security-help', 'settings-security-eyebrow'].forEach((id) => {
+['settings-security-title', 'settings-security-help'].forEach((id) => {
   assert(optionsHtml.includes(`id="${id}"`), `settings should clearly explain local-first security through ${id}`);
 });
 assert(optionsHtml.includes('class="settings-security-assurance"'), 'settings should lead with a dedicated local-security assurance panel');
 ['ui-theme', 'auto-cloud-sync', 'settings-auto-sync-control'].forEach((id) => {
   assert(optionsHtml.includes(`id="${id}"`), `settings should expose functional preference ${id}`);
 });
-assert(optionsHtml.includes('id="settings-local-card" data-sync-provider="local"'), 'local-only routing should retain a visible explanatory provider panel');
+assert(/<[^>]*data-sync-provider="local"[^>]*id="settings-local-card"/.test(optionsHtml), 'local-only routing should retain a visible explanatory provider panel');
 assert(optionsHtml.includes('class="settings-provider-stage"'), 'provider details should stay grouped inside the storage route card');
 assert(!optionsHtml.includes('class="settings-grid"'), 'settings should use the guided workbench instead of a flat card grid');
 assert(optionsCss.includes('.settings-workbench'), 'settings workbench should have a dedicated responsive layout');
-assert(optionsCss.includes('Settings console refinement'), 'settings should use the integrated scientific-console visual treatment');
+assert(optionsCss.includes('Settings share the workspace typography'), 'settings should use shared workspace components');
 assert(optionsCss.includes('@media (max-width: 1180px)'), 'settings workbench should reflow before the narrow mobile breakpoint');
-assert(optionsJs.includes("setText('#settings-kicker', t('settingsKicker'))"), 'settings hero should localize with the active interface language');
+
 assert(optionsJs.includes('function applyThemePreference'), 'appearance selection should apply a real workspace theme');
 assert(optionsJs.includes('autoSyncToggle.dataset.savedValue'), 'automatic cloud sync should retain its saved state across route changes');
-assert(optionsCss.includes('html[data-theme="dark"] #view-settings'), 'explicit dark appearance should override the system preference');
+assert(optionsCss.includes('hsl(var(--card-bg))'), 'explicit dark appearance should override the system preference');
 assert(optionsJs.includes("mainContent.scrollTop = 0"), 'workspace navigation should reveal the beginning of each settings view');
-assert(optionsHtml.includes('v7.4.19 Companion'), 'workspace version label should match the current companion release');
-assert.equal(manifest.version, '7.4.19', 'manifest version should match the current companion release');
+assert(optionsHtml.includes('v8.0.0 Companion'), 'workspace version label should match the current companion release');
+assert.equal(manifest.version, '8.0.0', 'manifest version should match the current companion release');
 
 ['view-projects', 'view-library', 'metric-projects', 'metric-records', 'metric-evidence', 'recent-records'].forEach((removedSection) => {
   assert(!optionsHtml.includes(removedSection), `options page should not expose removed ${removedSection}`);
@@ -76,7 +77,7 @@ assert(optionsJs.includes('sub-edit-first-author'), 'submission editor should ex
 assert(optionsJs.includes('pipeline-first-author'), 'dashboard pipeline cards should render first-author information');
 assert(optionsJs.includes('btn-pipeline-share'), 'dashboard pipeline cards should expose a one-click share-image action');
 assert(optionsJs.includes('createSubmissionShareCanvas'), 'submission journeys should be rendered into a local canvas image');
-assert(optionsJs.includes('const renderScale = 2'), 'share cards should render at high pixel density');
+assert(shareRenderer.includes('const renderScale = 2'), 'share cards should render at high pixel density');
 assert(optionsJs.includes('canvas.toBlob'), 'share images should be encoded as PNG blobs without remote services');
 assert(optionsJs.includes("navigator.canShare?.({ files: [file] })"), 'share previews should use native file sharing only when supported');
 assert(optionsJs.includes('navigator.clipboard.write([new ClipboardItem'), 'share previews should support copying the generated PNG');
@@ -89,12 +90,10 @@ assert(optionsJs.includes('normalizeShareVisibility'), 'share-image visibility s
 });
 assert(optionsCss.includes('.share-visibility-chip'), 'share-image fields should use accessible visibility controls');
 assert(optionsJs.includes('id="share-image-size"'), 'share studio should expose optimized image-size presets');
-assert(optionsJs.includes("visible.size === 'story'") && optionsJs.includes('Math.min(1920'), 'share studio should support an adaptive full-screen story export');
-assert(optionsJs.includes('canvasWidth = 720'), 'share images should use a compact mobile-first 720 px width');
-assert(optionsCss.includes('.share-size-control'), 'share image-size controls should match the scientific workspace');
-assert(optionsCss.includes('Share studio — modern scientific workspace'), 'share studio should retain the modern scientific visual system');
-assert(optionsJs.includes("const canvasBg = '#f3f7fc'"), 'share posters should use a cool neutral canvas instead of a vintage paper palette');
-assert(optionsJs.includes("const displayFont = font"), 'share posters should use the modern sans-serif display family consistently');
+assert(shareRenderer.includes("v.size === 'story'"), 'share renderer should support a taller story composition');
+assert(optionsHtml.indexOf('../scripts/share-card.js') < optionsHtml.indexOf('../scripts/options.js'), 'renderer must load before the workspace');
+assert(optionsJs.includes('id="share-appearance"'), 'share studio exposes card appearance');
+assert(optionsJs.includes('activeSharePreviewCleanup'), 'share generation must be cancelled when the modal closes');
 assert(!optionsJs.includes('pipeline-first-author-index'), 'dashboard first-author typography should not use a competing number badge');
 assert(
   /\.pipeline-first-author\s*\{[\s\S]*?font:\s*inherit;[\s\S]*?font-size:\s*11px;/.test(optionsCss),
@@ -184,7 +183,7 @@ assert(optionsJs.includes("new Blob([JSON.stringify(safeDb, null, 2)]"), 'large 
 assert(optionsJs.includes('MAX_IMPORT_BYTES'), 'database imports should enforce a bounded input size');
 assert(optionsJs.includes('PRE_IMPORT_BACKUP_KEY'), 'database imports should create a recoverable pre-import snapshot');
 assert(
-  optionsJs.indexOf('[PRE_IMPORT_BACKUP_KEY]') < optionsJs.indexOf('db = await window.storage.saveAll(normalizedImport)'),
+  optionsJs.indexOf('[PRE_IMPORT_BACKUP_KEY]') < optionsJs.indexOf('db = await window.storage.saveAll(normalizedImport,'),
   'the recovery snapshot should be written before imported data replaces the active database'
 );
 assert(optionsJs.includes("document.querySelector('[data-global-toast]')"),

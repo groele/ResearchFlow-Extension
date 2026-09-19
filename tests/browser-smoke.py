@@ -124,6 +124,7 @@ with sync_playwright() as playwright:
             celebration_handle = celebration.element_handle()
             page.screenshot(path=str(artifact_dir / "02-acceptance-celebration.png"))
 
+            page.locator(".submission-author-details summary").click()
             page.locator("#sub-edit-first-author").fill("Celebration Stability Check")
             page.wait_for_function(
                 """submissionId => (

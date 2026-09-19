@@ -48,7 +48,7 @@ assert.equal(
   RFUI.findCapturedSubmissionMatch({
     submissions: capturedSubmissions,
     manuscripts: capturedManuscripts,
-    capture: { externalManuscriptId: 'afm-26-10482' }
+    capture: { externalManuscriptId: 'afm-26-10482', targetJournal: 'Advanced Functional Materials', sourceOrigin: 'https://www.editorialmanager.com' }
   })?.id,
   'sub_1',
   'external manuscript identifiers should prevent duplicate capture'
@@ -434,3 +434,16 @@ assert.equal(RFUI.shouldAutoCapture({
 }), false);
 
 console.log('ui-utils tests passed');
+
+assert.equal(RFUI.findCapturedSubmissionMatch({ submissions: capturedSubmissions, capture: {
+  externalManuscriptId: 'AFM-26-10482', targetJournal: 'Other journal', sourceOrigin: 'https://www.editorialmanager.com'
+} }), null, 'same number on a different journal must not overwrite a submission');
+for (const url of ['javascript:alert(1)', 'data:text/html,test', 'file:///tmp/test', 'https://user:secret@example.com']) {
+  assert.equal(RFUI.buildSubmissionIdentityUpdate({ title: 'Test', journalUrl: url }).ok, false);
+  assert.equal(RFUI.buildSubmissionEditCenterUpdate({ title: 'Test', articleUrl: url }).ok, false);
+}
+
+assert.equal(RFUI.findCapturedSubmissionMatch({ submissions: capturedSubmissions, manuscripts: capturedManuscripts, capture: {
+  externalManuscriptId: 'AFM-26-99999', manuscriptTitle: capturedManuscripts[0].title,
+  targetJournal: 'Advanced Functional Materials', sourceOrigin: 'https://www.editorialmanager.com'
+} }), null, 'a new numbered submission must not collapse into an earlier attempt with the same title');

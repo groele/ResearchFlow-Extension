@@ -88,14 +88,21 @@ function sendDatabaseWrite(data, mergeOnConflict = false) {
 }
 
 (async () => {
-  const first = sendDatabaseWrite({ id: 'first', revision: 4 });
+  const first = sendDatabaseWrite({ id: 'first', revision: 3 });
   const second = sendDatabaseWrite({ id: 'second', revision: 4 }, true);
   const [firstResult, secondResult] = await Promise.all([first, second]);
 
   assert.deepEqual(saveOrder, ['first', 'second'], 'database writes must remain serialized');
-  assert.equal(firstResult.revision, 5);
+  assert.equal(firstResult.revision, 4);
+  await assert.rejects(sendDatabaseWrite({ id: 'stale', revision: 1 }), /changed in another page/);
   assert.equal(secondResult.merged, true, 'conflict-aware writes should merge with the latest database');
   assert.equal(messageListener({ action: 'UNKNOWN' }, {}, () => {}), false);
+  let denied;
+  messageListener({ action: 'SAVE_DATABASE', data: {} }, { url: 'https://www.nature.com/test' }, r => { denied = r; });
+  assert.equal(denied.success, false, 'content scripts cannot read or replace the workspace database');
+  assert.equal(messageListener(null, {}, () => {}), false);
+  messageListener({ action: 'SAVE_DATABASE', data: null }, {}, r => { denied = r; });
+  assert.equal(denied.success, false);
   console.log('background write queue tests passed');
 })().catch(error => {
   console.error(error);

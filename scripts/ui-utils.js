@@ -200,6 +200,13 @@
     return Boolean(state && !state.isAutomaticCapture);
   }
 
+  function isSafeWebUrl(value) {
+    try {
+      const url = new URL(String(value || '').trim());
+      return ['https:', 'http:'].includes(url.protocol) && !url.username && !url.password;
+    } catch { return false; }
+  }
+
   function buildSubmissionIdentityUpdate(values = {}) {
     const title = String(values.title || '').trim();
     const journal = String(values.journal || '').trim();
@@ -211,7 +218,7 @@
 
     if (journalUrl) {
       try {
-        new URL(journalUrl);
+        if (!isSafeWebUrl(journalUrl)) throw new Error('Invalid web URL');
       } catch (_) {
         return { ok: false, error: 'Journal URL must be a valid URL.' };
       }
@@ -227,7 +234,7 @@
     const articleUrl = String(values.articleUrl || '').trim();
     if (articleUrl) {
       try {
-        new URL(articleUrl);
+        if (!isSafeWebUrl(articleUrl)) throw new Error('Invalid web URL');
       } catch (_) {
         return { ok: false, error: 'Article URL must be a valid URL.' };
       }
@@ -343,16 +350,31 @@
     const title = normalize(capture.manuscriptTitle);
     const journal = normalize(capture.targetJournal);
     const origin = String(capture.sourceOrigin || '').trim().toLowerCase();
+    const manuscriptsById = new Map(manuscripts.map(item => [item.id, item]));
 
     return submissions.find((submission) => {
-      if (externalId && normalize(submission.externalManuscriptId) === externalId) return true;
+      const sameJournal = journal && normalize(submission.targetJournal || submission.journal) === journal;
+      const sameOrigin = origin && String(submission.captureProvenance?.sourceOrigin || '').trim().toLowerCase() === origin;
+      const existingExternalId = normalize(submission.externalManuscriptId);
+      if (externalId && existingExternalId) return externalId === existingExternalId && Boolean(sameJournal && sameOrigin);
       if (!origin || !title || !journal) return false;
-      const manuscript = manuscripts.find(item => item.id === submission.manuscriptId);
+      const manuscript = manuscriptsById.get(submission.manuscriptId);
       const submissionJournal = submission.targetJournal || submission.journal || '';
       return String(submission.captureProvenance?.sourceOrigin || '').trim().toLowerCase() === origin
         && normalize(manuscript?.title || submission.title) === title
         && normalize(submissionJournal) === journal;
     }) || null;
+  }
+
+  function normalizeSearchText(value) {
+    return String(value ?? '').normalize('NFKC').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toLocaleLowerCase().replace(/[\u2010-\u2015\u2212]/g, '-').replace(/\s+/g, ' ').trim();
+  }
+
+  function matchesSubmissionSearch(searchText, status, query, filter = 'all') {
+    const terms = Array.isArray(query) ? query : normalizeSearchText(query).split(/\s+/).filter(Boolean);
+    const groups = { active: ['submitted', 'under_review', 'revision'], revision: ['revision'], accepted: ['accepted', 'published'], rejected: ['rejected'] };
+    return (!groups[filter] || groups[filter].includes(status)) && terms.every(term => searchText.includes(term));
   }
 
   function escapeHTML(value) {
@@ -378,6 +400,7 @@
     getRecordFormMode,
     shouldAutoCapture,
     shouldNotifyMetadataCaptureFailure,
+    isSafeWebUrl,
     buildSubmissionIdentityUpdate,
     buildSubmissionEditCenterUpdate,
     buildSubmissionEditSyncPlan,
@@ -385,6 +408,8 @@
     buildSubmissionCreateMode,
     getTimelineEventDate,
     findCapturedSubmissionMatch,
+    normalizeSearchText,
+    matchesSubmissionSearch,
     escapeHTML
   };
 

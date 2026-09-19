@@ -33,7 +33,14 @@
       },
       sendMessage(message, callback) {
         let response = { success: true };
-        if (message?.action === 'TRIGGER_SYNC') {
+        if (message?.action === 'LOAD_DATABASE') {
+          fetch(new URL('data/preloaded_db.json', location.origin)).then(r => r.json()).then(async data => {
+            const normalized = await globalThis.storage.ensureDbShape(values.researchflow_db || data, { stamp: false });
+            values.researchflow_db = normalized;
+            callback?.({ success: true, data: normalized });
+          });
+          return Promise.resolve();
+        } else if (message?.action === 'TRIGGER_SYNC') {
           response = { success: false, error: 'No provider configured' };
         } else if (message?.action === 'SAVE_DATABASE') {
           const nextDatabase = {

@@ -11,6 +11,12 @@
 importScripts('storage.js', 'journal-portals.js');
 
 let databaseWriteQueue = Promise.resolve();
+// Sync commits and page saves share one writer; network waits stay outside it.
+storage.enqueueCommit = operation => {
+  const result = databaseWriteQueue.catch(() => {}).then(operation);
+  databaseWriteQueue = result;
+  return result;
+};
 const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
 
 async function openWorkspacePage(mode = '') {
@@ -24,7 +30,7 @@ async function openWorkspacePage(mode = '') {
   ));
 
   if (existingWorkspace) {
-    await chrome.tabs.update(existingWorkspace.id, { url: captureUrl, active: true });
+    await chrome.tabs.update(existingWorkspace.id, mode ? { url: captureUrl, active: true } : { active: true });
     if (existingWorkspace.windowId) {
       await chrome.windows.update(existingWorkspace.windowId, { focused: true }).catch(() => {});
     }
@@ -162,27 +168,51 @@ function buildPendingSubmissionDraft(request, sender) {
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (!request || typeof request !== 'object') return false;
+  if (['LOAD_DATABASE', 'SAVE_DATABASE', 'TRIGGER_SYNC'].includes(request.action)
+      && sender.url && !sender.url.startsWith(chrome.runtime.getURL(''))) {
+    sendResponse({ success: false, error: 'This operation requires a ResearchFlow workspace page.' });
+    return false;
+  }
+  if (request.action === 'LOAD_DATABASE') {
+    storage.enqueueCommit(() => storage.loadAll())
+      .then(data => sendResponse({ success: true, data }))
+      .catch(error => sendResponse({ success: false, error: error.message }));
+    return true;
+  }
   if (request.action === 'SAVE_DATABASE') {
-    databaseWriteQueue = databaseWriteQueue
-      .catch(() => {})
-      .then(async () => {
+    if (!request.data || typeof request.data !== 'object' || Array.isArray(request.data)) {
+      sendResponse({ success: false, error: 'Invalid database payload.' });
+      return false;
+    }
+    const write = storage.enqueueCommit(async () => {
         let nextDatabase = request.data;
+        const currentDatabase = await storage.loadAll();
+        if (!request.mergeOnConflict && Number(request.replace ? request.expectedRevision : request.data?.revision || 0) !== Number(currentDatabase.revision || 0)) {
+          throw new Error('Database changed in another page. Reload before saving; your changes were not committed.');
+        }
         if (request.mergeOnConflict) {
-          const currentDatabase = await storage.loadAll();
           nextDatabase = await storage.mergeDatabases(request.data, currentDatabase);
         }
+        nextDatabase = { ...nextDatabase, revision: currentDatabase.revision };
         return storage.saveAll(nextDatabase, { localOnly: true });
       });
-    databaseWriteQueue
+    write
       .then(data => sendResponse({ success: true, data }))
       .catch(error => sendResponse({ success: false, error: error.message }));
     return true;
   }
 
   if (request.action === 'TRIGGER_SYNC') {
+    const report = result => chrome.runtime.sendMessage?.({ action: 'SYNC_STATE', ...result })?.catch(() => {});
+    report({ syncing: true });
     storage.syncDatabaseNow()
-      .then(result => sendResponse(result))
-      .catch(error => sendResponse({ success: false, error: error.message }));
+      .then(result => { report(result); sendResponse(result); })
+      .catch(error => {
+        const result = { success: false, error: error.message };
+        report(result);
+        sendResponse(result);
+      });
     return true;
   }
 

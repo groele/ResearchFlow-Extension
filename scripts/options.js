@@ -11,11 +11,13 @@ let currentLanguage = 'en';
 let isPipelineExpanded = false;
 let pendingSubmissionCapture = null;
 let submissionAutoSaveCleanup = null;
+let pendingSubmissionSaves = 0;
 let acceptanceCelebrationCleanup = null;
 let previousModalFocus = null;
 let activeSharePreviewUrl = null;
+let activeSharePreviewCleanup = null;
 
-const RF_OPTIONS_RENDER_VERSION = '7.4.19';
+const RF_OPTIONS_RENDER_VERSION = '8.0.0';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
@@ -26,11 +28,23 @@ const UI_THEME_OPTIONS = new Set(['system', 'light', 'dark']);
 
 const I18N = {
   en: {
+    searchClear: 'Clear search', searchStatus: 'Filter by status', searchAll: 'All statuses', searchActive: 'In progress', searchRevision: 'Revision', searchAccepted: 'Accepted / Published', searchRejected: 'Rejected', searchEmpty: 'No matching submissions', searchEmptyHelp: 'Try a shorter keyword or another status.', searchReset: 'Clear filters',
+    shareZoom: 'Enlarge preview',
+    shareFit: 'Fit image',
+    shareAppearance: 'Card appearance',
+    sharePaper: 'Paper · calm & clear',
+    shareInk: 'Ink · after hours',
+    shareBlueprint: 'Blueprint · structured',
+    shareMinimal: 'Minimal · title first',
+    shareRendering: 'Preparing your image…',
+    submissionSearch: 'Find a submission',
+    submissionSearchPlaceholder: 'Title, journal, author or ID',
+    submissionSearchCount: '{count} / {total}',
     dashboardNav: 'Dashboard Overview',
     manuscriptsNav: 'Manuscripts Kanban',
     submissionsNav: 'Submissions & Review',
     settingsNav: 'Multi-Cloud Settings',
-    syncLocal: 'Synced (Local)',
+    syncLocal: 'Saved on this device',
     forceSync: '🔄 Force Sync',
     dashboardTitle: 'Dashboard Overview',
     dashboardSubtitle: "A bird's eye view of your scientific progress and pipelines.",
@@ -87,23 +101,23 @@ const I18N = {
     shareFieldDates: 'Milestone dates',
     shareFieldFooter: 'ResearchFlow footer',
     shareSizeTitle: 'Image size',
-    shareSizePortrait: 'Mobile portrait · adaptive 720 × 900–1350',
-    shareSizeStory: 'Story · 720 × 1920',
+    shareSizePortrait: 'Portrait · expands to fit',
+    shareSizeStory: 'Story · taller composition',
     shareSizeAuto: 'Adaptive long image',
     noEventYet: 'No event yet',
     addEventStart: 'Add an event to start tracking',
     clickAddEvent: 'Click here to add a timeline event for this manuscript.',
     clickEditEvent: 'Click to edit this event.',
     settingsTitle: 'Multi-Cloud Settings',
-    settingsSubtitle: 'Control exactly how and where your private data is distributed.',
+    settingsSubtitle: 'Manage synchronization, workspace preferences, and backups.',
     settingsKicker: 'Workspace control',
     settingsTrustSummary: 'Data protection summary',
     settingsLocalFirst: 'Local database',
     settingsDeviceSecrets: 'Device-only credentials',
     settingsPreferencesAutosave: 'Optional cloud sync',
     settingsSecurityEyebrow: 'Privacy by architecture',
-    settingsSecurityTitle: 'Your research data stays on this device by default.',
-    settingsSecurityHelp: 'Cloud sync only starts after you choose and configure a provider. Passwords and tokens are excluded from database files, exports, and cloud payloads.',
+    settingsSecurityTitle: 'Privacy by default',
+    settingsSecurityHelp: 'Your research data stays on this device by default. Cloud sync only starts after you choose and configure a provider; passwords and tokens stay out of database files, exports, and cloud payloads.',
     settingsRoutingEyebrow: 'Data destination',
     settingsRoutePrivacy: 'Secrets are stored only on this device.',
     settingsLocalEyebrow: 'Active route',
@@ -170,7 +184,7 @@ const I18N = {
     confidenceHigh: 'High',
     confidenceMedium: 'Medium',
     confidenceLow: 'Needs review',
-    cloudRoutingTitle: 'Distributed Cloud Storage Routing',
+    cloudRoutingTitle: 'Cloud synchronization',
     webdavTitle: 'WebDAV Credentials',
     githubTitle: 'GitHub Private Repository Sync',
     backupTitle: 'Database Backup & Import',
@@ -442,7 +456,7 @@ const I18N = {
     validUrlRequired: 'Please enter a valid URL (e.g. https://example.com)',
     portalAddedToast: 'Journal portal "{name}" added.',
     storageRoutingHelp: 'Choose where the ResearchFlow metadata database is synchronized.',
-    routeDbLabel: 'Database JSON Sync Destination',
+    routeDbLabel: 'Sync destination',
     optionLocalCache: 'None (Local Cache Only)',
     optionWebDavDrive: 'WebDAV Drive (Jianguoyun, Nextcloud)',
     optionGithubRepo: 'GitHub Private Repository',
@@ -491,11 +505,23 @@ const I18N = {
     academicCaptureSaved: 'Scholar manuscript reviewed and saved.'
   },
   zh: {
+    searchClear: '清除关键词', searchStatus: '按状态筛选', searchAll: '全部状态', searchActive: '进行中', searchRevision: '修回中', searchAccepted: '已接收 / 发表', searchRejected: '已拒稿', searchEmpty: '没有找到匹配的投稿', searchEmptyHelp: '试试更短的关键词，或切换投稿状态。', searchReset: '清除筛选条件',
+    shareZoom: '放大预览',
+    shareFit: '适应窗口',
+    shareAppearance: '卡片风格',
+    sharePaper: '清纸 · 简洁明亮',
+    shareInk: '墨夜 · 深色质感',
+    shareBlueprint: '蓝图 · 理性结构',
+    shareMinimal: '极简 · 聚焦标题',
+    shareRendering: '正在生成分享图…',
+    submissionSearch: '查找投稿',
+    submissionSearchPlaceholder: '搜索标题、期刊、作者或编号',
+    submissionSearchCount: '{count} / {total} 条',
     dashboardNav: '仪表盘总览',
     manuscriptsNav: '手稿看板',
     submissionsNav: '投稿与审稿',
     settingsNav: '多云设置',
-    syncLocal: '已同步（本地）',
+    syncLocal: '已保存到本机',
     forceSync: '🔄 强制同步',
     dashboardTitle: '仪表盘总览',
     dashboardSubtitle: '集中查看科研进展、投稿状态和关键时间线。',
@@ -552,23 +578,23 @@ const I18N = {
     shareFieldDates: '节点日期',
     shareFieldFooter: 'ResearchFlow 页脚',
     shareSizeTitle: '图片尺寸',
-    shareSizePortrait: '移动竖版 · 自适应 720 × 900–1350',
-    shareSizeStory: '全屏 · 720 × 1920',
+    shareSizePortrait: '竖版海报 · 随内容延展',
+    shareSizeStory: '故事长幅 · 更高的构图',
     shareSizeAuto: '自适应长图',
     noEventYet: '暂无事件',
     addEventStart: '添加事件开始跟踪',
     clickAddEvent: '点击此处为此手稿添加时间线事件。',
     clickEditEvent: '点击编辑此事件。',
     settingsTitle: '多云设置',
-    settingsSubtitle: '精准控制私有数据的分发与存储位置。',
+    settingsSubtitle: '管理云端同步、工作区偏好与数据备份。',
     settingsKicker: '工作区控制中心',
     settingsTrustSummary: '数据保护摘要',
     settingsLocalFirst: '数据库本地保存',
     settingsDeviceSecrets: '凭据仅限本设备',
     settingsPreferencesAutosave: '云同步按需开启',
     settingsSecurityEyebrow: '架构级隐私保护',
-    settingsSecurityTitle: '研究数据默认仅保存在当前设备。',
-    settingsSecurityHelp: '只有在你主动选择并配置云服务后才会同步；密码与令牌不会进入数据库文件、导出备份或云端同步载荷。',
+    settingsSecurityTitle: '默认隐私保护',
+    settingsSecurityHelp: '研究数据默认仅保存在当前设备。只有在你主动选择并配置云服务后才会同步；密码与令牌不会进入数据库文件、导出备份或云端同步载荷。',
     settingsRoutingEyebrow: '数据去向',
     settingsRoutePrivacy: '密码与令牌只保存在当前设备。',
     settingsLocalEyebrow: '当前存储方式',
@@ -635,7 +661,7 @@ const I18N = {
     confidenceHigh: '高',
     confidenceMedium: '中',
     confidenceLow: '需重点核对',
-    cloudRoutingTitle: '分布式云存储路由',
+    cloudRoutingTitle: '云端同步',
     webdavTitle: 'WebDAV 凭据',
     githubTitle: 'GitHub 私有仓库同步',
     backupTitle: '数据库备份与导入',
@@ -914,7 +940,7 @@ const I18N = {
     academicDuplicateUpdated: '已更新现有手稿，未创建重复条目。',
     academicCaptureSaved: 'Scholar 手稿已核对并保存。',
     storageRoutingHelp: '选择 ResearchFlow 元数据数据库的存储与同步位置。',
-    routeDbLabel: '数据库 JSON 同步位置',
+    routeDbLabel: '同步位置',
     optionLocalCache: '无（仅使用本地缓存）',
     optionWebDavDrive: 'WebDAV 网盘（坚果云、Nextcloud）',
     optionGithubRepo: 'GitHub 私有仓库',
@@ -1109,35 +1135,31 @@ function applyLanguage() {
   setButtonText('#btn-add-submission', t('trackNewSubmissionButton'));
   setText('.submission-list-head h3', t('activeSubmissionsTitle'));
   setText('.submission-list-head .text-muted', t('activeSubmissionsHelp'));
+  setText('#submission-search-label', t('submissionSearch'));
+  document.getElementById('submission-search')?.setAttribute('placeholder', t('submissionSearchPlaceholder'));
+  document.getElementById('submission-search-clear')?.setAttribute('aria-label', t('searchClear'));
+  document.getElementById('submission-search-status')?.setAttribute('aria-label', t('searchStatus'));
+  for (const [value, key] of [['all', 'searchAll'], ['active', 'searchActive'], ['revision', 'searchRevision'], ['accepted', 'searchAccepted'], ['rejected', 'searchRejected']]) setOptionText('#submission-search-status', value, t(key));
+  setText('#submission-search-empty-title', t('searchEmpty'));
+  setText('#submission-search-empty-help', t('searchEmptyHelp'));
+  setText('#submission-search-reset', t('searchReset'));
   setText('#submission-detail-panel .empty-state h3', t('submissionEmptyDetail'));
 
   setText('#view-settings .view-header h1', t('settingsTitle'));
   setText('#view-settings .view-header .text-muted', t('settingsSubtitle'));
-  setText('#settings-kicker', t('settingsKicker'));
   document.querySelector('.settings-trust-strip')?.setAttribute('aria-label', t('settingsTrustSummary'));
-  setText('#settings-local-first-label', t('settingsLocalFirst'));
-  setText('#settings-device-secret-label', t('settingsDeviceSecrets'));
-  setText('#settings-autosave-label', t('settingsPreferencesAutosave'));
-  setText('#settings-security-eyebrow', t('settingsSecurityEyebrow'));
   setText('#settings-security-title', t('settingsSecurityTitle'));
   setText('#settings-security-help', t('settingsSecurityHelp'));
-  setText('#settings-routing-eyebrow', t('settingsRoutingEyebrow'));
   setText('#settings-route-privacy-note', t('settingsRoutePrivacy'));
-  setText('#settings-local-eyebrow', t('settingsLocalEyebrow'));
   setText('#settings-local-title', t('settingsLocalTitle'));
   setText('#settings-local-help', t('settingsLocalHelp'));
   setText('#settings-local-point-account', t('settingsLocalPointAccount'));
   setText('#settings-local-point-sync', t('settingsLocalPointSync'));
   setText('#settings-local-point-backup', t('settingsLocalPointBackup'));
-  setText('#settings-webdav-eyebrow', t('settingsProviderEyebrow'));
   setText('#settings-webdav-help', t('settingsWebdavHelp'));
   setText('#settings-credential-note', t('settingsCredentialNote'));
-  setText('#settings-github-eyebrow', t('settingsProviderEyebrow'));
   setText('#settings-github-help', t('settingsGithubHelp'));
   setText('#settings-github-credential-note', t('settingsGithubCredentialNote'));
-  setText('#settings-language-eyebrow', t('settingsLanguageEyebrow'));
-  setText('#settings-assist-eyebrow', t('settingsAssistEyebrow'));
-  setText('#settings-backup-eyebrow', t('settingsBackupEyebrow'));
   setText('#settings-backup-note', t('settingsBackupNote'));
   setText('#settings-language-card h3', t('languageCardTitle'));
   setText('label[for="ui-language"]', t('languageLabel'));
@@ -1182,6 +1204,18 @@ function applyLanguage() {
   updateSyncProviderVisibility();
 }
 
+async function renderAllViews() {
+  submissionAutoSaveCleanup?.();
+  const panel = document.getElementById('submission-detail-panel');
+  if (panel) { panel.innerHTML = ''; delete panel.dataset.currentSubmissionId; }
+  currentLanguage = db.settings?.profile?.language || 'en';
+  applyThemePreference(db.settings?.profile?.theme || 'system');
+  applyLanguage();
+  renderDashboard();
+  renderKanban();
+  renderSubmissions();
+}
+
 function refreshActiveViewForLanguage() {
   const activeViewId = document.querySelector('.content-view.active')?.id || 'view-dashboard';
   if (activeViewId === 'view-dashboard') renderDashboard();
@@ -1197,7 +1231,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   navItems.forEach(item => {
     item.addEventListener('click', () => {
+      if (!db || !canLeaveSubmissionEditor()) return;
       const targetView = item.getAttribute('data-view');
+      if (targetView !== 'view-submissions') submissionAutoSaveCleanup?.();
 
       navItems.forEach(n => n.classList.remove('active'));
       views.forEach(v => v.classList.remove('active'));
@@ -1215,8 +1251,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
+  setupSubmissionSearch();
+
   // Load Database
-  db = await window.storage.loadAll();
+  try {
+    db = await window.storage.loadAll();
+  } catch (error) {
+    const view = document.getElementById('view-dashboard');
+    view.replaceChildren();
+    const message = document.createElement('p');
+    message.setAttribute('role', 'alert');
+    message.textContent = `无法加载本地数据 / Unable to load local data: ${error.message}`;
+    const retry = document.createElement('button');
+    retry.className = 'btn-primary';
+    retry.textContent = '重新加载 / Retry';
+    retry.addEventListener('click', () => location.reload());
+    view.append(message, retry);
+    return;
+  }
   applyThemePreference(db.settings?.profile?.theme || 'system');
   currentLanguage = db.settings?.profile?.language || 'en';
   document.documentElement.lang = currentLanguage === 'zh' ? 'zh-CN' : 'en';
@@ -1265,8 +1317,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     dbMigrationChanged = clearUnacceptedPublicationLinks(db) || dbMigrationChanged;
     dbMigrationChanged = syncManuscriptStatusesFromSubmissions(db) || dbMigrationChanged;
 
+    db.submissions.forEach(sub => { dbMigrationChanged = normalizeSubmissionTimeline(sub) || dbMigrationChanged; });
     if (dbMigrationChanged) {
-      window.storage.saveAll(db).catch(console.error);
+      try { db = await window.storage.saveAll(db, { mergeOnConflict: true }); }
+      catch (error) { showGlobalToast(error.message, 'error'); }
     }
   }
 
@@ -1310,19 +1364,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
           }
         });
-        if (updateChanged) {
-          window.storage.saveAll(db).catch(console.error);
-        }
+        // Broadcasts update the view; they must not trigger another write cascade.
       }
 
-      if (clearUnacceptedPublicationLinks(db)) {
-        window.storage.saveAll(db).catch(console.error);
-      }
-      if (syncManuscriptStatusesFromSubmissions(db)) {
-        window.storage.saveAll(db).catch(console.error);
-      }
+      clearUnacceptedPublicationLinks(db);
+      syncManuscriptStatusesFromSubmissions(db);
 
-      updateSyncStatus('success', 'Synced');
+      updateSyncStatus('active', t('syncLocal'));
 
       // Reload active view
       const activeNav = document.querySelector('.nav-item.active');
@@ -1419,67 +1467,6 @@ function buildDefaultSubmissionTimeline(submission) {
   }));
 }
 
-function roundedRectPath(ctx, x, y, width, height, radius) {
-  ctx.beginPath();
-  ctx.roundRect(x, y, width, height, Math.min(radius, width / 2, height / 2));
-}
-
-function canvasTextLines(ctx, text, maxWidth) {
-  const value = String(text || '').trim();
-  if (!value) return [];
-  const lines = [];
-  let line = '';
-  const hasWordSpaces = /\s/.test(value);
-  const tokens = hasWordSpaces ? value.split(/\s+/) : Array.from(value);
-  tokens.forEach((token) => {
-    const next = `${line}${hasWordSpaces && line ? ' ' : ''}${token}`;
-    if (line && ctx.measureText(next).width > maxWidth) {
-      lines.push(line.trim());
-      line = token;
-    } else {
-      line = next;
-    }
-  });
-  if (line) lines.push(line.trim());
-  return lines;
-}
-
-function drawWrappedCanvasText(ctx, text, x, y, maxWidth, lineHeight, maxLines = Infinity) {
-  let lines = canvasTextLines(ctx, text, maxWidth);
-  if (lines.length > maxLines) {
-    lines = lines.slice(0, maxLines);
-    let finalLine = lines[maxLines - 1];
-    while (finalLine && ctx.measureText(`${finalLine}…`).width > maxWidth) finalLine = finalLine.slice(0, -1);
-    lines[maxLines - 1] = `${finalLine}…`;
-  }
-  lines.forEach((line, index) => ctx.fillText(line, x, y + index * lineHeight));
-  return lines.length;
-}
-
-function drawEllipsizedCanvasText(ctx, text, x, y, maxWidth) {
-  const value = String(text || '').trim();
-  if (!value || maxWidth <= 0) return '';
-  if (ctx.measureText(value).width <= maxWidth) {
-    ctx.fillText(value, x, y);
-    return value;
-  }
-  let clipped = value;
-  const ellipsis = String.fromCharCode(8230);
-  while (clipped && ctx.measureText(clipped + ellipsis).width > maxWidth) clipped = clipped.slice(0, -1);
-  const result = clipped + ellipsis;
-  ctx.fillText(result, x, y);
-  return result;
-}
-
-function formatShareDate(value) {
-  if (!value) return '—';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return String(value).slice(0, 10);
-  return new Intl.DateTimeFormat(currentLanguage === 'zh' ? 'zh-CN' : 'en-US', {
-    year: 'numeric', month: 'short', day: '2-digit'
-  }).format(date);
-}
-
 function getSubmissionShareEvents(submission, startMode = 'experiment') {
   const events = autoSortNodes(submission.timelineNodes || [])
     .map(node => ({
@@ -1487,9 +1474,11 @@ function getSubmissionShareEvents(submission, startMode = 'experiment') {
       date: getNodeDate(node),
       type: node.type || 'special',
       status: computeNodeStatus(node),
+      completed: Boolean(node.completeDate),
+      due: !node.completeDate && !node.planDate && Boolean(node.dueDate),
       key: inferKey(node)
     }))
-    .filter(event => event.date)
+    .filter(event => event.date && Number.isFinite(new Date(event.date).getTime()))
     .sort((a, b) => new Date(a.date) - new Date(b.date));
   if (!events.length) return events;
   const analysis = analyzeSubmission(submission);
@@ -1513,6 +1502,7 @@ function normalizeShareVisibility(value = {}) {
     duration: value.duration !== false,
     dates: value.dates !== false,
     footer: value.footer !== false,
+    appearance: ['paper', 'ink', 'blueprint', 'minimal'].includes(value.appearance) ? value.appearance : 'paper',
     size,
     timelineStart
   };
@@ -1520,644 +1510,47 @@ function normalizeShareVisibility(value = {}) {
 
 function createSubmissionShareCanvas(submission, visibility = {}) {
   const visible = normalizeShareVisibility(visibility);
+  const snapshot = structuredClone(submission);
   const manuscript = db?.manuscripts?.find(item => item.id === submission.manuscriptId);
   const title = manuscript?.title || submission.title || t('untitledManuscript');
-  const journal = getSubmissionJournalName(submission);
-  const firstAuthor = getSubmissionFirstAuthor(submission, manuscript);
-  const analysis = analyzeSubmission(submission);
-  const events = getSubmissionShareEvents(submission, visible.timelineStart);
-  const totalNodesCount = events.length || (submission.timelineNodes || []).length || 1;
-  const isZh = (typeof currentLanguage !== 'undefined' && currentLanguage === 'zh');
-
-  const canvasWidth = 720;
-  const portraitContentHeight = 420
-    + events.length * 72
-    + (visible.title ? 145 : 0)
-    + (visible.journal ? 88 : 0)
-    + (visible.author ? 34 : 0)
-    + (visible.status || visible.duration ? 110 : 0);
-  const canvasHeight = visible.size === 'story'
-    ? Math.min(1920, Math.max(980, portraitContentHeight + 60))
-    : (visible.size === 'auto'
-      ? Math.max(1080, Math.round(720 + events.length * 96))
-      : Math.min(1350, Math.max(900, portraitContentHeight)));
-  const width = canvasWidth;
-  const height = canvasHeight;
-  const renderScale = 2;
-
-  const canvas = document.createElement('canvas');
-  canvas.width = canvasWidth * renderScale;
-  canvas.height = canvasHeight * renderScale;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Canvas is unavailable');
-
-  // Render at 2x density while preserving logical layout coordinates.
-  ctx.scale(renderScale, renderScale);
-
-  // Crisp text rendering
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
-
-  const ink = '#0f172a';
-  const inkSecondary = '#334155';
-  const canvasBg = '#f3f7fc';
-  const muted = '#64748b';
-  const subtle = '#94a3b8';
-  const paper = '#ffffff';
-  const accent = analysis.accepted ? '#059669' : '#2563eb';
-  const font = '"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", "Segoe UI", -apple-system, sans-serif';
-  const displayFont = font;
-  const shareTypeColors = {
-    research: { main: '#2563eb', bg: '#eff6ff', border: '#bfdbfe', label: isZh ? '研究' : 'Research' },
-    writing: { main: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe', label: isZh ? '写作' : 'Writing' },
-    submission: { main: '#0891b2', bg: '#ecfeff', border: '#a5f3fc', label: isZh ? '投稿' : 'Submission' },
-    review: { main: '#d97706', bg: '#fffbeb', border: '#fde68a', label: isZh ? '审稿' : 'Review' },
-    revision: { main: '#ea580c', bg: '#fff7ed', border: '#fed7aa', label: isZh ? '修回' : 'Revision' },
-    publication: { main: '#059669', bg: '#ecfdf5', border: '#a7f3d0', label: isZh ? '出版' : 'Publication' },
-    special: { main: '#64748b', bg: '#f8fafc', border: '#e2e8f0', label: isZh ? '节点' : 'Milestone' }
+  const analysis = analyzeSubmission(snapshot);
+  const events = getSubmissionShareEvents(snapshot, visible.timelineStart);
+  const zh = currentLanguage === 'zh';
+  const start = visible.timelineStart === 'submission'
+    ? analysis.submitDate
+    : analysis.experimentStartDate || events.find(event => event.type === 'research')?.date || events[0]?.date;
+  const status = normalizeSubmissionStatus(submission.status);
+  const end = analysis.accepted ? analysis.acceptDate || analysis.onlineDate
+    : status === 'rejected' ? submission.rejectedAt || submission.decisionDate : todayString();
+  const duration = start && end && new Date(start) <= new Date(end) ? getDaysDiff(start, end) : null;
+  const startLabel = visible.timelineStart === 'submission' ? (zh ? '投稿' : 'submission') : (zh ? '首个记录节点' : 'first recorded milestone');
+  const endLabel = analysis.accepted ? (zh ? '接收 / 发表' : 'acceptance / publication') : status === 'rejected' ? (zh ? '决定日期' : 'decision') : (zh ? '今天' : 'today');
+  const typeLabels = zh
+    ? { research: '研究', writing: '写作', submission: '投稿', review: '审稿', revision: '修回', publication: '出版', special: '节点' }
+    : { research: 'Research', writing: 'Writing', submission: 'Submission', review: 'Review', revision: 'Revision', publication: 'Publication', special: 'Milestone' };
+  const model = {
+    language: currentLanguage,
+    title,
+    journal: getSubmissionJournalName(submission),
+    author: getSubmissionFirstAuthor(submission, manuscript),
+    status: getSubmissionStatusLabel(submission.status),
+    duration,
+    durationLabel: zh ? `从${startLabel}至${endLabel}` : `From ${startLabel} to ${endLabel}`,
+    events: events.map(event => {
+      const parsed = new Date(event.date);
+      return {
+        name: event.name,
+        completed: event.completed,
+        typeLabel: typeLabels[event.type] || typeLabels.special,
+        dateKindLabel: event.completed ? (zh ? '已记录' : 'Recorded') : event.due ? (zh ? '截止日期' : 'Due date') : (zh ? '计划日期' : 'Planned'),
+        dateLabel: new Intl.DateTimeFormat(zh ? 'zh-CN' : 'en-US', { month: 'short', day: '2-digit', timeZone: 'UTC' }).format(parsed),
+        yearLabel: String(parsed.getUTCFullYear())
+      };
+    })
   };
-
-  // 1. Outer Canvas Background
-  const canvasGradient = ctx.createLinearGradient(0, 0, width, height);
-  canvasGradient.addColorStop(0, '#ffffff');
-  canvasGradient.addColorStop(0.3, '#f8fafd');
-  canvasGradient.addColorStop(1, canvasBg);
-  ctx.fillStyle = canvasGradient;
-  ctx.fillRect(0, 0, width, height);
-
-  // 2. Poster Container Card (Padded & Floating)
-  const cardX = 24;
-  const cardY = 24;
-  const cardW = width - 48; // 672
-  const cardH = height - 48;
-  // Keep a calm 24px safety inset between the floating card and its content.
-  const innerX = 48;
-  const innerW = width - 96; // 624
-  const innerRight = innerX + innerW; // 672
-
-  ctx.save();
-  ctx.shadowColor = 'rgba(15, 23, 42, 0.08)';
-  ctx.shadowBlur = 32;
-  ctx.shadowOffsetY = 12;
-  roundedRectPath(ctx, cardX, cardY, cardW, cardH, 22);
-  ctx.fillStyle = paper;
-  ctx.fill();
-  ctx.strokeStyle = '#cbd5e1';
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
-  ctx.restore();
-
-  // Top Accent Gradient Bar on Card
-  ctx.save();
-  roundedRectPath(ctx, cardX, cardY, cardW, cardH, 22);
-  ctx.clip();
-  const signalGradient = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY);
-  signalGradient.addColorStop(0, '#2563eb');
-  signalGradient.addColorStop(0.5, '#06b6d4');
-  signalGradient.addColorStop(1, '#10b981');
-  ctx.fillStyle = signalGradient;
-  ctx.fillRect(cardX, cardY, cardW, 5);
-  ctx.restore();
-
-  // 3. Top Header: RF / 01 Badge + Date
-  const headerY = cardY + 18;
-  roundedRectPath(ctx, innerX, headerY, 80, 26, 6);
-  ctx.fillStyle = 'rgba(37, 99, 235, 0.08)';
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(37, 99, 235, 0.2)';
-  ctx.lineWidth = 1;
-  ctx.stroke();
-
-  ctx.fillStyle = '#2563eb';
-  ctx.font = `800 12px ${font}`;
-  ctx.textAlign = 'center';
-  ctx.fillText('RF / 01', innerX + 40, headerY + 18);
-  ctx.textAlign = 'left';
-
-  ctx.textAlign = 'right';
-  ctx.fillStyle = muted;
-  ctx.font = `700 16px ${font}`;
-  ctx.fillText(formatShareDate(new Date()), innerRight, headerY + 18);
-  ctx.textAlign = 'left';
-
-  let cursorY = headerY + 34;
-
-  // 4. Hero Section: Journal & Title
-  const showJournal = visible.journal && journal;
-  const showTitle = visible.title;
-  const showAuthor = visible.author && firstAuthor;
-
-  if (showJournal || showTitle || showAuthor) {
-    if (showJournal && !showTitle) {
-      // Compact sleek Journal & Status Hero Banner
-      const heroCardH = 116;
-      roundedRectPath(ctx, innerX, cursorY, innerW, heroCardH, 14);
-      const journalBg = ctx.createLinearGradient(innerX, cursorY, innerRight, cursorY + heroCardH);
-      journalBg.addColorStop(0, '#06152f');
-      journalBg.addColorStop(0.55, '#123b7a');
-      journalBg.addColorStop(1, '#1d4ed8');
-      ctx.fillStyle = journalBg;
-      ctx.fill();
-
-      ctx.save();
-      roundedRectPath(ctx, innerX, cursorY, innerW, heroCardH, 14);
-      ctx.clip();
-      const heroGlow = ctx.createRadialGradient(innerRight - 110, cursorY + 16, 0, innerRight - 110, cursorY + 16, 210);
-      heroGlow.addColorStop(0, 'rgba(34, 211, 238, 0.30)');
-      heroGlow.addColorStop(1, 'rgba(34, 211, 238, 0)');
-      ctx.fillStyle = heroGlow;
-      ctx.fillRect(innerX, cursorY, innerW, heroCardH);
-      ctx.strokeStyle = 'rgba(125, 211, 252, 0.16)';
-      ctx.lineWidth = 1;
-      for (let gridX = innerX + 18; gridX < innerRight; gridX += 34) {
-        ctx.beginPath();
-        ctx.moveTo(gridX, cursorY);
-        ctx.lineTo(gridX, cursorY + heroCardH);
-        ctx.stroke();
-      }
-      ctx.strokeStyle = 'rgba(196, 181, 253, 0.24)';
-      ctx.beginPath();
-      ctx.moveTo(innerX + innerW * 0.48, cursorY + heroCardH);
-      ctx.lineTo(innerX + innerW * 0.72, cursorY);
-      ctx.stroke();
-      ctx.restore();
-
-      // Glowing left accent
-      ctx.fillStyle = '#2dd4bf';
-      ctx.beginPath();
-      ctx.roundRect(innerX, cursorY, 6, heroCardH, [14, 0, 0, 14]);
-      ctx.fill();
-
-      // Left info
-      ctx.fillStyle = 'rgba(186, 230, 253, 0.9)';
-      ctx.font = `800 12px ${font}`;
-      ctx.fillText(t('shareJournalLabel'), innerX + 24, cursorY + 28);
-
-      ctx.fillStyle = '#ffffff';
-      const compactJournalMaxWidth = innerW - 240;
-      let compactJournalSize = 30;
-      let compactJournalLines = [];
-      while (compactJournalSize > 16) {
-        ctx.font = `800 ${compactJournalSize}px ${displayFont}`;
-        compactJournalLines = canvasTextLines(ctx, journal, compactJournalMaxWidth);
-        if (compactJournalLines.length <= 2) break;
-        compactJournalSize -= 1;
-      }
-      ctx.font = `800 ${compactJournalSize}px ${displayFont}`;
-      compactJournalLines = canvasTextLines(ctx, journal, compactJournalMaxWidth);
-      compactJournalLines.forEach((line, index) => ctx.fillText(line, innerX + 24, cursorY + 62 + index * Math.max(23, compactJournalSize + 3)));
-
-      // Right status pill in hero
-      const statusLabel = getSubmissionStatusLabel(submission.status);
-      ctx.font = `700 16px ${font}`;
-      const stW = ctx.measureText(statusLabel).width + 36;
-      const stX = innerRight - stW - 20;
-
-      roundedRectPath(ctx, stX, cursorY + 26, stW, 36, 18);
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-
-      ctx.fillStyle = '#38bdf8';
-      ctx.beginPath();
-      ctx.arc(stX + 16, cursorY + 44, 4, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = '#ffffff';
-      ctx.fillText(statusLabel, stX + 26, cursorY + 49);
-
-      cursorY += heroCardH + 10;
-    } else {
-      // Full Hero with Title
-      if (showJournal) {
-        const journalCardH = 124;
-        roundedRectPath(ctx, innerX, cursorY, innerW, journalCardH, 12);
-        const journalBg = ctx.createLinearGradient(innerX, cursorY, innerRight, cursorY + journalCardH);
-        journalBg.addColorStop(0, '#071a3a');
-        journalBg.addColorStop(0.58, '#164e9b');
-        journalBg.addColorStop(1, '#2563eb');
-        ctx.fillStyle = journalBg;
-        ctx.fill();
-
-        ctx.save();
-        roundedRectPath(ctx, innerX, cursorY, innerW, journalCardH, 12);
-        ctx.clip();
-        const journalGlow = ctx.createRadialGradient(innerRight - 90, cursorY + 18, 0, innerRight - 90, cursorY + 18, 180);
-        journalGlow.addColorStop(0, 'rgba(34, 211, 238, 0.28)');
-        journalGlow.addColorStop(1, 'rgba(34, 211, 238, 0)');
-        ctx.fillStyle = journalGlow;
-        ctx.fillRect(innerX, cursorY, innerW, journalCardH);
-        ctx.strokeStyle = 'rgba(125, 211, 252, 0.14)';
-        ctx.lineWidth = 1;
-        for (let gridX = innerX + 18; gridX < innerRight; gridX += 34) {
-          ctx.beginPath();
-          ctx.moveTo(gridX, cursorY);
-          ctx.lineTo(gridX, cursorY + journalCardH);
-          ctx.stroke();
-        }
-        ctx.restore();
-
-        ctx.fillStyle = '#2dd4bf';
-        ctx.beginPath();
-        ctx.roundRect(innerX, cursorY, 5, journalCardH, [12, 0, 0, 12]);
-        ctx.fill();
-
-        ctx.fillStyle = 'rgba(186, 230, 253, 0.85)';
-        ctx.font = `800 12px ${font}`;
-        ctx.fillText(t('shareJournalLabel'), innerX + 22, cursorY + 25);
-
-        ctx.fillStyle = '#ffffff';
-        const journalMaxWidth = innerW - 44;
-        let journalSize = 30;
-        let journalLines = [];
-        while (journalSize > 16) {
-          ctx.font = `800 ${journalSize}px ${displayFont}`;
-          journalLines = canvasTextLines(ctx, journal, journalMaxWidth);
-          if (journalLines.length <= 2) break;
-          journalSize -= 1;
-        }
-        ctx.font = `800 ${journalSize}px ${displayFont}`;
-        journalLines = canvasTextLines(ctx, journal, journalMaxWidth);
-        journalLines.forEach((line, index) => ctx.fillText(line, innerX + 22, cursorY + 60 + index * Math.max(24, journalSize + 3)));
-        cursorY += journalCardH + 8;
-      }
-
-      if (showTitle) {
-        ctx.fillStyle = ink;
-        ctx.font = `800 38px ${displayFont}`;
-        const titleLineCount = drawWrappedCanvasText(ctx, title, innerX, cursorY + 38, innerW, 48, 3);
-        cursorY += 38 + (titleLineCount - 1) * 48 + 16;
-      }
-
-      if (showAuthor) {
-        ctx.font = `700 16px ${font}`;
-        const labelW = ctx.measureText(t('firstAuthorLabel')).width;
-        ctx.font = `600 15px ${font}`;
-        const authorW = ctx.measureText(firstAuthor).width;
-        const authorPillW = labelW + authorW + 30;
-
-        roundedRectPath(ctx, innerX, cursorY, authorPillW, 30, 8);
-        ctx.fillStyle = 'rgba(37, 99, 235, 0.06)';
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(37, 99, 235, 0.16)';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-
-        ctx.fillStyle = '#2563eb';
-        ctx.font = `700 16px ${font}`;
-        ctx.fillText(t('firstAuthorLabel'), innerX + 10, cursorY + 20);
-
-        ctx.fillStyle = inkSecondary;
-        ctx.font = `600 15px ${font}`;
-        ctx.fillText(firstAuthor, innerX + 10 + labelW + 10, cursorY + 20);
-        cursorY += 40;
-      }
-    }
-
-    ctx.fillStyle = '#f1f5f9';
-    ctx.fillRect(innerX, cursorY + 2, innerW, 1.5);
-    cursorY += 18;
-  }
-
-  // 5. Key Metrics: Dashboard Stat Cards
-  const duration = analysis.display?.value;
-  const showMetrics = visible.status || visible.duration;
-
-  if (showMetrics) {
-    const cardH = 100;
-    const both = visible.duration && visible.status;
-    const colW = both ? (innerW - 18) / 2 : innerW;
-
-    if (visible.duration) {
-      roundedRectPath(ctx, innerX, cursorY, colW, cardH, 12);
-      ctx.fillStyle = '#f8fafc';
-      ctx.fill();
-      ctx.strokeStyle = '#cbd5e1';
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-
-      // Top mini accent indicator
-      ctx.fillStyle = '#2563eb';
-      ctx.fillRect(innerX + 22, cursorY, 36, 3);
-
-      ctx.fillStyle = muted;
-      ctx.font = `700 16px ${font}`;
-      ctx.fillText(t('shareJourneyDuration'), innerX + 22, cursorY + 28);
-
-      const durationStr = duration === null || duration === undefined ? '—' : String(duration);
-      ctx.fillStyle = ink;
-      ctx.font = `800 48px ${displayFont}`;
-      ctx.fillText(durationStr, innerX + 22, cursorY + 74);
-      const numW = ctx.measureText(durationStr).width;
-
-      if (duration !== null && duration !== undefined) {
-        ctx.fillStyle = accent;
-        ctx.font = `800 18px ${font}`;
-        ctx.fillText(t('days'), innerX + 22 + numW + 8, cursorY + 70);
-      }
-
-      ctx.textAlign = 'right';
-      ctx.fillStyle = subtle;
-      ctx.font = `600 13px ${font}`;
-      ctx.fillText(isZh ? '自启动至今' : 'Active tracking', innerX + colW - 22, cursorY + 70);
-      ctx.textAlign = 'left';
-    }
-
-    if (visible.status) {
-      const statusX = visible.duration ? innerX + colW + 18 : innerX;
-      roundedRectPath(ctx, statusX, cursorY, colW, cardH, 12);
-      ctx.fillStyle = '#f8fafc';
-      ctx.fill();
-      ctx.strokeStyle = '#cbd5e1';
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-
-      ctx.fillStyle = analysis.accepted ? '#059669' : '#0891b2';
-      ctx.fillRect(statusX + 22, cursorY, 36, 3);
-
-      ctx.fillStyle = muted;
-      ctx.font = `700 16px ${font}`;
-      ctx.fillText(t('shareJourneyStatus'), statusX + 22, cursorY + 28);
-
-      const statusText = getSubmissionStatusLabel(submission.status);
-      ctx.font = `800 18px ${font}`;
-      const stW = ctx.measureText(statusText).width;
-      const pillW = Math.min(colW - 44, stW + 38);
-
-      roundedRectPath(ctx, statusX + 22, cursorY + 42, pillW, 34, 8);
-      ctx.fillStyle = analysis.accepted ? '#ecfdf5' : '#eff6ff';
-      ctx.fill();
-      ctx.strokeStyle = analysis.accepted ? '#a7f3d0' : '#bfdbfe';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-
-      ctx.fillStyle = accent;
-      ctx.beginPath();
-      ctx.arc(statusX + 22 + 13, cursorY + 59, 3.5, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = analysis.accepted ? '#065f46' : '#1e40af';
-      ctx.font = `800 18px ${font}`;
-      ctx.fillText(statusText, statusX + 22 + 24, cursorY + 65);
-
-      ctx.textAlign = 'right';
-      ctx.fillStyle = subtle;
-      ctx.font = `600 13px ${font}`;
-      ctx.fillText(isZh ? '当前流程' : 'Current stage', statusX + colW - 22, cursorY + 70);
-      ctx.textAlign = 'left';
-    }
-
-    ctx.fillStyle = '#f1f5f9';
-    ctx.fillRect(innerX, cursorY + cardH + 10, innerW, 1.5);
-    cursorY += cardH + 18;
-  }
-
-  // 6. Timeline Milestones Section
-  ctx.fillStyle = ink;
-  ctx.font = `800 22px ${font}`;
-  ctx.fillText(t('shareJourneyTimeline'), innerX, cursorY + 4);
-
-  // Progress Pill Badge
-  roundedRectPath(ctx, innerRight - 88, cursorY - 14, 88, 24, 12);
-  ctx.fillStyle = '#f1f5f9';
-  ctx.fill();
-  ctx.strokeStyle = '#cbd5e1';
-  ctx.lineWidth = 1;
-  ctx.stroke();
-
-  ctx.fillStyle = '#475569';
-  ctx.font = `700 16px ${font}`;
-  ctx.textAlign = 'center';
-  ctx.fillText(`${String(events.length).padStart(2, '0')} / ${String(totalNodesCount).padStart(2, '0')}`, innerRight - 44, cursorY + 2);
-  ctx.textAlign = 'left';
-
-  cursorY += 18;
-
-  const footerSpace = visible.footer ? 52 : 18;
-  const availableTimelineHeight = (cardY + cardH) - cursorY - footerSpace;
-
-  // Render bottom Journey Summary Card when there are fewer nodes
-  const shouldRenderSummaryCard = events.length <= 5 && availableTimelineHeight > (events.length * 72 + 130);
-  const summaryCardH = shouldRenderSummaryCard ? 92 : 0;
-  const timelineUsableHeight = availableTimelineHeight - summaryCardH - (shouldRenderSummaryCard ? 16 : 0);
-
-  const minRowGap = 60;
-  const maxRowGap = shouldRenderSummaryCard ? 82 : (visible.size === 'story' ? 150 : 88);
-  const rowGap = events.length > 1
-    ? Math.min(maxRowGap, Math.max(minRowGap, (timelineUsableHeight - 50) / (events.length - 1)))
-    : 72;
-  const compactTimeline = rowGap < 78;
-  const denseTimeline = events.length >= 7;
-
-  const railX = innerX + 28;
-  const firstY = cursorY + 22;
-  const lastY = firstY + Math.max(0, events.length - 1) * rowGap;
-
-  if (events.length > 1) {
-    ctx.strokeStyle = '#cbd5e1';
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    ctx.moveTo(railX, firstY);
-    ctx.lineTo(railX, lastY);
-    ctx.stroke();
-  }
-
-  if (!events.length) {
-    roundedRectPath(ctx, innerX, cursorY + 16, innerW, 72, 10);
-    ctx.fillStyle = '#f8fafc';
-    ctx.fill();
-    ctx.fillStyle = muted;
-    ctx.font = `600 15px ${font}`;
-    ctx.fillText(t('shareJourneyNoEvents'), innerX + 24, cursorY + 56);
-  } else {
-    events.forEach((event, index) => {
-      const y = firstY + index * rowGap;
-      const typeStyle = shareTypeColors[event.type] || shareTypeColors.special;
-      const contentX = railX + 36;
-      const rowW = innerRight - contentX;
-      const rowCardH = denseTimeline ? 56 : (compactTimeline ? 58 : 64);
-      const rowCardY = y - rowCardH / 2;
-
-      // Soft Milestone Row Container Card
-      roundedRectPath(ctx, contentX, rowCardY, rowW, rowCardH, 10);
-      ctx.fillStyle = index % 2 === 0 ? '#f8fafc' : '#ffffff';
-      ctx.fill();
-      ctx.save();
-      roundedRectPath(ctx, contentX, rowCardY, rowW, rowCardH, 10);
-      ctx.clip();
-      ctx.fillStyle = typeStyle.main;
-      ctx.globalAlpha = 0.9;
-      ctx.fillRect(contentX, rowCardY, 4, rowCardH);
-      ctx.globalAlpha = 1;
-      ctx.restore();
-      ctx.strokeStyle = '#e2e8f0';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-
-      // Outer Numbered Milestone Circle
-      ctx.fillStyle = typeStyle.bg;
-      ctx.beginPath();
-      ctx.arc(railX, y, 15, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = typeStyle.main;
-      ctx.lineWidth = 3;
-      ctx.stroke();
-
-      ctx.fillStyle = ink;
-      ctx.font = `800 12px ${font}`;
-      ctx.textAlign = 'center';
-      ctx.fillText(String(index + 1).padStart(2, '0'), railX, y + 4);
-      ctx.textAlign = 'left';
-
-      // Event Type Tag Pill inside row card
-      ctx.font = `700 13px ${font}`;
-      const tagText = typeStyle.label;
-      const tagW = ctx.measureText(tagText).width + 14;
-      roundedRectPath(ctx, contentX + 14, y - 11, tagW, 22, 5);
-      ctx.fillStyle = typeStyle.bg;
-      ctx.fill();
-      ctx.strokeStyle = typeStyle.border;
-      ctx.lineWidth = 1;
-      ctx.stroke();
-
-      ctx.fillStyle = typeStyle.main;
-      ctx.fillText(tagText, contentX + 21, y + 4);
-
-      // Event Name
-      const nameX = contentX + 14 + tagW + 12;
-      const maxNameW = visible.dates ? rowW - tagW - 214 : rowW - tagW - 36;
-      ctx.fillStyle = ink;
-      ctx.font = `700 ${denseTimeline ? 18 : 20}px ${font}`;
-      drawEllipsizedCanvasText(ctx, event.name, nameX, y + 5, maxNameW);
-
-      // Event Date Badge on the Right
-      if (visible.dates) {
-        const dateText = formatShareDate(event.date);
-        ctx.font = `700 16px ${font}`;
-        const dateW = ctx.measureText(dateText).width + 28;
-        const dateX = innerRight - dateW - 16;
-
-        roundedRectPath(ctx, dateX, y - 15, dateW, 30, 8);
-        ctx.fillStyle = typeStyle.bg;
-        ctx.fill();
-        ctx.strokeStyle = typeStyle.border;
-        ctx.lineWidth = 1;
-        ctx.stroke();
-
-        ctx.fillStyle = typeStyle.main;
-        ctx.fillText(dateText, dateX + 14, y + 5);
-      }
-    });
-
-    // Milestone Summary Insights Card at the Bottom
-    if (shouldRenderSummaryCard && events.length > 0) {
-      const sumY = lastY + 56;
-      const sumH = Math.min(104, (cardY + cardH) - sumY - footerSpace - 8);
-      if (sumH >= 80) {
-        roundedRectPath(ctx, innerX, sumY, innerW, sumH, 12);
-        ctx.fillStyle = '#f8fafc';
-        ctx.fill();
-        ctx.strokeStyle = '#cbd5e1';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-
-        const summaryAccent = ctx.createLinearGradient(innerX + 20, sumY, innerX + 180, sumY);
-        summaryAccent.addColorStop(0, accent);
-        summaryAccent.addColorStop(1, '#22d3ee');
-        ctx.fillStyle = summaryAccent;
-        ctx.fillRect(innerX + 20, sumY, 48, 3);
-        ctx.fillStyle = accent;
-        ctx.beginPath();
-        ctx.arc(innerX + 24, sumY + 22, 3, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = ink;
-        ctx.font = `800 13px ${font}`;
-        ctx.fillText(isZh ? '科研里程碑阶段小结' : 'MILESTONE SUMMARY', innerX + 34, sumY + 26);
-
-        const colW = (innerW - 56) / 3;
-        const firstEvent = events[0];
-        const lastEvent = events[events.length - 1];
-
-        // Col 1: First Milestone
-        const c1X = innerX + 20;
-        ctx.fillStyle = muted;
-        ctx.font = `600 12px ${font}`;
-        ctx.fillText(isZh ? '起步节点' : 'Start Milestone', c1X, sumY + 48);
-        ctx.fillStyle = ink;
-        ctx.font = `700 16px ${font}`;
-        ctx.fillText(formatShareDate(firstEvent?.date), c1X, sumY + 72);
-
-        // Col 2: Latest Milestone
-        const c2X = c1X + colW + 8;
-        ctx.strokeStyle = '#e2e8f0';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(c2X - 8, sumY + 36);
-        ctx.lineTo(c2X - 8, sumY + sumH - 14);
-        ctx.stroke();
-        ctx.fillStyle = muted;
-        ctx.font = `600 12px ${font}`;
-        ctx.fillText(isZh ? '当前进展' : 'Latest Milestone', c2X, sumY + 48);
-        ctx.fillStyle = ink;
-        ctx.font = `700 16px ${font}`;
-        drawWrappedCanvasText(ctx, lastEvent?.name || '—', c2X, sumY + 72, colW - 18, 18, 1);
-
-        // Col 3: Stage Span
-        const c3X = c2X + colW + 8;
-        ctx.beginPath();
-        ctx.moveTo(c3X - 8, sumY + 36);
-        ctx.lineTo(c3X - 8, sumY + sumH - 14);
-        ctx.stroke();
-        ctx.fillStyle = muted;
-        ctx.font = `600 12px ${font}`;
-        ctx.fillText(isZh ? '阶段历时' : 'Stage Span', c3X, sumY + 48);
-        const spanDays = getDaysDiff(firstEvent?.date, lastEvent?.date);
-        ctx.fillStyle = accent;
-        ctx.font = `800 18px ${font}`;
-        ctx.fillText(spanDays !== null ? `${spanDays} ${t('days')}` : '—', c3X, sumY + 72);
-      }
-    }
-  }
-
-  // 7. Footer Branding & Privacy Attribution
-  if (visible.footer) {
-    const footerY = (cardY + cardH) - 24;
-    ctx.fillStyle = '#f1f5f9';
-    ctx.fillRect(innerX, footerY - 16, innerW, 1);
-
-    // Mini Logo Icon
-    roundedRectPath(ctx, innerX, footerY - 11, 16, 16, 4);
-    const logoGrad = ctx.createLinearGradient(innerX, footerY - 11, innerX + 16, footerY + 5);
-    logoGrad.addColorStop(0, '#2563eb');
-    logoGrad.addColorStop(1, '#06b6d4');
-    ctx.fillStyle = logoGrad;
-    ctx.fill();
-
-    ctx.fillStyle = '#ffffff';
-    ctx.font = `800 8px ${font}`;
-    ctx.textAlign = 'center';
-    ctx.fillText('RF', innerX + 8, footerY + 1);
-    ctx.textAlign = 'left';
-
-    ctx.fillStyle = ink;
-    ctx.font = `800 13px ${font}`;
-    ctx.fillText('RESEARCHFLOW', innerX + 24, footerY + 2);
-
-    ctx.fillStyle = subtle;
-    ctx.font = `600 12px ${font}`;
-    ctx.fillText('•  JOURNEY MAP', innerX + 150, footerY + 2);
-
-    ctx.fillStyle = subtle;
-    ctx.font = `500 12px ${font}`;
-    ctx.textAlign = 'right';
-    ctx.fillText(t('shareJourneyFooter'), innerRight, footerY + 2);
-    ctx.textAlign = 'left';
-  }
-
-  return { canvas, title };
+  const result = window.RFShareCard.render(model, visible);
+  // Hidden manuscript titles must not leak through filenames or native share text.
+  return { ...result, title: visible.title ? title : (zh ? '投稿历程' : 'Submission journey') };
 }
 
 function canvasToPngBlob(canvas) {
@@ -2171,7 +1564,7 @@ function safeShareFileName(title) {
     .replace(/[<>:"/\\|?*\u0000-\u001f]/g, '')
     .replace(/\s+/g, '-')
     .slice(0, 72);
-  return `${base || 'submission-journey'}-journey.png`;
+  return `${base || 'submission'}${/journey$/i.test(base) ? '' : '-journey'}.png`;
 }
 
 function downloadShareBlob(blob, fileName) {
@@ -2231,6 +1624,7 @@ async function openSubmissionSharePreview(submissionId, triggerButton) {
               <strong>${escapeHTML(t('shareVisibilityTitle'))}</strong>
               <small>${escapeHTML(t('shareVisibilityHelp'))}</small>
             </div>
+            <label class="share-size-control" for="share-appearance"><span>${escapeHTML(t('shareAppearance'))}</span><select id="share-appearance"><option value="paper" ${visibility.appearance === 'paper' ? 'selected' : ''}>${escapeHTML(t('sharePaper'))}</option><option value="ink" ${visibility.appearance === 'ink' ? 'selected' : ''}>${escapeHTML(t('shareInk'))}</option><option value="blueprint" ${visibility.appearance === 'blueprint' ? 'selected' : ''}>${escapeHTML(t('shareBlueprint'))}</option><option value="minimal" ${visibility.appearance === 'minimal' ? 'selected' : ''}>${escapeHTML(t('shareMinimal'))}</option></select></label>
             <div class="share-visibility-list">${visibilityControls}</div>
             <div class="share-timeline-start-control">
               <span>${escapeHTML(t('shareTimelineStart'))}</span>
@@ -2249,12 +1643,13 @@ async function openSubmissionSharePreview(submissionId, triggerButton) {
             </label>
           </aside>
           <div class="share-preview-frame" data-render-state="idle" aria-live="polite">
-            <div class="share-preview-loading" data-share-loading>${escapeHTML(t('shareJourneyReady'))}</div>
+            <div class="share-preview-loading" data-share-loading>${escapeHTML(t('shareRendering'))}</div>
             <img alt="${escapeHTML(t('shareJourneyTitle'))}">
           </div>
         </div>
         <div class="share-preview-actions">
-          <span class="share-local-note">● ${escapeHTML(t('shareJourneyHelp'))}</span>
+          <span class="share-local-note" id="share-output-details" role="status">${escapeHTML(t('shareJourneyHelp'))}</span>
+          <button class="btn-secondary" id="btn-share-zoom" type="button" aria-pressed="false">${escapeHTML(t('shareZoom'))}</button>
           <button class="btn-primary" id="btn-share-system" type="button">${escapeHTML(t('shareJourneySystem'))}</button>
           <button class="btn-secondary" id="btn-share-download" type="button">${escapeHTML(t('shareJourneyDownload'))}</button>
           <button class="btn-secondary" id="btn-share-copy" type="button">${escapeHTML(t('shareJourneyCopy'))}</button>
@@ -2265,92 +1660,102 @@ async function openSubmissionSharePreview(submissionId, triggerButton) {
     const image = modalContent.querySelector('.share-preview-frame img');
     const previewFrame = modalContent.querySelector('.share-preview-frame');
     const loading = modalContent.querySelector('[data-share-loading]');
-    const renderPreview = async () => {
-      const renderId = ++previewRenderId;
+    document.getElementById('btn-share-zoom').addEventListener('click', event => {
+      const zoomed = previewFrame.classList.toggle('is-zoomed');
+      event.currentTarget.setAttribute('aria-pressed', String(zoomed));
+      event.currentTarget.textContent = t(zoomed ? 'shareFit' : 'shareZoom');
+      previewFrame.scrollTo({ top: 0, left: 0 });
+    });
+    let closed = false;
+    let renderTimer = null;
+    let preferenceWrites = Promise.resolve();
+    const pendingUrls = new Set();
+    const actionButtons = modalContent.querySelectorAll('#btn-share-system, #btn-share-download, #btn-share-copy');
+    const setBusy = () => {
+      currentBlob = null;
+      actionButtons.forEach(button => { button.disabled = true; });
       previewFrame.dataset.renderState = 'rendering';
-      previewFrame.dataset.shareSize = visibility.size;
+      previewFrame.setAttribute('aria-busy', 'true');
       loading.hidden = false;
       image.classList.add('is-rendering');
-      const { canvas, title } = createSubmissionShareCanvas(submission, visibility);
-      const blob = await canvasToPngBlob(canvas);
-      const nextUrl = URL.createObjectURL(blob);
-      if (renderId !== previewRenderId) {
-        URL.revokeObjectURL(nextUrl);
-        return;
-      }
-      const previousUrl = activeSharePreviewUrl;
-      activeSharePreviewUrl = nextUrl;
-      currentBlob = blob;
-      currentTitle = title;
-      currentFileName = safeShareFileName(title);
-      await new Promise((resolve, reject) => {
-        image.onload = () => {
-          loading.hidden = true;
-          image.classList.remove('is-rendering');
-          previewFrame.dataset.renderState = 'ready';
-          previewFrame.scrollTo({ top: 0, left: 0 });
-          if (previousUrl) URL.revokeObjectURL(previousUrl);
-          resolve();
-        };
-        image.onerror = () => reject(new Error('Share image preview failed to load'));
-        image.src = nextUrl;
-      });
     };
-
-    const renderPreviewSafe = async () => {
-      const requestedRenderId = previewRenderId + 1;
+    activeSharePreviewCleanup = () => {
+      closed = true;
+      previewRenderId += 1;
+      clearTimeout(renderTimer);
+      currentBlob = null;
+      pendingUrls.forEach(url => URL.revokeObjectURL(url));
+      pendingUrls.clear();
+      activeSharePreviewCleanup = null;
+    };
+    const renderPreviewSafe = async (renderId) => {
+      let nextUrl = '';
       try {
-        await renderPreview();
+        if (closed || renderId !== previewRenderId) return;
+        const chosen = { ...visibility };
+        const { canvas, title } = createSubmissionShareCanvas(submission, chosen);
+        const blob = await canvasToPngBlob(canvas);
+        if (closed || renderId !== previewRenderId) return;
+        nextUrl = URL.createObjectURL(blob);
+        pendingUrls.add(nextUrl);
+        const decoded = new Image();
+        decoded.src = nextUrl;
+        await decoded.decode();
+        if (closed || renderId !== previewRenderId) return;
+        const previousUrl = activeSharePreviewUrl;
+        image.src = nextUrl;
+        await image.decode();
+        if (closed || renderId !== previewRenderId) return;
+        activeSharePreviewUrl = nextUrl;
+        pendingUrls.delete(nextUrl);
+        currentBlob = blob;
+        currentTitle = title;
+        currentFileName = safeShareFileName(title);
+        previewFrame.dataset.shareSize = chosen.size;
+        previewFrame.dataset.appearance = chosen.appearance;
+        previewFrame.dataset.renderState = 'ready';
+        previewFrame.setAttribute('aria-busy', 'false');
+        image.classList.remove('is-rendering');
+        loading.hidden = true;
+        actionButtons.forEach(button => { button.disabled = false; });
+        document.getElementById('share-output-details').textContent = `${canvas.width} × ${canvas.height} · PNG · ${Math.ceil(blob.size / 1024)} KB`;
+        if (previousUrl) URL.revokeObjectURL(previousUrl);
       } catch (error) {
-        if (requestedRenderId !== previewRenderId) return;
+        if (closed || renderId !== previewRenderId) return;
         loading.hidden = true;
         image.classList.remove('is-rendering');
         previewFrame.dataset.renderState = 'error';
-        currentBlob = null;
+        previewFrame.setAttribute('aria-busy', 'false');
         showGlobalToast(t('shareJourneyFailed'), 'warning');
+      } finally {
+        if (nextUrl && pendingUrls.has(nextUrl)) {
+          URL.revokeObjectURL(nextUrl);
+          pendingUrls.delete(nextUrl);
+        }
       }
     };
-
-    const persistShareVisibility = async () => {
-      try {
-        await chrome.storage.local.set({ [SHARE_PREFS_STORAGE_KEY]: visibility });
-      } catch {
-        showGlobalToast(t('shareJourneyFailed'), 'warning');
-      }
+    const updatePreview = patch => {
+      visibility = normalizeShareVisibility({ ...visibility, ...patch });
+      const snapshot = { ...visibility };
+      preferenceWrites = preferenceWrites.catch(() => {}).then(() => chrome.storage.local.set({ [SHARE_PREFS_STORAGE_KEY]: snapshot }));
+      preferenceWrites.catch(() => { if (!closed) showGlobalToast(t('shareJourneyFailed'), 'warning'); });
+      // Invalidate the downloadable image synchronously before the first async yield.
+      const renderId = ++previewRenderId;
+      setBusy();
+      clearTimeout(renderTimer);
+      renderTimer = setTimeout(() => renderPreviewSafe(renderId), 80);
     };
-
-    await renderPreviewSafe();
-    modalContent.querySelectorAll('[data-share-field]').forEach((control) => {
-      control.addEventListener('change', async () => {
-        previewFrame.dataset.renderState = 'pending';
-        loading.hidden = false;
-        image.classList.add('is-rendering');
-        visibility = normalizeShareVisibility({
-          ...visibility,
-          [control.dataset.shareField]: control.checked
-        });
-        await persistShareVisibility();
-        await renderPreviewSafe();
-      });
+    modalContent.querySelectorAll('[data-share-field]').forEach(control => {
+      control.addEventListener('change', () => updatePreview({ [control.dataset.shareField]: control.checked }));
     });
-    modalContent.querySelectorAll('input[name="share-timeline-start"]').forEach((control) => {
-      control.addEventListener('change', async () => {
-        previewFrame.dataset.renderState = 'pending';
-        loading.hidden = false;
-        image.classList.add('is-rendering');
-        visibility = normalizeShareVisibility({ ...visibility, timelineStart: control.value });
-        await persistShareVisibility();
-        await renderPreviewSafe();
-      });
+    modalContent.querySelectorAll('input[name="share-timeline-start"]').forEach(control => {
+      control.addEventListener('change', () => updatePreview({ timelineStart: control.value }));
     });
-    document.getElementById('share-image-size')?.addEventListener('change', async (event) => {
-      previewFrame.dataset.renderState = 'pending';
-      loading.hidden = false;
-      image.classList.add('is-rendering');
-      visibility = normalizeShareVisibility({ ...visibility, size: event.target.value });
-      await persistShareVisibility();
-      await renderPreviewSafe();
-    });
+    document.getElementById('share-image-size')?.addEventListener('change', event => updatePreview({ size: event.target.value }));
+    document.getElementById('share-appearance')?.addEventListener('change', event => updatePreview({ appearance: event.target.value }));
+    setBusy();
+    await renderPreviewSafe(++previewRenderId);
+    if (closed) return;
 
     const systemButton = document.getElementById('btn-share-system');
     const canSystemShare = Boolean(navigator.share && navigator.canShare);
@@ -2450,6 +1855,26 @@ function updateSyncStatus(state, text) {
 }
 
 function setupSyncListeners() {
+  chrome.runtime.onMessage.addListener(message => {
+    if (message.action !== 'SYNC_STATE') return;
+    const zh = currentLanguage === 'zh';
+    if (message.syncing) updateSyncStatus('syncing', zh ? '正在同步云端…' : 'Syncing to cloud…');
+    else if (!message.success) updateSyncStatus('error', zh ? '同步失败，本机数据已保留' : 'Sync failed; local data retained');
+    else updateSyncStatus('active', message.localOnly ? t('syncLocal') : message.pending
+      ? (zh ? '本机有新修改，等待同步' : 'New local changes pending')
+      : (zh ? '云端同步完成' : 'Cloud sync complete'));
+  });
+  window.addEventListener('researchflow-save-state', event => {
+    const { state, error } = event.detail;
+    const zh = currentLanguage === 'zh';
+    if (state === 'error') {
+      updateSyncStatus('error', zh ? '未保存，请重试' : 'Not saved — please retry');
+      showGlobalToast(error, 'error');
+    } else {
+      updateSyncStatus(state === 'saving' ? 'syncing' : 'active', state === 'saving'
+        ? (zh ? '正在保存…' : 'Saving…') : t('syncLocal'));
+    }
+  });
   const syncBtn = document.getElementById('btn-manual-sync');
   syncBtn.addEventListener('click', async () => {
     syncBtn.disabled = true;
@@ -2460,7 +1885,7 @@ function setupSyncListeners() {
       const res = await window.storage.syncDatabaseNow();
       if (res.success) {
         showGlobalToast('Database synchronization complete!', 'success');
-        updateSyncStatus('active', 'Synced');
+        updateSyncStatus('active', res.localOnly ? t('syncLocal') : (res.pending ? (currentLanguage === 'zh' ? '本机有新修改，等待同步' : 'New local changes pending') : (currentLanguage === 'zh' ? '云端同步完成' : 'Cloud sync complete')));
       } else {
         showGlobalToast(`Sync failed: ${res.error}`, 'error');
         updateSyncStatus('error', 'Sync Failed');
@@ -3629,6 +3054,7 @@ function getSubmissionBadgeClass(sub) {
 // --- VIEW 1: DASHBOARD OVERVIEW ---
 // --- VIEW 1: DASHBOARD OVERVIEW ---
 function renderDashboard() {
+  const manuscriptsById = new Map(db.manuscripts.map(manuscript => [manuscript.id, manuscript]));
   // Calculate interactive stats counts
   const allSubmissions = db.submissions;
   const visibleSubmissions = allSubmissions.filter(s => s.status !== 'rejected');
@@ -3640,7 +3066,7 @@ function renderDashboard() {
     }
     timelineChanged = normalizeSubmissionTimeline(sub) || timelineChanged;
   });
-  if (timelineChanged) window.storage.saveAll(db).catch(console.error);
+  // Rendering is read-only with respect to persistence; user actions own commits.
   const acceptedCount = visibleSubmissions.filter(isAcceptedSubmission).length;
   const activeCount = visibleSubmissions.filter(s => !isAcceptedSubmission(s)).length;
   const totalCount = allSubmissions.length;
@@ -3684,7 +3110,7 @@ function renderDashboard() {
   } else {
     submissionsList.forEach((sub, index) => {
       const displayIndex = submissionsList.length - index;
-      const man = db.manuscripts.find(m => m.id === sub.manuscriptId);
+      const man = manuscriptsById.get(sub.manuscriptId);
       const manTitle = man ? man.title : t('untitledManuscript');
       const journalName = getSubmissionJournalName(sub);
       const firstAuthor = getSubmissionFirstAuthor(sub, man);
@@ -4667,7 +4093,20 @@ function focusSubmissionEditCenter() {
   }
 }
 
+function canLeaveSubmissionEditor() {
+  const editor = document.getElementById('submission-entry-editor-panel');
+  const state = editor?.querySelector('[data-submission-autosave-status]')?.dataset.state;
+  if (!editor || !['pending', 'invalid', 'error'].includes(state)) return true;
+  const plan = window.RFUI.buildSubmissionEditSyncPlan(getSubmissionEditValues('sub-edit'));
+  if (plan.ok) return true;
+  showGlobalToast(plan.error, 'error');
+  document.getElementById('sub-edit-title')?.focus();
+  return false;
+}
+
 function openSubmissionForEditing(sub, options = {}) {
+  if (!canLeaveSubmissionEditor()) return;
+  submissionAutoSaveCleanup?.();
   selectedSubmissionId = sub.id;
   renderSubmissions();
   renderSubmissionDetails(sub);
@@ -4972,7 +4411,7 @@ function refreshSubmissionStatusPresentation(sub) {
 }
 
 async function saveSubmissionEditFromValues(sub, prefix, options = {}) {
-  const editValues = getSubmissionEditValues(prefix);
+  const editValues = options.values || getSubmissionEditValues(prefix);
   const syncPlan = window.RFUI.buildSubmissionEditSyncPlan(editValues);
   if (!syncPlan.ok) {
     if (options.alertOnError !== false) alert(syncPlan.error);
@@ -5009,11 +4448,12 @@ async function saveSubmissionEditFromValues(sub, prefix, options = {}) {
     previousStatus,
     normalizeSubmissionStatus(savedSub.status)
   );
-  renderDashboard();
-  renderKanban();
-  renderSubmissions();
+  const activeView = document.querySelector('.content-view.active')?.id;
+  if (activeView === 'view-dashboard') renderDashboard();
+  if (activeView === 'view-manuscripts') renderKanban();
+  if (activeView === 'view-submissions') renderSubmissions();
   if (options.renderDetails !== false) renderSubmissionDetails(savedSub);
-  else refreshSubmissionStatusPresentation(savedSub);
+  else if (selectedSubmissionId === savedSub.id) refreshSubmissionStatusPresentation(savedSub);
   if (options.notify !== false) showGlobalToast(t('submissionEditsSaved'), 'success');
   if (shouldCelebrate) showAcceptanceCelebration(savedSub);
   return true;
@@ -5045,19 +4485,22 @@ function setupSubmissionAutoSave(sub) {
       debounceTimer = null;
     }
     const requestedRevision = revision;
+    const values = getSubmissionEditValues('sub-edit');
+    const currentSnapshot = JSON.stringify(values);
+    pendingSubmissionSaves += 1;
     setStatus('saving', t('autoSaveSaving'));
 
     saveChain = saveChain
       .catch(() => {})
       .then(async () => {
-        if (!editCenter.isConnected) return;
-        const currentSnapshot = JSON.stringify(getSubmissionEditValues('sub-edit'));
+        // Values are captured before navigation can replace the editor.
         if (currentSnapshot === lastSavedSnapshot) {
           if (requestedRevision === revision) setStatus('saved', t('autoSaveSaved'));
           return;
         }
         let validationError = '';
         const saved = await saveSubmissionEditFromValues(sub, 'sub-edit', {
+          values,
           alertOnError: false,
           renderDetails: false,
           notify: false,
@@ -5080,7 +4523,9 @@ function setupSubmissionAutoSave(sub) {
       .catch(error => {
         console.error('Submission auto-save failed:', error);
         setStatus('error', t('autoSaveFailed'), String(error?.message || error || ''));
-      });
+        showGlobalToast(t('autoSaveFailed'), 'error');
+      })
+      .finally(() => { pendingSubmissionSaves -= 1; });
   };
 
   const requestSave = ({ immediate = false } = {}) => {
@@ -5120,11 +4565,54 @@ function setupSubmissionAutoSave(sub) {
   window.addEventListener('pagehide', flushPendingSave);
   document.addEventListener('visibilitychange', flushWhenHidden);
   submissionAutoSaveCleanup = () => {
-    if (debounceTimer) clearTimeout(debounceTimer);
+    flushPendingSave();
     window.removeEventListener('pagehide', flushPendingSave);
     document.removeEventListener('visibilitychange', flushWhenHidden);
     submissionAutoSaveCleanup = null;
   };
+}
+
+function setupSubmissionSearch() {
+  const input = document.getElementById('submission-search');
+  input.addEventListener('input', event => { if (!event.isComposing) applySubmissionSearch(); });
+  input.addEventListener('compositionend', applySubmissionSearch);
+  document.getElementById('submission-search-status').addEventListener('change', applySubmissionSearch);
+  const clear = (all = false) => {
+    input.value = '';
+    if (all) document.getElementById('submission-search-status').value = 'all';
+    applySubmissionSearch(); input.focus();
+  };
+  document.getElementById('submission-search-clear').addEventListener('click', () => clear());
+  document.getElementById('submission-search-reset').addEventListener('click', () => clear(true));
+  input.addEventListener('keydown', event => {
+    if (event.isComposing) return;
+    if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); clear(); }
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      document.querySelector('.submission-card-item:not([hidden]) .btn-edit-submission')?.click();
+    }
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey || event.isComposing || modal.classList.contains('active')) return;
+    if (event.target.closest?.('input, textarea, select, [contenteditable="true"]')) return;
+    if (document.getElementById('view-submissions').classList.contains('active')) { event.preventDefault(); input.focus(); }
+  });
+}
+
+function applySubmissionSearch() {
+  const input = document.getElementById('submission-search');
+  const filter = document.getElementById('submission-search-status')?.value || 'all';
+  const terms = window.RFUI.normalizeSearchText(input.value).split(/\s+/).filter(Boolean);
+  const cards = document.querySelectorAll('#submissions-list-container .submission-card-item');
+  let count = 0;
+  cards.forEach(card => {
+    const matches = window.RFUI.matchesSubmissionSearch(card.dataset.searchText, card.dataset.searchStatus, terms, filter);
+    if (card.hidden === matches) card.hidden = !matches;
+    if (matches) count += 1;
+  });
+  document.getElementById('submission-search-clear').hidden = !input.value;
+  document.getElementById('submission-search-empty').hidden = count > 0 || cards.length === 0;
+  document.getElementById('submission-search-count').textContent = tf('submissionSearchCount', { count, total: cards.length });
 }
 
 function renderSubmissions() {
@@ -5136,6 +4624,8 @@ function renderSubmissions() {
     selectedSubmissionId = null;
   } else {
     const sortedSubmissions = sortDashboardSubmissions(db.submissions);
+    const manuscriptsById = new Map(db.manuscripts.map(manuscript => [manuscript.id, manuscript]));
+    const cards = document.createDocumentFragment();
     if (!sortedSubmissions.some(sub => sub.id === selectedSubmissionId)) {
       selectedSubmissionId = sortedSubmissions[0].id;
     }
@@ -5147,10 +4637,12 @@ function renderSubmissions() {
       card.className = `glass-card submission-card-item ${sub.id === selectedSubmissionId ? 'selected' : ''}`;
 
       // Find linked manuscript
-      const man = db.manuscripts.find(m => m.id === sub.manuscriptId);
+      const man = manuscriptsById.get(sub.manuscriptId);
       const manTitle = man ? man.title : (sub.title || t('untitledManuscript'));
       const journalName = getSubmissionJournalName(sub);
       const statusText = getSubmissionStatusLabel(sub.status || 'submitted');
+      card.dataset.searchStatus = normalizeSubmissionStatus(sub.status);
+      card.dataset.searchText = window.RFUI.normalizeSearchText([manTitle, journalName, sub.externalManuscriptId, getSubmissionFirstAuthor(sub, man), man?.authors, man?.doi, sub.doi, statusText, sub.status].filter(Boolean).join(' '));
       const transferText = sub.previousJournal
         ? `<span class="submission-card-meta">${escapeHTML(t('transferToJournal'))}: ${escapeHTML(sub.previousJournal)}</span>`
         : '';
@@ -5184,8 +4676,9 @@ function renderSubmissions() {
         openSubmissionForEditing(sub, { focusEditCenter: true });
       });
 
-      container.appendChild(card);
+      cards.appendChild(card);
     });
+    container.appendChild(cards);
 
     const detailPanel = document.getElementById('submission-detail-panel');
     if (detailPanel?.dataset.currentSubmissionId !== selectedSubmission.id) {
@@ -5195,6 +4688,7 @@ function renderSubmissions() {
 
   // Render journal portals section
   renderJournalPortals();
+  applySubmissionSearch();
 }
 
 function renderJournalPortals() {
@@ -5222,7 +4716,7 @@ function renderJournalPortals() {
   portals.forEach(portal => {
     const card = document.createElement('a');
     card.className = 'portal-item-card';
-    card.href = portal.url;
+    card.href = window.RFUI.isSafeWebUrl(portal.url) ? portal.url : '#';
     card.target = '_blank';
     card.rel = 'noopener noreferrer';
 
@@ -5233,17 +4727,18 @@ function renderJournalPortals() {
       domain = portal.url;
     }
 
-    const initial = portal.name.charAt(0).toUpperCase();
+    const initial = String(portal.name || '').charAt(0).toUpperCase();
+    const portalColor = /^#[0-9a-f]{6}$/i.test(portal.color || '') ? portal.color : 'var(--accent-purple)';
     card.title = `${portal.name} - ${domain}`;
 
     card.innerHTML = `
       <div class="portal-info">
-        <div class="portal-avatar" style="background-color: ${portal.color || 'var(--accent-purple)'};">
-          ${initial}
+        <div class="portal-avatar" style="background-color: ${portalColor};">
+          ${escapeHTML(initial)}
         </div>
         <div class="portal-text">
-          <span class="portal-name">${portal.name}</span>
-          <span class="portal-domain" title="${portal.url}">${domain}</span>
+          <span class="portal-name">${escapeHTML(portal.name)}</span>
+          <span class="portal-domain" title="${escapeHTML(portal.url)}">${escapeHTML(domain)}</span>
         </div>
       </div>
       <div class="portal-actions">
@@ -5314,7 +4809,7 @@ function setupJournalPortalListeners() {
           }
 
           try {
-            new URL(url);
+            if (!window.RFUI.isSafeWebUrl(url)) throw new Error('Invalid web URL');
           } catch (err) {
             alert(t('validUrlRequired'));
             return;
@@ -5392,6 +4887,7 @@ function openLinkSubmissionModal(submission) {
 }
 
 function renderSubmissionDetails(sub) {
+  submissionAutoSaveCleanup?.();
   sub.status = normalizeSubmissionStatus(sub.status);
   normalizeSubmissionTimeline(sub);
   const detailPanel = document.getElementById('submission-detail-panel');
@@ -5569,6 +5065,8 @@ function renderSubmissionDetails(sub) {
             </select>
           </div>
         </div>
+        <details class="submission-author-details">
+          <summary>${escapeHTML(t('firstAuthorLabel'))}</summary>
         <div class="submission-first-author-module">
           <div class="submission-first-author-identity">
             <span class="submission-first-author-index" aria-hidden="true">1</span>
@@ -5579,6 +5077,7 @@ function renderSubmissionDetails(sub) {
           </div>
           <input type="text" id="sub-edit-first-author" value="${escapeHTML(firstAuthor)}" placeholder="${escapeHTML(t('firstAuthorPlaceholder'))}">
         </div>
+        </details>
       </div>
 
       <div class="submission-edit-section">
@@ -6747,7 +6246,7 @@ function setupSettingsListeners() {
 
     try {
       const normalizedBackup = await window.storage.ensureDbShape(backup.database, { stamp: false });
-      db = await window.storage.saveAll(normalizedBackup);
+      db = await window.storage.saveAll(normalizedBackup, { replace: true, expectedRevision: db.revision });
       await renderAllViews();
       await loadSettings();
       showGlobalToast(t('importBackupRestored'), 'success');
@@ -6790,6 +6289,7 @@ function setupSettingsListeners() {
           throw new Error(t('invalidBackup'));
         }
 
+        if (Number(importJson.schemaVersion) > 7) throw new Error('This backup requires a newer version of ResearchFlow.');
         function capitalize(str) {
           if (!str) return '';
           return str.charAt(0).toUpperCase() + str.slice(1);
@@ -6986,6 +6486,14 @@ function setupSettingsListeners() {
           newDb.tasks = importJson.tasks;
         }
 
+        // Native backups must round-trip tombstones, capture provenance and extension fields.
+        // Legacy conversions above remain available for older third-party formats.
+        if (Number(importJson.schemaVersion) === 7) {
+          for (const key of ['researchAreas', 'projects', 'researchRecords', 'manuscripts', 'submissions', 'tasks']) {
+            newDb[key] = Array.isArray(importJson[key]) ? importJson[key] : [];
+          }
+          newDb.deletedEntities = importJson.deletedEntities || {};
+        }
         syncManuscriptStatusesFromSubmissions(newDb);
         const normalizedImport = await window.storage.ensureDbShape(newDb, { stamp: false });
         const safeCurrentDb = window.storage.sanitizeDatabaseForExternalUse(db);
@@ -7007,7 +6515,7 @@ function setupSettingsListeners() {
 
         // Only replace the in-memory cache after parsing, conversion,
         // normalization and recovery-backup creation have all succeeded.
-        db = await window.storage.saveAll(normalizedImport);
+        db = await window.storage.saveAll(normalizedImport, { replace: true, expectedRevision: db.revision });
         await renderAllViews();
         await loadSettings();
         showGlobalToast(t('databaseImported'), 'success');
@@ -7031,6 +6539,7 @@ const modal = document.getElementById('modal-container');
 const modalContent = document.getElementById('modal-card-content');
 
 function openModal(htmlContent) {
+  activeSharePreviewCleanup?.();
   if (!modal.classList.contains('active')) {
     const activeElement = document.activeElement;
     previousModalFocus = activeElement instanceof HTMLElement && !modal.contains(activeElement)
@@ -7066,6 +6575,7 @@ function openModal(htmlContent) {
 }
 
 function closeModal() {
+  activeSharePreviewCleanup?.();
   const restoreTarget = previousModalFocus?.isConnected && !modal.contains(previousModalFocus)
     ? previousModalFocus
     : null;
@@ -7216,3 +6726,12 @@ function showGlobalToast(message, type = 'success') {
     toast._removeTimer = setTimeout(() => toast.remove(), 250);
   }, 3000);
 }
+
+// Warn only while an edit is dirty or a commit is outstanding.
+window.addEventListener('beforeunload', event => {
+  const state = document.querySelector('[data-submission-autosave-status]')?.dataset.state;
+  if (pendingSubmissionSaves || ['pending', 'saving', 'error', 'invalid'].includes(state)) {
+    event.preventDefault();
+    event.returnValue = '';
+  }
+});

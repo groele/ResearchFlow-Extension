@@ -66,9 +66,11 @@ function showPageToast(message, type = 'success') {
 
   toast.innerHTML = `
     <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: ${color}; box-shadow: 0 0 8px ${color}"></span>
-    <span>${message}</span>
+    <span data-toast-message></span>
   `;
 
+  toast.querySelector('[data-toast-message]').textContent = String(message || '');
+  toast.setAttribute('role', type === 'danger' ? 'alert' : 'status');
   container.appendChild(toast);
 
   // Trigger animation

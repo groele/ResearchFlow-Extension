@@ -53,10 +53,20 @@ const DEFAULT_DB = {
 class StorageEngine {
   constructor() {
     this.cache = null;
+    this.loadPromise = null;
     this.syncing = false;
     this.deviceIdPromise = null;
     this.syncTimer = null;
     this.syncCredentials = null;
+    chrome.storage.onChanged?.addListener((changes, area) => {
+      if (area === 'local' && changes[SYNC_CREDENTIALS_KEY]) this.syncCredentials = null;
+    });
+    this.commitQueue = Promise.resolve();
+    this.enqueueCommit = operation => {
+      const result = this.commitQueue.catch(() => {}).then(operation);
+      this.commitQueue = result;
+      return result;
+    };
   }
 
   /**
@@ -64,74 +74,87 @@ class StorageEngine {
    */
   async loadAll() {
     if (this.cache) return this.cache;
+    if (!this.loadPromise) {
+      this.loadPromise = this.loadDatabase().finally(() => { this.loadPromise = null; });
+    }
+    return this.loadPromise;
+  }
 
-    return new Promise((resolve) => {
-      chrome.storage.local.get(['researchflow_db'], async (result) => {
-        if (result.researchflow_db) {
-          this.cache = await this.ensureDbShape(result.researchflow_db, { stamp: false });
-          await this.persistLocal(this.cache);
-          resolve(this.cache);
-        } else {
-          // Try to load preloaded data if available
-          try {
-            const preloadUrl = chrome.runtime.getURL('data/preloaded_db.json');
-            const res = await fetch(preloadUrl);
-            if (res.ok) {
-              const preloadData = await res.json();
-              this.cache = await this.ensureDbShape(preloadData, { stamp: false });
-              // Save it to storage so it is persistent
-              await this.persistLocal(this.cache);
-              console.log('Preloaded database loaded successfully!');
-              resolve(this.cache);
-              return;
-            }
-          } catch (e) {
-            console.warn('No preloaded_db.json found or failed to fetch, loading defaults.', e);
-          }
-          
-          this.cache = await this.ensureDbShape(DEFAULT_DB, { stamp: false });
-          await this.persistLocal(this.cache);
-          resolve(this.cache);
-        }
+  async loadDatabase() {
+    // Initialization and migration are writes: only the service worker owns them.
+    if (typeof window !== 'undefined' && chrome.runtime?.sendMessage) {
+      const response = await this.sendRequest({ action: 'LOAD_DATABASE' });
+      if (!response?.success || !response.data) throw new Error(response?.error || 'Database load failed.');
+      this.cache = response.data;
+      return this.cache;
+    }
+
+    const result = await new Promise((resolve, reject) => {
+      chrome.storage.local.get(['researchflow_db'], result => {
+        const error = chrome.runtime.lastError;
+        if (error) reject(new Error(error.message || 'Local storage read failed.'));
+        else resolve(result);
       });
     });
+    let source = result.researchflow_db;
+    if (!source) {
+      try {
+        const response = await this.fetchWithTimeout(chrome.runtime.getURL('data/preloaded_db.json'));
+        if (response.ok) source = await response.json();
+      } catch (error) {
+        console.warn('Preloaded database unavailable:', error.message);
+      }
+    }
+    const normalized = await this.ensureDbShape(source || DEFAULT_DB, { stamp: false });
+    await this.persistLocal(normalized);
+    this.cache = normalized;
+    return this.cache;
   }
 
   /**
    * Saves database locally and schedules background cloud sync
    */
   async saveAll(data, options = {}) {
+    const notify = (state, error = '') => {
+      if (typeof window !== 'undefined' && window.dispatchEvent) {
+        window.dispatchEvent(new CustomEvent('researchflow-save-state', { detail: { state, error } }));
+      }
+    };
+    notify('saving');
+    try {
+      const saved = await this.saveDatabase(data, options);
+      notify('saved');
+      return saved;
+    } catch (error) {
+      notify('error', error.message);
+      throw error;
+    }
+  }
+
+  async saveDatabase(data, options = {}) {
     if (
       options.localOnly !== true
       && typeof window !== 'undefined'
       && chrome.runtime?.sendMessage
     ) {
-      const backgroundResult = await new Promise((resolve) => {
-        chrome.runtime.sendMessage({
-          action: 'SAVE_DATABASE',
-          data,
-          mergeOnConflict: options.mergeOnConflict === true
-        }, (response) => {
-          if (chrome.runtime.lastError) {
-            resolve({ success: false, unavailable: true, error: chrome.runtime.lastError.message });
-            return;
-          }
-          resolve(response || { success: false, unavailable: true });
-        });
+      const backgroundResult = await this.sendRequest({
+        action: 'SAVE_DATABASE',
+        data,
+        mergeOnConflict: options.mergeOnConflict === true,
+        replace: options.replace === true,
+        expectedRevision: options.expectedRevision
       });
       if (backgroundResult?.success && backgroundResult.data) {
         const normalizedResult = await this.ensureDbShape(backgroundResult.data, { stamp: false });
         this.cache = this.adoptSavedSnapshot(data, normalizedResult);
         return this.cache;
       }
-      if (!backgroundResult?.unavailable) {
-        throw new Error(backgroundResult?.error || 'Database save failed.');
-      }
+      throw new Error(backgroundResult?.error || 'Database save failed. Please retry.');
     }
 
     const normalized = await this.ensureDbShape(data, { stamp: true });
+    await this.persistLocal(normalized);
     this.cache = this.adoptSavedSnapshot(data, normalized);
-    await this.persistLocal(this.cache);
 
     // Notify other pages (e.g. side panel or dashboard) of data changes
     chrome.runtime.sendMessage({ action: 'DATABASE_UPDATED', data: this.cache }).catch(() => {});
@@ -139,8 +162,11 @@ class StorageEngine {
     // Trigger asynchronous cloud sync only when the selected remote provider
     // has a complete, valid configuration. Local persistence must never be
     // coupled to a half-configured WebDAV or GitHub route.
-    if (await this.shouldRunCloudSync(this.cache)) {
-      this.scheduleBackgroundSync();
+    try {
+      if (await this.shouldRunCloudSync(this.cache)) this.scheduleBackgroundSync();
+    } catch (error) {
+      // The local commit succeeded; optional sync setup must not turn it into a failed save.
+      console.warn('Cloud sync scheduling unavailable:', error.message);
     }
     return this.cache;
   }
@@ -170,15 +196,24 @@ class StorageEngine {
 
   async persistLocal(data) {
     const safeData = this.sanitizeDatabaseForExternalUse(data);
-    await new Promise((resolve) => {
-      chrome.storage.local.set({ researchflow_db: safeData }, resolve);
+    await new Promise((resolve, reject) => {
+      chrome.storage.local.set({ researchflow_db: safeData }, () => {
+        const error = chrome.runtime.lastError;
+        if (error) reject(new Error(error.message || 'Local storage write failed.'));
+        else resolve();
+      });
     });
+  }
+
+  async fetchWithTimeout(url, options = {}) {
+    // Bound both response headers and body reads. Do not retry writes blindly.
+    return fetch(url, { ...options, signal: options.signal || AbortSignal.timeout(20000) });
   }
 
   async ensureDbShape(data, options = {}) {
     const now = Date.now();
     const source = data && typeof data === 'object' ? data : {};
-    const normalized = this.deepMerge(DEFAULT_DB, source);
+    const normalized = this.deepMerge(JSON.parse(JSON.stringify(DEFAULT_DB)), source);
     delete normalized.evidence;
     delete normalized.projectEvidenceLinks;
     delete normalized.recordEvidenceLinks;
@@ -355,8 +390,9 @@ class StorageEngine {
 
   async loadSyncCredentials() {
     if (this.syncCredentials) return this.deepMerge({}, this.syncCredentials);
-    this.syncCredentials = await new Promise((resolve) => {
+    this.syncCredentials = await new Promise((resolve, reject) => {
       chrome.storage.local.get([SYNC_CREDENTIALS_KEY], (result) => {
+        if (chrome.runtime.lastError) { reject(new Error(chrome.runtime.lastError.message)); return; }
         const stored = result?.[SYNC_CREDENTIALS_KEY];
         resolve(stored && typeof stored === 'object' ? stored : {});
       });
@@ -369,10 +405,13 @@ class StorageEngine {
     if (provider === 'webdav' || provider === 'github') {
       credentials[provider] = this.getCredentialPatch(provider, config);
     }
-    this.syncCredentials = credentials;
-    await new Promise((resolve) => {
-      chrome.storage.local.set({ [SYNC_CREDENTIALS_KEY]: credentials }, resolve);
+    await new Promise((resolve, reject) => {
+      chrome.storage.local.set({ [SYNC_CREDENTIALS_KEY]: credentials }, () => {
+        if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+        else resolve();
+      });
     });
+    this.syncCredentials = credentials;
     return this.getCredentialPatch(provider, credentials[provider] || {});
   }
 
@@ -446,16 +485,20 @@ class StorageEngine {
 
   async getDeviceId() {
     if (!this.deviceIdPromise) {
-      this.deviceIdPromise = new Promise((resolve) => {
+      this.deviceIdPromise = new Promise((resolve, reject) => {
         chrome.storage.local.get(['researchflow_device_id'], (result) => {
+          if (chrome.runtime.lastError) { reject(new Error(chrome.runtime.lastError.message)); return; }
           if (result.researchflow_device_id) {
             resolve(result.researchflow_device_id);
             return;
           }
           const id = 'device_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
-          chrome.storage.local.set({ researchflow_device_id: id }, () => resolve(id));
+          chrome.storage.local.set({ researchflow_device_id: id }, () => {
+            if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+            else resolve(id);
+          });
         });
-      });
+      }).catch(error => { this.deviceIdPromise = null; throw error; });
     }
     return this.deviceIdPromise;
   }
@@ -467,9 +510,10 @@ class StorageEngine {
     const output = Object.assign({}, target);
     if (isObject(target) && isObject(source)) {
       Object.keys(source).forEach(key => {
+        if (key === '__proto__' || key === 'constructor' || key === 'prototype') return;
         if (isObject(source[key])) {
           if (!(key in target)) {
-            Object.assign(output, { [key]: source[key] });
+            Object.assign(output, { [key]: this.deepMerge({}, source[key]) });
           } else {
             output[key] = this.deepMerge(target[key], source[key]);
           }
@@ -489,15 +533,25 @@ class StorageEngine {
    * Notifies the background script to perform a sync
    */
   async triggerBackgroundSync() {
+    return this.sendRequest({ action: 'TRIGGER_SYNC' }, 90000);
+  }
+
+  sendRequest(message, timeoutMs = 15000) {
     return new Promise((resolve, reject) => {
-      chrome.runtime.sendMessage({ action: 'TRIGGER_SYNC' }, (response) => {
-        if (chrome.runtime.lastError) {
-          // If background page is not running or listening, we ignore and resolve
-          resolve({ success: false, error: 'Background inactive' });
-        } else {
-          resolve(response);
-        }
-      });
+      const timeoutMessage = message.action === 'SAVE_DATABASE'
+        ? 'Save response timed out. Check the latest data before retrying.'
+        : 'Background response timed out. Please retry.';
+      const timer = setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
+      try {
+        chrome.runtime.sendMessage(message, response => {
+          clearTimeout(timer);
+          if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+          else resolve(response);
+        });
+      } catch (error) {
+        clearTimeout(timer);
+        reject(error);
+      }
     });
   }
 
@@ -518,7 +572,7 @@ class StorageEngine {
         headers.set('Authorization', 'Basic ' + btoa(String.fromCharCode(...credentialBytes)));
         
         // PROPFIND check
-        const response = await fetch(cleanUrl, {
+        const response = await this.fetchWithTimeout(cleanUrl, {
           method: 'PROPFIND',
           headers: headers,
           body: `<?xml version="1.0" encoding="utf-8" ?>
@@ -535,7 +589,7 @@ class StorageEngine {
         const { token, repo, branch = 'main' } = config;
         if (!token || !repo) throw new Error('Missing token or repository');
 
-        const response = await fetch(`https://api.github.com/repos/${repo}`, {
+        const response = await this.fetchWithTimeout(`https://api.github.com/repos/${repo}`, {
           headers: {
             'Authorization': `token ${token}`,
             'Accept': 'application/vnd.github.v3+json'
@@ -560,78 +614,49 @@ class StorageEngine {
    * Syncs the JSON database with the configured metadata cloud provider
    */
   async syncDatabaseNow() {
+    if (typeof window !== 'undefined' && chrome.runtime?.sendMessage) {
+      return this.triggerBackgroundSync();
+    }
     if (this.syncing) return { success: false, error: 'Sync already in progress' };
     this.syncing = true;
-    
     try {
-      const db = await this.loadAll();
-      const metaProvider = await this.getEffectiveMetadataProvider(db);
-      
-      if (metaProvider.provider === 'local') {
-        this.syncing = false;
-        return { success: true, message: 'Local storage active, no sync required.' };
-      }
-
-      const configurationIssue = this.getSyncConfigurationIssue(metaProvider);
-      if (configurationIssue) {
-        this.syncing = false;
-        return {
-          success: false,
-          skipped: true,
-          error: configurationIssue
-        };
-      }
-
-      let cloudData = null;
-      let remoteTimestamp = 0;
-      let localTimestamp = db.lastUpdated || 0;
-
-      if (metaProvider.provider === 'webdav') {
-        cloudData = await this.fetchFromWebDAV(metaProvider.config);
-      } else if (metaProvider.provider === 'github') {
-        cloudData = await this.fetchFromGitHub(metaProvider.config);
-      }
-
-      if (cloudData) {
-        remoteTimestamp = cloudData.lastUpdated || 0;
-
-        const merged = await this.mergeDatabases(db, cloudData);
-        const localChanged = this.hasMeaningfulChanges(db, merged);
-        const shouldPush = localTimestamp >= remoteTimestamp || localChanged;
-        const shouldUpdateLocal = remoteTimestamp > localTimestamp || localChanged;
-
-        if (shouldUpdateLocal) {
-          this.cache = merged;
-          await this.persistLocal(merged);
-          chrome.runtime.sendMessage({ action: 'DATABASE_UPDATED', data: merged }).catch(() => {});
-        }
-
-        if (shouldPush) {
-          const pushDb = await this.ensureDbShape(merged, { stamp: true });
-          await this.saveToCloud(metaProvider.provider, metaProvider.config, pushDb);
-          this.cache = pushDb;
-          await this.persistLocal(pushDb);
-        }
-      } else {
-        // No cloud database exists yet - upload local database
-        const pushDb = await this.ensureDbShape(db, { stamp: true });
-        await this.saveToCloud(metaProvider.provider, metaProvider.config, pushDb);
-        this.cache = pushDb;
-        await this.persistLocal(pushDb);
-      }
-      
+      const initial = await this.loadAll();
+      const provider = await this.getEffectiveMetadataProvider(initial);
+      if (provider.provider === 'local') return { success: true, localOnly: true };
+      const issue = this.getSyncConfigurationIssue(provider);
+      if (issue) return { success: false, skipped: true, error: issue };
+      const remote = provider.provider === 'webdav'
+        ? await this.fetchFromWebDAV(provider.config)
+        : await this.fetchFromGitHub(provider.config);
+      const pushDb = await this.enqueueCommit(async () => {
+        // Re-read after the network wait, not the snapshot from sync start.
+        const latest = await this.loadAll();
+        const merged = remote ? await this.mergeDatabases(latest, remote) : latest;
+        const committed = await this.ensureDbShape(merged, { stamp: true });
+        await this.persistLocal(committed);
+        this.cache = committed;
+        chrome.runtime.sendMessage({ action: 'DATABASE_UPDATED', data: committed }).catch(() => {});
+        return JSON.parse(JSON.stringify(committed));
+      });
+      await this.saveToCloud(provider.provider, provider.config, pushDb);
+      const pending = await this.enqueueCommit(async () => {
+        const latest = await this.loadAll();
+        const merged = await this.mergeDatabases(latest, pushDb);
+        const pending = this.hasMeaningfulChanges(pushDb, merged);
+        await this.persistLocal(merged);
+        this.cache = merged;
+        chrome.runtime.sendMessage({ action: 'DATABASE_UPDATED', data: merged }).catch(() => {});
+        return pending;
+      });
+      if (pending) this.scheduleBackgroundSync();
+      return { success: true, pending };
+    } catch (error) {
+      return { success: false, error: error.message };
+    } finally {
       this.syncing = false;
-      return { success: true };
-    } catch (e) {
-      this.syncing = false;
-      console.error('Database Sync Error:', e);
-      return { success: false, error: e.message };
     }
   }
 
-  /**
-   * Saves database JSON to selected cloud
-   */
   async saveToCloud(provider, config, db) {
     if (provider === 'webdav') {
       await this.saveToWebDAV(config, db);
@@ -667,7 +692,7 @@ class StorageEngine {
     // live outside the synchronized database.
     merged.settings = local.settings;
     merged._github_sha = remote._github_sha || local._github_sha;
-    merged._webdav_etag = remote._webdav_etag || local._webdav_etag;
+    merged._webdav_etag = remote._webdav_etag !== undefined ? remote._webdav_etag : local._webdav_etag;
     merged.lastUpdated = Math.max(Number(local.lastUpdated) || 0, Number(remote.lastUpdated) || 0);
     merged.updatedAt = new Date(merged.lastUpdated || Date.now()).toISOString();
     merged.revision = Math.max(Number(local.revision) || 0, Number(remote.revision) || 0);
@@ -723,7 +748,7 @@ class StorageEngine {
     const credentialBytes = new TextEncoder().encode(`${username}:${password}`);
     headers.set('Authorization', 'Basic ' + btoa(String.fromCharCode(...credentialBytes)));
     
-    const response = await fetch(dbUrl, { method: 'GET', headers });
+    const response = await this.fetchWithTimeout(dbUrl, { method: 'GET', headers });
     if (response.status === 404) return null;
     if (!response.ok) throw new Error(`WebDAV read failed: ${response.statusText}`);
     const parsed = await response.json();
@@ -743,9 +768,11 @@ class StorageEngine {
     const credentialBytes = new TextEncoder().encode(`${username}:${password}`);
     headers.set('Authorization', 'Basic ' + btoa(String.fromCharCode(...credentialBytes)));
     headers.set('Content-Type', 'application/json');
+    if (db._webdav_etag === null) throw new Error('WebDAV server did not provide an ETag. A safe overwrite is unavailable.');
     if (db._webdav_etag) headers.set('If-Match', db._webdav_etag);
+    else headers.set('If-None-Match', '*');
 
-    const response = await fetch(dbUrl, {
+    const response = await this.fetchWithTimeout(dbUrl, {
       method: 'PUT',
       headers,
       body: JSON.stringify(this.sanitizeDatabaseForExternalUse(db), null, 2)
@@ -754,6 +781,7 @@ class StorageEngine {
       throw new Error('WebDAV conflict: the remote database changed. Sync again to merge before retrying.');
     }
     if (!response.ok) throw new Error(`WebDAV write failed: ${response.statusText}`);
+    db._webdav_etag = response.headers?.get?.('etag') || null;
   }
 
   async ensureHostPermissionForUrl(url, options = {}) {
@@ -790,9 +818,9 @@ class StorageEngine {
   // --- GitHub Methods ---
   async fetchFromGitHub(config) {
     const { token, repo, branch = 'main' } = config;
-    const dbUrl = `https://api.github.com/repos/${repo}/contents/researchflow_db.json?ref=${branch}`;
+    const dbUrl = `https://api.github.com/repos/${repo}/contents/researchflow_db.json?ref=${encodeURIComponent(branch)}`;
     
-    const response = await fetch(dbUrl, {
+    const response = await this.fetchWithTimeout(dbUrl, {
       headers: {
         'Authorization': `token ${token}`,
         'Accept': 'application/vnd.github.v3+json'
@@ -803,7 +831,9 @@ class StorageEngine {
     
     const data = await response.json();
     // GitHub contents are Base64 encoded
-    const decoded = atob(data.content.replace(/\s/g, ''));
+    const decoded = new TextDecoder('utf-8', { fatal: true }).decode(
+      Uint8Array.from(atob(data.content.replace(/\s/g, '')), char => char.charCodeAt(0))
+    );
     const parsed = JSON.parse(decoded);
     parsed._github_sha = data.sha; // Save SHA to override files correctly
     return parsed;
@@ -816,7 +846,7 @@ class StorageEngine {
     // We need to fetch the existing file's SHA if it exists
     let sha = db._github_sha;
     if (!sha) {
-      const getRes = await fetch(`${dbUrl}?ref=${branch}`, {
+      const getRes = await this.fetchWithTimeout(`${dbUrl}?ref=${encodeURIComponent(branch)}`, {
         headers: {
           'Authorization': `token ${token}`,
           'Accept': 'application/vnd.github.v3+json'
@@ -825,6 +855,8 @@ class StorageEngine {
       if (getRes.ok) {
         const getResData = await getRes.json();
         sha = getResData.sha;
+      } else if (getRes.status !== 404) {
+        throw new Error(`GitHub preflight failed: ${getRes.status} ${getRes.statusText}`);
       }
     }
 
@@ -841,7 +873,7 @@ class StorageEngine {
     };
     if (sha) putBody.sha = sha;
 
-    let response = await fetch(dbUrl, {
+    let response = await this.fetchWithTimeout(dbUrl, {
       method: 'PUT',
       headers: {
         'Authorization': `token ${token}`,
@@ -867,7 +899,7 @@ class StorageEngine {
           branch,
           sha: latestRemote._github_sha
         };
-        response = await fetch(dbUrl, {
+        response = await this.fetchWithTimeout(dbUrl, {
           method: 'PUT',
           headers: {
             'Authorization': `token ${token}`,

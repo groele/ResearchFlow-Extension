@@ -134,7 +134,7 @@ assert(storageJs.includes('deletedEntities'), 'storage should retain entity dele
 assert(storageJs.includes('filterDeletedEntities'), 'remote merge should filter entities deleted on another device');
 assert(storageJs.includes('shouldRunCloudSync(this.cache)'), 'local saves should skip incomplete remote sync configurations');
 assert(storageJs.includes("action: 'SAVE_DATABASE'"), 'workspace saves should use the serialized background writer');
-assert(storageJs.includes('getSyncConfigurationIssue(metaProvider)'), 'manual sync should report invalid provider configuration without attempting a request');
+assert(storageJs.includes('getSyncConfigurationIssue(provider)'), 'manual sync should report invalid provider configuration without attempting a request');
 assert(storageJs.includes("return 'Invalid WebDAV URL'"), 'WebDAV URL validation should fail before permission or network access');
 
 console.log('runtime contract tests passed');
