@@ -3,6 +3,9 @@
   const FONT = '"Microsoft YaHei UI", "PingFang SC", "Segoe UI", sans-serif';
   const DISPLAY = 'Georgia, "Songti SC", "Microsoft YaHei", serif';
   const THEMES = {
+    estuary: { background: '#b3cfd5', paper: '#e4f2ef', ink: '#153d4a', muted: '#456773', line: '#9fbdc4', accent: '#186d7c', wash: '#d4e8ea', gradient: ['#8fb6cc', '#b3d2c5'], paperGradient: ['#cee0f5', '#e4f2ef', '#b8dccc'] },
+    iris: { background: '#b7b3d2', paper: '#eee5ef', ink: '#323354', muted: '#62617a', line: '#bdb2cf', accent: '#665397', wash: '#e0daec', gradient: ['#aab8d4', '#d3b5c7'], paperGradient: ['#cfdcf5', '#eee5ef', '#dec0d0'] },
+    amber: { background: '#d6baaa', paper: '#f8ecdc', ink: '#49352e', muted: '#786055', line: '#ccb6a2', accent: '#92512c', wash: '#efdfc9', gradient: ['#d8b298', '#b4c4b0'], paperGradient: ['#efd0b5', '#f8ecdc', '#ceddcb'] },
     journal: { background: '#dce5ed', paper: '#fafbfc', ink: '#18344c', muted: '#536779', line: '#cbd7e0', accent: '#27628e', wash: '#e9f0f6', gradient: ['#cbddea', '#ebe7f1'], paperGradient: ['#ffffff', '#edf3f8'] },
     conference: { background: '#103e48', paper: '#f4fbfa', ink: '#133d44', muted: '#486e71', line: '#b9d7d6', accent: '#087c82', wash: '#dceeed', gradient: ['#174659', '#23786c'], paperGradient: ['#ffffff', '#e0f2ee'] },
     archive: { background: '#ddd6c8', paper: '#fffaf0', ink: '#383c34', muted: '#666c5e', line: '#d6d6c5', accent: '#607046', wash: '#efefe1', gradient: ['#e7dfcf', '#cbd7c8'], paperGradient: ['#fffdf6', '#f0f0e3'] },
@@ -78,9 +81,17 @@
       y += text('title', model.title, left, y, 624, cover ? 36 : 32, cover ? 400 : 600, palette.ink, 6, cover && !zh) + 24;
     }
     if (v.journal && model.journal) {
-      text('journal-label', zh ? '投稿期刊' : 'THE JOURNAL', left, y, 624, 11, 700, palette.accent);
-      y += 24;
-      y += text('journal', model.journal, left, y, 624, minimal ? 23 : blueprint ? 32 : zh ? 34 : 38, blueprint ? 600 : 400, palette.ink, 3, !zh && !minimal && !blueprint) + 24;
+      // Choose typography from the journal text, not the workspace language.
+      const latinJournal = !/[\u2e80-\u9fff]/u.test(model.journal);
+      const shortJournal = glyphs(String(model.journal).trim()).length <= 18;
+      const journalSize = minimal && v.title && model.title ? 28 : shortJournal ? 48 : 34;
+      blocks.push({ kind: 'rect', role: 'journal-mark', x: left, y: y + 2, width: 3, height: 12, color: palette.accent });
+      text('journal-label', zh ? '投稿期刊' : 'THE JOURNAL', left + 12, y, 600, 10, 600, palette.muted);
+      y += 22;
+      const journalHeight = text('journal', model.journal, left, y, 624, journalSize, latinJournal ? 400 : 600, palette.ink, 3, latinJournal && !tech);
+      y += journalHeight + 10;
+      blocks.push({ kind: 'rect', role: 'journal-underline', x: left, y, width: shortJournal ? 64 : 96, height: 2, color: palette.accent });
+      y += 20;
     }
     if (!minimal && v.title && model.title) {
       y += text('title', model.title, left, y, 624, 27, 600, palette.ink, 6) + 20;
@@ -178,8 +189,7 @@
     ctx.scale(renderScale, renderScale);
     if (layout.palette.gradient) {
       const gradient = ctx.createLinearGradient(0, 0, layout.width, layout.height);
-      gradient.addColorStop(0, layout.palette.gradient[0]);
-      gradient.addColorStop(1, layout.palette.gradient[1]);
+      layout.palette.gradient.forEach((color, i, colors) => gradient.addColorStop(i / (colors.length - 1), color));
       ctx.fillStyle = gradient;
     } else ctx.fillStyle = layout.palette.background;
     ctx.fillRect(0, 0, layout.width, layout.height);
@@ -187,8 +197,7 @@
     ctx.roundRect(16, 16, layout.width - 32, layout.height - 32, layout.appearance === 'minimal' ? 0 : 16);
     if (layout.palette.paperGradient) {
       const paperGradient = ctx.createLinearGradient(0, 16, layout.width, layout.height);
-      paperGradient.addColorStop(0, layout.palette.paperGradient[0]);
-      paperGradient.addColorStop(1, layout.palette.paperGradient[1]);
+      layout.palette.paperGradient.forEach((color, i, colors) => paperGradient.addColorStop(i / (colors.length - 1), color));
       ctx.fillStyle = paperGradient;
     } else ctx.fillStyle = layout.palette.paper;
     ctx.fill();
