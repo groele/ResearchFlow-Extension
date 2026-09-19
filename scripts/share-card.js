@@ -75,8 +75,8 @@
     };
     const rule = y => blocks.push({ kind: 'line', x: left, y, x2: right, y2: y, color: palette.line });
     if (v.footer) {
-      const center = 596;
-      blocks.push({ kind: 'brand-seal', role: 'brand-seal', x: center, y: 86, scale: .9, color: palette.accent, secondary: palette.accent2 || palette.muted });
+      const center = 592;
+      blocks.push({ kind: 'brand-seal', role: 'brand-seal', x: center, y: 86, scale: 1.06, color: palette.accent, secondary: palette.accent2 || palette.muted });
       // Store actual centered bounds so drawing, wrapping and collision checks agree.
       const brandText = (role, value, top, size, weight, color) => {
         let font = `${weight} ${size}px ${BRAND_FONT}`;
@@ -87,8 +87,8 @@
         const width = ctx.measureText(value).width;
         blocks.push({kind: 'text', role, text: value, x: center - width / 2, y: top, width, height: Math.ceil(size * 1.4), font, color});
       };
-      brandText('brand-wordmark', 'ResearchFlow', 128, 13, 600, palette.ink);
-      brandText('brand-motto', zh ? '探索 · 求证 · 记录' : 'Explore · Verify · Record', 150, zh ? 9.5 : 9, 400, palette.muted);
+      brandText('brand-wordmark', 'ResearchFlow', 128, 15, 600, palette.ink);
+      brandText('brand-motto', zh ? '探索 · 求证 · 记录' : 'Explore · Verify · Record', 152, zh ? 10.5 : 10, 400, palette.muted);
     }
     const allEvents = Array.isArray(model.events) ? model.events : [];
     const events = allEvents.length > 64 ? [allEvents[0], ...allEvents.slice(-63)] : allEvents;

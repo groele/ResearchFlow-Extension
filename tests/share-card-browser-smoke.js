@@ -38,7 +38,7 @@ fs.mkdirSync(out, { recursive: true });
         if (layout.height > 10000) throw new Error('Unbounded image height');
         const brandLines = layout.blocks.filter(b => ['brand-wordmark', 'brand-motto'].includes(b.role));
         for (const b of brandLines) {
-          if (Math.abs(b.x + b.width / 2 - 596) > .1) throw new Error('Brand lines must share the seal center');
+          if (Math.abs(b.x + b.width / 2 - 592) > .1) throw new Error('Brand lines must share the seal center');
         }
         if (brandLines[0].y + brandLines[0].height > brandLines[1].y - 3) throw new Error('Brand line spacing is too tight');
         if (brandLines[1].y + brandLines[1].height > layout.headerBottom - 20) throw new Error('Brand needs clearance above section rule');
