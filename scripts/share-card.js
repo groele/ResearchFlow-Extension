@@ -59,12 +59,13 @@
     const left = 48;
     const right = 672;
     const blocks = [];
+    let masthead = true;
     if (cover) blocks.push({ kind: 'rect', x: 16, y: 16, width: 688, height: 12, color: palette.accent });
     if (v.appearance === 'conference') blocks.push({ kind: 'rect', x: 24, y: 40, width: 6, height: 190, color: palette.accent });
     if (tech) blocks.push({ kind: 'grid', color: palette.line, accent: palette.accent2 });
     const text = (role, value, x, y, maxWidth, size, weight = 400, color = palette.ink, maxLines = 1, display = false) => {
       // Reserve the masthead's right column for the brand seal, including long titles.
-      if (v.footer && y < 180 && x < 520) maxWidth = Math.min(maxWidth, 508 - x);
+      if (v.footer && masthead) maxWidth = Math.min(maxWidth, 496 - x);
       const font = `${weight} ${size}px ${display ? DISPLAY : FONT}`;
       ctx.font = font;
       const lines = wrapText(ctx, value, maxWidth, maxLines);
@@ -74,8 +75,8 @@
     };
     const rule = y => blocks.push({ kind: 'line', x: left, y, x2: right, y2: y, color: palette.line });
     if (v.footer) {
-      const center = 606;
-      blocks.push({ kind: 'brand-seal', role: 'brand-seal', x: center, y: 86, color: palette.accent, secondary: palette.accent2 || palette.muted });
+      const center = 596;
+      blocks.push({ kind: 'brand-seal', role: 'brand-seal', x: center, y: 86, scale: .9, color: palette.accent, secondary: palette.accent2 || palette.muted });
       // Store actual centered bounds so drawing, wrapping and collision checks agree.
       const brandText = (role, value, top, size, weight, color) => {
         let font = `${weight} ${size}px ${BRAND_FONT}`;
@@ -86,8 +87,8 @@
         const width = ctx.measureText(value).width;
         blocks.push({kind: 'text', role, text: value, x: center - width / 2, y: top, width, height: Math.ceil(size * 1.4), font, color});
       };
-      brandText('brand-wordmark', 'ResearchFlow', 132, 14, 600, palette.ink);
-      brandText('brand-motto', zh ? '探索 · 求证 · 记录' : 'Explore · Verify · Record', 155, zh ? 9.5 : 9, 400, palette.muted);
+      brandText('brand-wordmark', 'ResearchFlow', 128, 13, 600, palette.ink);
+      brandText('brand-motto', zh ? '探索 · 求证 · 记录' : 'Explore · Verify · Record', 150, zh ? 9.5 : 9, 400, palette.muted);
     }
     const allEvents = Array.isArray(model.events) ? model.events : [];
     const events = allEvents.length > 64 ? [allEvents[0], ...allEvents.slice(-63)] : allEvents;
@@ -118,7 +119,18 @@
     if (v.author && model.author) {
       y += text('author', `${zh ? '第一作者' : 'First author'}  /  ${model.author}`, left, y, 624, 15, 400, palette.muted, 2) + 16;
     }
-    const headerBottom = Math.max(y + 8, v.footer ? 192 : 0);
+    const headerBottom = Math.max(y + 8, v.footer ? 216 : 0);
+    if (v.footer) {
+      // Balance the signature against the first headline, not the page's top edge.
+      // Cap its travel on long titles and preserve clearance above the section rule.
+      const headline = blocks.find(b => b.role === 'journal' || b.role === 'title');
+      const target = headline ? headline.y + headline.height / 2 - 8 : 132;
+      const centerY = Math.max(124, Math.min(target, 170, headerBottom - 80));
+      const offset = centerY - 108;
+      blocks.filter(b => ['brand-seal', 'brand-wordmark', 'brand-motto'].includes(b.role))
+        .forEach(b => { b.y += offset; });
+    }
+    masthead = false;
     rule(headerBottom);
     y = headerBottom + 26;
     if (v.duration || v.status) {
@@ -227,6 +239,7 @@
       ctx.lineWidth = 1;
       if (block.kind === 'brand-seal') {
         ctx.save(); ctx.translate(block.x, block.y);
+        ctx.scale(block.scale || 1, block.scale || 1);
         ctx.strokeStyle = block.color; ctx.lineWidth = 1;
         ctx.globalAlpha = .35;
         ctx.beginPath(); ctx.arc(0, 0, 36, 0, Math.PI * 2); ctx.stroke();

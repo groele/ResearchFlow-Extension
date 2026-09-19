@@ -17,7 +17,7 @@ let previousModalFocus = null;
 let activeSharePreviewUrl = null;
 let activeSharePreviewCleanup = null;
 
-const RF_OPTIONS_RENDER_VERSION = '8.5.1';
+const RF_OPTIONS_RENDER_VERSION = '8.5.2';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
